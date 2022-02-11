@@ -52,16 +52,15 @@ class Mysql {
    * @return {Promise<Object[]>}
    */
   async queryAll(sql, params) {
-    let result;
     try {
       if (!this.connection) this.connection = await this.getConnection();
 
-      result = await this.connection.execute(sql, params);
+      const [rows, columns] = await this.connection.execute(sql, params);
+
+      return rows;
     } catch (err) {
       throw err;
     }
-
-    return result[0];
   }
   /**
    * select 1 row
@@ -70,16 +69,35 @@ class Mysql {
    * @return {Promise<Object>}
    */
   async queryRow(sql, params) {
-    let result;
     try {
       if (!this.connection) this.connection = await this.getConnection();
 
-      result = await this.connection.execute(sql, params);
+      const [rows, columns] = await this.connection.execute(sql, params);
+
+      return rows.length ? rows[0] : null;
     } catch (err) {
       throw err;
     }
+  }
 
-    return result[0].length ? result[0][0] : null;
+  /**
+   * select 1 row 1 column
+   * @param {string} sql
+   * @param {Object} params
+   * @return {Promise<null|*>}
+   */
+  async queryScalar(sql, params) {
+    try {
+      if (!this.connection) this.connection = await this.getConnection();
+
+      const [rows, columns] = await this.connection.execute(sql, params);
+      if (!rows.length) return null;
+
+      const firstRow = rows[0];
+      return firstRow[Object.keys(firstRow)[0]];
+    } catch (err) {
+      throw err;
+    }
   }
   /**
    * execute query
