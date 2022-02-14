@@ -126,6 +126,26 @@ class Mysql {
   getLastInsertID() {
     return this.lastInsertId;
   }
+
+  /**
+   * create update clause
+   * @param {Object} data
+   * @return {(string|{})[]}
+   */
+  static createUpdateClause(data) {
+    let sqlUpdate = '';
+    let params = {};
+
+    for (let key in data) {
+      let _item = data[key];
+
+      sqlUpdate += `${key} = :${key}, `;
+      params[key] = _item;
+    }
+    sqlUpdate = sqlUpdate.trim().replace(/,$/, '');
+
+    return [sqlUpdate, params];
+  }
   /**
    * start transaction
    * @return {Promise<void>}

@@ -16,12 +16,17 @@ app.set('db', db);
 
 //set vars: routers
 const investHistoryRouter = require('./router/invest-history');
+const {ResponseError} = require("./helper/express-response");
 
 //set routers
 app.use('/invest-history', investHistoryRouter);
+Mysql.createUpdateClause({'test': 1, 'test2': 2, 'test3': {val: 1, raw: true}});
 
 
 //set error handler
+app.use('*', (req, res, next) => {
+  next(new ResponseError('page not found', -1, 404));
+});
 app.use(expressResponse.error);
 
 app.listen(port, () => {

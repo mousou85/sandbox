@@ -1,6 +1,7 @@
 const express = require('express');
 const asyncHandler = require('../helper/express-async-wrap');
 const {ResponseError, createResult} = require('../helper/express-response');
+const {Mysql} = require("../database/mysql");
 
 const router = express.Router();
 
@@ -49,28 +50,53 @@ router.put('/unit/:unit_idx', asyncHandler(async (req, res, next) => {
     let unitType = req.body.unit_type;
     if (!unit && !unitType) throw new ResponseError('unit 또는 unitType값 중 하나는 필수임');
     unit = unit.toUpperCase();
-    console.log(unit);
 
     //check data
     let hasData = await  db.queryScalar('SELECT unit_idx FROM invest_unit WHERE unit_idx = :unit_idx', {unit_idx: unitIdx});
     if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
 
     //update data
-    let sqlUpdate = '';
-    let sqlParams = {unit_idx: unitIdx};
-    if (unit) {
-      sqlUpdate += 'unit = :unit, ';
-      sqlParams.unit = unit;
-    }
-    if (unitType) {
-      sqlUpdate += 'unit_type = :unit_type, ';
-      sqlParams.unit_type = unitType;
-    }
-    sqlUpdate = sqlUpdate.trim().replace(/,$/, '');
+    let params = {};
+    if (unit) params.unit = unit;
+    if (unitType) params.unit_type = unitType;
+
+    let [sqlUpdate, sqlParams] = Mysql.createUpdateClause(params);
+    sqlParams.unit_idx = unitIdx;
+
     sqlUpdate = `UPDATE invest_unit SET ${sqlUpdate} WHERE unit_idx = :unit_idx`;
 
     let rsUpdate = await db.execute(sqlUpdate, sqlParams);
     if (!rsUpdate) throw new ResponseError('unit 수정 실패함');
+
+    res.json(createResult());
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
+/**
+ * unit 삭제
+ */
+router.delete('/unit/:unit_idx', asyncHandler(async (req, res, next) => {
+  //set vars: db
+  const db = req.app.get('db');
+
+  try {
+    //set vars: request
+    let unitIdx = req.params.unit_idx;
+
+    //check data
+    let hasData = await  db.queryScalar('SELECT unit_idx FROM invest_unit WHERE unit_idx = :unit_idx', {unit_idx: unitIdx});
+    if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
+
+    //delete data
+    let sqlDelete = 'DELETE FROM invest_unit WHERE unit_idx = :unit_idx';
+    let sqlParams = {unit_idx: unitIdx};
+
+    let rsDelete = await db.execute(sqlDelete, sqlParams);
+    if (!rsDelete) throw new ResponseError('unit 삭제 실패함');
 
     res.json(createResult());
   } catch (err) {
