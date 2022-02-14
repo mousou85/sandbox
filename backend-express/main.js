@@ -14,16 +14,26 @@ app.use(bodyParser.json());
 const db = new Mysql(process.env.MYSQL_HOST, process.env.MYSQL_USER, process.env.MYSQL_PASSWORD, process.env.MYSQL_DATABASE, process.env.MYSQL_PORT);
 app.set('db', db);
 
-//set vars: routers
-const investHistoryRouter = require('./router/invest-history');
+/*
+ * 라우터 설정
+ */
+const investHistoryRouter = {
+  unit: require('./router/investHistory/unit'),
+  unitSet: require('./router/investHistory/unitSet'),
+  company: require('./router/investHistory/company'),
+  item: require('./router/investHistory/item')
+}
+
+app.use('/invest-history/unit', investHistoryRouter.unit);
+app.use('/invest-history/unit-set', investHistoryRouter.unitSet);
+app.use('/invest-history/company', investHistoryRouter.company);
+app.use('/invest-history/item', investHistoryRouter.item);
+
+
+/*
+ * 에러 핸들러
+ */
 const {ResponseError} = require("./helper/express-response");
-
-//set routers
-app.use('/invest-history', investHistoryRouter);
-Mysql.createUpdateClause({'test': 1, 'test2': 2, 'test3': {val: 1, raw: true}});
-
-
-//set error handler
 app.use('*', (req, res, next) => {
   next(new ResponseError('page not found', -1, 404));
 });

@@ -16,7 +16,7 @@ function error(err, req, res, next) {
 
 /**
  * 결과 json data 생성
- * @param {string} [resultMessage]
+ * @param {string} [resultMessage='success']
  * @param {*} [extraData]
  * @return {{result: boolean, resultMessage: (*|string)}}
  */
