@@ -6,6 +6,48 @@ const {Mysql} = require("../database/mysql");
 const router = express.Router();
 
 /**
+ * unit 목록
+ */
+router.get('/unit', asyncHandler(async (req, res, next) => {
+  //set vars: db
+  const db = req.app.get('db');
+
+  try {
+    //set vars: 리스트
+    let unitList = await db.queryAll('SELECt * FROM invest_unit ORDER BY unit_idx ASC');
+
+    res.json(createResult('success', {list: unitList}));
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
+/**
+ * unit 데이터
+ */
+router.get('/unit/:unit_idx', asyncHandler(async (req, res, next) => {
+  //set vars: db
+  const db = req.app.get('db');
+
+  try {
+    //set vars: request
+    let unitIdx = req.params.unit_idx;
+
+    //set vars: 데이터
+    let unit = await db.queryRow('SELECT * FROM invest_unit WHERE unit_idx = :unit_idx', {unit_idx: unitIdx});
+    if (!unit) throw new ResponseError('데이터가 존재하지 않음');
+
+    res.json(createResult('success', unit));
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
+/**
  * unit 추가
  */
 router.post('/unit', asyncHandler(async (req, res, next) => {

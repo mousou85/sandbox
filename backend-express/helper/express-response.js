@@ -26,7 +26,7 @@ function createResult(resultMessage, extraData) {
     resultMessage: resultMessage ? resultMessage : 'success',
   }
 
-  if (!extraData) jsonData.data = extraData;
+  if (extraData) jsonData.data = extraData;
 
   return jsonData;
 }
