@@ -28,6 +28,45 @@ router.get('/item-type', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * item 데이터
+ */
+router.get('/:item_idx', asyncHandler(async (req, res) => {
+  //set vars: db
+  const db = req.app.get('db');
+  
+  try {
+    //set vars: request
+    let itemIdx = req.params.item_idx;
+    if (!itemIdx) throw new ResponseError('잘못된 접근');
+    
+    //set vars: 데이터
+    let sql = `
+      SELECT i.*, c.company_name
+      FROM invest_item i
+        JOIN invest_company c ON c.company_idx = i.company_idx
+      WHERE i.item_idx = :item_idx
+    `;
+    let item = await db.queryRow(sql, {item_idx: itemIdx});
+    if (!item) throw new ResponseError('데이터 없음');
+    
+    sql = `
+      SELECT us.*, u.unit, u.unit_type
+      FROM invest_unit_set us
+        JOIN invest_unit u ON u.unit_idx = us.unit_idx
+      WHERE us.item_idx = :item_idx
+      ORDER BY us.unit_set_idx ASC
+    `;
+    item.unit_set = await db.queryAll(sql, {item_idx: itemIdx});
+    
+    res.json(createResult('success', item));
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
+/**
  * item 등록
  */
 router.post('/', asyncHandler(async (req, res) => {
