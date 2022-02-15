@@ -87,6 +87,91 @@ router.post('/', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * item 수정
+ */
+router.put('/:item_idx', asyncHandler(async (req, res) => {
+  //set vars: db
+  const db = req.app.get('db');
+
+  try {
+    //set vars: request
+    let itemIdx = req.params.item_idx;
+    let companyIdx = req.body.company_idx;
+    let itemType = req.body.item_type;
+    let itemName = req.body.item_name;
+    let units = req.body.units;
+    itemName = itemName ? itemName.trim() : null;
+    if (!companyIdx && !itemType && !itemName && (!units || !units.length)) throw new ResponseError('잘못된 접근');
+
+    //check data
+    let hasData = await db.queryScalar('SELECT 1 FROM invest_item WHERE item_idx = :item_idx', {item_idx: itemIdx});
+    if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
+    
+    /*
+    update data
+     */
+    let updateParams = {};
+    
+    if (companyIdx) {
+      let hasCompany = await db.queryScalar('SELECT 1 FROM invest_company WHERE company_idx = :company_idx', {company_idx: companyIdx});
+      if (!hasCompany) throw new ResponseError('company가 존재하지 않음');
+  
+      updateParams.company_idx = companyIdx;
+    }
+    if (itemType) {
+      if (!itemTypeList.hasOwnProperty(itemType)) throw new ResponseError('존재하지 않는 item type임');
+      
+      updateParams.item_type = itemType;
+    }
+    if (itemName) {
+      if (itemName.length > 50) throw new ResponseError('item_name은 50자 이하로 입력');
+      
+      updateParams.item_name = itemName;
+    }
+    
+    await db.beginTransaction();
+    try {
+      //update
+      if (Object.keys(updateParams).length > 0) {
+        let [sqlUpdate, sqlParams] = Mysql.createUpdateClause(updateParams);
+        sqlParams.item_idx = itemIdx;
+        
+        await db.execute(`UPDATE invest_item SET ${sqlUpdate} WHERE item_idx = :item_idx`, sqlParams);
+      }
+      
+      //unit-set update
+      if (units && units.length) {
+        let unitSetList = await db.queryAll('SELECT unit_set_idx, unit_idx FROM invest_unit_set WHERE item_idx = :item_idx', {item_idx: itemIdx});
+        
+        for (let item of unitSetList) {
+          //기존 등록 unit 중 삭제해야될 것들 삭제
+          if (!units.includes(item.unit_idx)) {
+            await db.execute('DELETE FROM invest_unit_set WHERE unit_set_idx = :unit_set_idx', {unit_set_idx: item.unit_set_idx});
+          } else {
+            units.splice(units.indexOf(item.unit_idx), 1);
+          }
+        }
+        
+        for (let unit of units) {
+          await db.execute('INSERT INTO invest_unit_set(item_idx, unit_idx) VALUES(:item_idx, :unit_idx)', {item_idx: itemIdx, unit_idx: unit});
+        }
+      }
+      
+      await db.commit();
+    } catch (err) {
+      await db.rollback();
+      throw err;
+    }
+    
+    res.json(createResult());
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
 // const historyTypeList = {
 //   'in': '유입',
 //   'out': '유출',
