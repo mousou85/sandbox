@@ -211,6 +211,47 @@ router.put('/:item_idx', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * item 삭제
+ */
+router.delete('/:item_idx', asyncHandler(async (req, res) => {
+  //set vars: db
+  const db = req.app.get('db');
+  
+  try {
+    //set vars: request
+    let itemIdx = req.params.item_idx;
+    
+    //check data
+    let hasData = await db.queryScalar('SELECT 1 FROM invest_item WHERE item_idx = :item_idx', {item_idx: itemIdx});
+    if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
+    
+    let hasHistory = await db.queryScalar('SELECT COUNT(*) FROM invest_history WHERE item_idx = :item_idx', {item_idx: itemIdx});
+    if (hasHistory) throw new ResponseError('history가 있는 item은 삭제 불가');
+    
+    /*
+    delete data
+     */
+    await db.beginTransaction();
+    try {
+      await db.execute('DELETE FROM invest_unit_set WHERE item_idx = :item_idx', {item_idx: itemIdx});
+      
+      await db.execute('DELETE FROM invest_item WHERE item_idx = :item_idx', {item_idx: itemIdx});
+      
+      await db.commit();
+    } catch (err) {
+      await db.rollback();
+      throw err;
+    }
+    
+    res.json(createResult());
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
 // const historyTypeList = {
 //   'in': '유입',
 //   'out': '유출',
