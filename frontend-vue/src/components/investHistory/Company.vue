@@ -1,4 +1,5 @@
 <template>
+  <SubMenu></SubMenu>
   <div>
     <div>
       <input type="text" id="addCompanyName" maxlength="20" placeholder="기업명 입력">
@@ -26,6 +27,7 @@
 
 
 <script  setup>
+import SubMenu from './SubMenu.vue';
 import {onMounted, ref} from "vue";
 import http from '../../libs/http';
 
