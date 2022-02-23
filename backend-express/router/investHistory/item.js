@@ -27,6 +27,41 @@ router.get('/item-type', asyncHandler(async (req, res) => {
   res.json(createResult('success', {'list': list}));
 }));
 
+router.get('/', asyncHandler(async (req, res) => {
+  //set vars: db
+  const db = req.app.get('db');
+  
+  try {
+    //set vars: 데이터
+    let sql = `
+      SELECT i.*, ic.company_name
+      FROM invest_item i
+        JOIN invest_company ic ON i.company_idx = ic.company_idx
+      ORDER BY i.item_idx ASC
+    `;
+    let list = await db.queryAll(sql);
+    for (let i in list) {
+      let _itemIdx = list[i].item_idx;
+      
+      sql = `
+        SELECT us.*, u.unit, u.unit_type
+        FROM invest_unit_set us
+          JOIN invest_unit u ON u.unit_idx = us.unit_idx
+        WHERE us.item_idx = :item_idx
+        ORDER BY us.unit_set_idx ASC
+      `;
+      list[i].item_type_text = itemTypeList[list[i].item_type];
+      list[i].unit_set = await db.queryAll(sql, {item_idx: _itemIdx});
+    }
+  
+    res.json(createResult('success', {'list': list}));
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
 /**
  * item 데이터
  */
