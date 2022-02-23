@@ -22,7 +22,10 @@ const routes = [
         path: 'item',
         component: import('./components/investHistory/Item.vue')
       },
-
+      {
+        path: 'unit',
+        component: import('./components/investHistory/Unit.vue')
+      },
     ]
   },
 ];

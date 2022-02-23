@@ -9,6 +9,9 @@
     <router-link to="/invest-history/item" custom v-slot="{navigate, href, route}">
       <button type="button" @click="navigate">상품관리</button>
     </router-link>
+    <router-link to="/invest-history/unit" custom v-slot="{navigate, href, route}">
+      <button type="button" @click="navigate">단위관리</button>
+    </router-link>
   </div>
 </template>
 
