@@ -60,7 +60,6 @@ router.post('/', asyncHandler(async (req, res) => {
     let unitType = req.body.unit_type;
     if (!unit) throw new ResponseError('unit값은 필수입력임');
     if (!unitType) throw new ResponseError('unit_type값은 필수입력임');
-    unit = unit.trim().toUpperCase();
     unitType = unitType.trim();
 
     //중복 체크
@@ -92,7 +91,6 @@ router.put('/:unit_idx', asyncHandler(async (req, res) => {
     let unit = req.body.unit;
     let unitType = req.body.unit_type;
     if (!unit && !unitType) throw new ResponseError('unit 또는 unit_type값 중 하나는 필수임');
-    unit = unit.trim().toUpperCase();
     unitType = unitType.trim();
 
     //check data
