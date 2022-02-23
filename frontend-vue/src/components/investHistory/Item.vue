@@ -58,10 +58,6 @@
           <button type="button" @click="itemEdit(item.item_idx)">수정</button>
           <button type="button" @click="itemDel(item.item_idx)">삭제</button>
         </td>
-        <!--<td>
-          <input type="text" maxlength="20" :value="company.company_name"  @blur="updateCompany(company.company_idx, $event.target.value)">
-          <button type="button" @click="deleteCompany(company.company_idx)">삭제</button>
-        </td>-->
       </tr>
       </tbody>
     </table>
@@ -69,7 +65,7 @@
 </template>
 
 <script setup>
-import {computed, onBeforeMount, reactive, ref} from "vue";
+import {onBeforeMount, reactive, ref} from "vue";
 import http from '../../libs/http';
 
 const companyList = ref([]);
@@ -144,7 +140,6 @@ const itemFormSubmit = async (e) => {
   const $companyIdx = $form.elements.company_idx;
   const $itemType = $form.elements.item_type;
   const $itemName = $form.elements.item_name;
-  const $unit = $form.elements.unit;
 
   if (!itemFormData.company_idx) {
     alert('기업선택');
