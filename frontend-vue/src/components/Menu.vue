@@ -1,7 +1,7 @@
 <template>
   <div id="menuWrap">
-    <router-link :to="{name: 'index'}" class="item" active-class="active">Home</router-link>
-    <router-link :to="{name: 'invest-history'}" class="item" active-class="active">History</router-link>
+    <router-link to="/" class="item" active-class="active">Home</router-link>
+    <router-link to="/invest-history" class="item" active-class="active">History</router-link>
   </div>
 </template>
 

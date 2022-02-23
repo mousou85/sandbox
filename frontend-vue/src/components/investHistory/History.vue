@@ -1,10 +1,8 @@
 <template>
-  <SubMenu></SubMenu>
   <div>
-
+    this is history page
   </div>
 </template>
 
 <script setup>
-import SubMenu from './SubMenu.vue';
 </script>
