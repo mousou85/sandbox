@@ -38,27 +38,27 @@
 
     <table id="list">
       <thead>
-      <tr>
-        <th>IDX</th>
-        <th>기업명</th>
-        <th>상품명</th>
-        <th>상품타입</th>
-        <th>단위</th>
-        <th></th>
-      </tr>
+        <tr>
+          <th>IDX</th>
+          <th>기업명</th>
+          <th>상품명</th>
+          <th>상품타입</th>
+          <th>단위</th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>
-      <tr v-for="item in itemList" :key="item.item_idx">
-        <td class="center">{{item.item_idx}}</td>
-        <td class="center">{{item.company_name}}</td>
-        <td>{{item.item_name}}</td>
-        <td>{{item.item_type_text}}</td>
-        <td>{{printUnitText(item.unit_set)}}</td>
-        <td>
-          <button type="button" @click="itemEdit(item.item_idx)">수정</button>
-          <button type="button" @click="itemDel(item.item_idx)">삭제</button>
-        </td>
-      </tr>
+        <tr v-for="item in itemList" :key="item.item_idx">
+          <td class="center">{{item.item_idx}}</td>
+          <td class="center">{{item.company_name}}</td>
+          <td>{{item.item_name}}</td>
+          <td>{{item.item_type_text}}</td>
+          <td>{{printUnitText(item.unit_set)}}</td>
+          <td>
+            <button type="button" @click="itemEdit(item.item_idx)">수정</button>
+            <button type="button" @click="itemDel(item.item_idx)">삭제</button>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -249,10 +249,10 @@ const resetForm = () => {
   padding: 3px;
 }
 
- #list {
-   border: 1px solid;
-   border-collapse: collapse;
- }
+#list {
+  border: 1px solid;
+  border-collapse: collapse;
+}
 #list th, #list td {
   border: 1px solid;
   padding: 5px;
