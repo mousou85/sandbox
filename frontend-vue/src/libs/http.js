@@ -22,12 +22,14 @@ export default {
 
       const res = await axios.get(url, axiosParams);
       const json = res.data;
-
-      return {
+  
+      let result = {
         result: json.result,
-        resultMessage: json.resultMessage,
-        data: json.data
+        resultMessage: json.resultMessage
       };
+      if (json.data) result.data = json.data;
+  
+      return result;
     } catch (err) {
       const errMessage = err.response?.data?.error || err.message;
       throw new Error(errMessage);
@@ -42,12 +44,14 @@ export default {
     try {
       const res = await axios.post(url, requestBody ? requestBody : null);
       const json = res.data;
-
-      return {
+      
+      let result = {
         result: json.result,
-        resultMessage: json.resultMessage,
-        data: json.data
+        resultMessage: json.resultMessage
       };
+      if (json.data) result.data = json.data;
+
+      return result;
     } catch (err) {
       const errMessage = err.response?.data?.error || err.message;
       throw new Error(errMessage);
@@ -62,12 +66,14 @@ export default {
     try {
       const res = await axios.put(url, requestBody ? requestBody : null);
       const json = res.data;
-
-      return {
+  
+      let result = {
         result: json.result,
-        resultMessage: json.resultMessage,
-        data: json.data
+        resultMessage: json.resultMessage
       };
+      if (json.data) result.data = json.data;
+  
+      return result;
     } catch (err) {
       const errMessage = err.response?.data?.error || err.message;
       throw new Error(errMessage);
@@ -82,12 +88,14 @@ export default {
     try {
       const res = await axios.delete(url, {data: requestBody ? requestBody : null});
       const json = res.data;
-
-      return {
+  
+      let result = {
         result: json.result,
-        resultMessage: json.resultMessage,
-        data: json.data
+        resultMessage: json.resultMessage
       };
+      if (json.data) result.data = json.data;
+  
+      return result;
     } catch (err) {
       const errMessage = err.response?.data?.error || err.message;
       throw new Error(errMessage);

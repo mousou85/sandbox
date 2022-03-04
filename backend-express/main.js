@@ -23,13 +23,15 @@ const investHistoryRouter = {
   unit: require('./router/investHistory/unit'),
   unitSet: require('./router/investHistory/unitSet'),
   company: require('./router/investHistory/company'),
-  item: require('./router/investHistory/item')
+  item: require('./router/investHistory/item'),
+  history: require('./router/investHistory/history')
 }
 
 app.use('/invest-history/unit', investHistoryRouter.unit);
 app.use('/invest-history/unit-set', investHistoryRouter.unitSet);
 app.use('/invest-history/company', investHistoryRouter.company);
 app.use('/invest-history/item', investHistoryRouter.item);
+app.use('/invest-history/history', investHistoryRouter.history);
 
 
 /*
