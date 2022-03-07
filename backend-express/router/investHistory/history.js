@@ -5,6 +5,20 @@ const {Mysql} = require("../../database/mysql");
 
 const router = express.Router();
 
+const historyTypeList = {
+  'in': '유입',
+  'out': '유출',
+  'revenue': '평가'
+};
+const inoutTypeList = {
+  'principal': '원금',
+  'proceeds': '수익금',
+};
+const revenueTypeList = {
+  'interest': '이자',
+  'eval': '평가금액'
+};
+
 // router.get('/', asyncHandler(async (req, res) => {
 //   //set vars: db
 //   const db = req.app.get('db');
@@ -40,44 +54,54 @@ const router = express.Router();
 //   }
 // }));
 
-// /**
-//  * item 데이터
-//  */
-// router.get('/:item_idx', asyncHandler(async (req, res) => {
-//   //set vars: db
-//   const db = req.app.get('db');
-//
-//   try {
-//     //set vars: request
-//     let itemIdx = req.params.item_idx;
-//     if (!itemIdx) throw new ResponseError('잘못된 접근');
-//
-//     //set vars: 데이터
-//     let sql = `
-//       SELECT i.*, c.company_name
-//       FROM invest_item i
-//         JOIN invest_company c ON c.company_idx = i.company_idx
-//       WHERE i.item_idx = :item_idx
-//     `;
-//     let item = await db.queryRow(sql, {item_idx: itemIdx});
-//     if (!item) throw new ResponseError('데이터 없음');
-//
-//     sql = `
-//       SELECT us.*, u.unit, u.unit_type
-//       FROM invest_unit_set us
-//         JOIN invest_unit u ON u.unit_idx = us.unit_idx
-//       WHERE us.item_idx = :item_idx
-//       ORDER BY us.unit_set_idx ASC
-//     `;
-//     item.unit_set = await db.queryAll(sql, {item_idx: itemIdx});
-//
-//     res.json(createResult('success', item));
-//   } catch (err) {
-//     throw err;
-//   } finally {
-//     await db.releaseConnection();
-//   }
-// }));
+/**
+ * history 리스트
+ */
+router.get('/:item_idx', asyncHandler(async (req, res) => {
+  //set vars: db
+  const db = req.app.get('db');
+
+  try {
+    //set vars: request
+    let itemIdx = req.params.item_idx;
+    if (!itemIdx) throw new ResponseError('잘못된 접근');
+
+    //set vars: 데이터
+    let sql = `
+      SELECT
+        h.history_idx,
+        h.unit_idx,
+        h.history_date,
+        h.history_type,
+        h.inout_type,
+        h.revenue_type,
+        h.val,
+        h.memo,
+        u.unit,
+        u.unit_type
+      FROM invest_history h
+        JOIN invest_unit u ON h.unit_idx = u.unit_idx
+      WHERE h.item_idx = :item_idx
+      ORDER BY h.history_date DESC
+    `;
+    const historyList = await db.queryAll(sql, {item_idx: itemIdx});
+    for (let key in historyList) {
+      const _historyType = historyList[key].history_type;
+      const _inoutType = historyList[key].inout_type;
+      const _revenueType = historyList[key].revenue_type;
+      
+      historyList[key].history_type_text = historyTypeList[_historyType];
+      historyList[key].inout_type_text = _inoutType ? inoutTypeList[_inoutType] : null;
+      historyList[key].revenue_type_text = _revenueType ? revenueTypeList[_revenueType] : null;
+    }
+    
+    res.json(createResult('success', {'list': historyList}));
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
 
 /**
  * history 등록

@@ -14,7 +14,8 @@ class Mysql {
     database: null,
     connectionLimit: 10,
     queueLimit: 0,
-    namedPlaceholders: true
+    namedPlaceholders: true,
+    dateStrings: 'date'
   };
   /**
    * @type {Pool|PoolCluster}
