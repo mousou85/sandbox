@@ -71,6 +71,24 @@
         </tr>
       </thead>
       <tbody>
+        <tr v-for="history in historyList" :key="history.history_idx">
+          <td class="center">{{history.history_date}}</td>
+          <td class="center">
+            <span v-if="['in','out'].includes(history.history_type)">
+              {{history.history_type_text}} - {{history.inout_type_text}}
+            </span>
+            <span v-else>
+              {{history.history_type_text}} - {{history.revenue_type_text}}
+            </span>
+          </td>
+          <td class="right">
+            {{history.unit_type == 'int' ? parseInt(history.val) : history.val}} {{history.unit}}
+          </td>
+          <td>{{history.memo}}</td>
+          <td class="center">
+            <button type="button" @click="delHistory(history.history_idx)">삭제</button>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -92,6 +110,7 @@ const formData = reactive({
 });
 const itemList = ref([]);
 const unitList = ref([]);
+const historyList = ref([]);
 
 const $addFormUnitIdx = ref();
 const $valUnit = ref();
@@ -105,9 +124,6 @@ onBeforeMount(async () => {
   } catch (err) {
 
   }
-});
-watch($addFormUnitIdx.value, (newVal, oldVal) => {
-  console.log(newVal, oldVal);
 });
 
 /**
@@ -123,6 +139,7 @@ const getItemList = async () => {
     return [];
   }
 };
+
 const getUnitList = async (itemIdx) => {
   try {
     const res = await http.get(`http://localhost:5000/invest-history/unit-set/${itemIdx}`);
@@ -137,6 +154,7 @@ const selectItem = async ($event) => {
   formData.item_idx = $event.target.value;
   try {
     unitList.value = await getUnitList(formData.item_idx);
+    historyList.value = await getHistoryList(formData.item_idx);
   } catch (err) {
   }
 }
@@ -150,71 +168,102 @@ const setValUnit = ($event) => {
   $valUnit.value.innerText = unit;
 }
 
+/**
+ * 히스토리 리스트 반환
+ * @param itemIdx
+ * @return {Promise<*[]|*>}
+ */
+const getHistoryList = async (itemIdx) => {
+  try {
+    const res = await http.get(`http://localhost:5000/invest-history/history/${itemIdx}`);
+    if (!res.result) throw new Error(res.resultMessage);
+    return res.data.list;
+  } catch (err) {
+    return [];
+  }
+};
+
+/**
+ * 히스토리 추가
+ * @param $event
+ * @return {Promise<boolean>}
+ */
 const addHistory = async ($event) => {
   const $form = $event.target;
-  // $addFormUnitIdx.value.onChange();
-  formData.unit_idx = '';
-  $addFormUnitIdx.value.change();
-  // document.getElementById('addFormUnitIdx').onchange();
-  // console.log($addFormUnitIdx.value.click());
-  return false;
-  // if (!formData.item_idx) {
-  //   alert('상품 선택');
-  //   return false;
-  // }
-  // if (!formData.unit_idx) {
-  //   alert('단위 선택');
-  //   $form.elements.unit_idx.focus();
-  //   return false;
-  // }
-  // if (!formData.history_date) {
-  //   alert('날짜 선택');
-  //   $form.elements.history_date.focus();
-  //   return false;
-  // }
-  // if (!formData.history_type) {
-  //   alert('기록 타입 선택');
-  //   return false;
-  // }
-  // if (['in', 'out'].includes(formData.history_type)) {
-  //   if (!formData.inout_type) {
-  //     alert('유입/유출 타입 선택');
-  //     return false;
-  //   }
-  // } else {
-  //   if (!formData.revenue_type) {
-  //     alert('평가 타입 선택');
-  //     return false;
-  //   }
-  // }
-  // if (!formData.val) {
-  //   alert('금액 입력');
-  //   return false;
-  // }
-  //
-  // try {
-  //   const res = await http.post(`http://localhost:5000/invest-history/history/${formData.item_idx}/`, formData);
-  //   if (!res.result) throw new Error(res.resultMessage);
-  //
-  //   alert('추가 완료');
-  //
-  //   formData.unit_idx = '';
-  //   formData.history_date = '';
-  //   formData.history_type = '';
-  //   formData.inout_type = '';
-  //   formData.revenue_type = '';
-  //   formData.val = '';
-  //   formData.memo = '';
-  //
-  // } catch (err) {
-  //   alert(err);
-  //   return false;
-  // }
+
+  if (!formData.item_idx) {
+    alert('상품 선택');
+    return false;
+  }
+  if (!formData.unit_idx) {
+    alert('단위 선택');
+    $form.elements.unit_idx.focus();
+    return false;
+  }
+  if (!formData.history_date) {
+    alert('날짜 선택');
+    $form.elements.history_date.focus();
+    return false;
+  }
+  if (!formData.history_type) {
+    alert('기록 타입 선택');
+    return false;
+  }
+  if (['in', 'out'].includes(formData.history_type)) {
+    if (!formData.inout_type) {
+      alert('유입/유출 타입 선택');
+      return false;
+    }
+  } else {
+    if (!formData.revenue_type) {
+      alert('평가 타입 선택');
+      return false;
+    }
+  }
+  if (!formData.val) {
+    alert('금액 입력');
+    return false;
+  }
+
+  try {
+    const res = await http.post(`http://localhost:5000/invest-history/history/${formData.item_idx}/`, formData);
+    if (!res.result) throw new Error(res.resultMessage);
+
+    alert('추가 완료');
+
+    formData.unit_idx = '';
+    formData.history_date = '';
+    formData.history_type = '';
+    formData.inout_type = '';
+    formData.revenue_type = '';
+    formData.val = '';
+    formData.memo = '';
+
+    document.getElementById('valUnit').innerText = '';
+
+  } catch (err) {
+    alert(err);
+    return false;
+  }
 }
 
-const t = () => {
-  console.log(1);
-}
+/**
+ * 히스토리 삭제
+ * @param historyIdx
+ * @return {Promise<boolean>}
+ */
+const delHistory = async (historyIdx) => {
+  try {
+    const res = await http.delete(`http://localhost:5000/invest-history/history/${formData.item_idx}/${historyIdx}`);
+    if (!res.result) throw new Error(res.resultMessage);
+
+    historyList.value = await getHistoryList(formData.item_idx);
+  } catch (err) {
+    alert(err);
+    return false;
+  }
+};
+
 </script>
 
 <style scoped>
@@ -229,6 +278,9 @@ const t = () => {
 }
 #list .center {
   text-align: center;
+}
+#list .right {
+  text-align: right;
 }
 
 #addForm {
