@@ -35,13 +35,13 @@
           <label class="short"><input type="radio" name="history_type" value="revenue" v-model="formData.history_type">평가</label>
         </div>
 
-        <div class="row">
+        <div class="row" v-if="['in', 'out'].includes(formData.history_type)">
           <label>유입/유출 타입</label>
           <label class="short"><input type="radio" name="inout_type" value="principal" v-model="formData.inout_type">원금</label>
           <label class="short"><input type="radio" name="inout_type" value="proceeds" v-model="formData.inout_type">수익금</label>
         </div>
 
-        <div class="row">
+        <div class="row" v-else-if="formData.history_type == 'revenue'">
           <label>평가 타입</label>
           <label class="short"><input type="radio" name="revenue_type" value="interest" v-model="formData.revenue_type">이자</label>
           <label class="short"><input type="radio" name="revenue_type" value="eval" v-model="formData.revenue_type">평가금액</label>
@@ -49,7 +49,7 @@
 
         <div class="row">
           <label for="addFormVal">금액</label>
-          <input type="number" id="addFormVal" name="val" class="val" v-model="formData.val"><span id="valUnit" ref="$valUnit"></span>
+          <input type="text" id="addFormVal" name="val" class="val" v-model="formData.val"><span id="valUnit" ref="$valUnit"></span>
         </div>
 
         <div class="row">
@@ -82,7 +82,7 @@
             </span>
           </td>
           <td class="right">
-            {{history.unit_type == 'int' ? parseInt(history.val) : history.val}} {{history.unit}}
+            {{history.unit_type == 'int' ? parseInt(history.val).toLocaleString() : history.val.toLocaleString()}} {{history.unit}}
           </td>
           <td>{{history.memo}}</td>
           <td class="center">
@@ -97,6 +97,7 @@
 <script setup>
 import {onBeforeMount, reactive, ref, watch} from "vue";
 import http from "../../libs/http";
+import {numberComma} from "../../libs/helper";
 
 const formData = reactive({
   item_idx: '',
@@ -124,6 +125,10 @@ onBeforeMount(async () => {
   } catch (err) {
 
   }
+});
+
+watch(() => formData.val, (newVal) => {
+  formData.val = numberComma(newVal);
 });
 
 /**
