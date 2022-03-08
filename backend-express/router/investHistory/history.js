@@ -82,7 +82,7 @@ router.get('/:item_idx', asyncHandler(async (req, res) => {
       FROM invest_history h
         JOIN invest_unit u ON h.unit_idx = u.unit_idx
       WHERE h.item_idx = :item_idx
-      ORDER BY h.history_date DESC
+      ORDER BY h.history_date DESC, h.history_idx DESC
     `;
     const historyList = await db.queryAll(sql, {item_idx: itemIdx});
     for (let key in historyList) {
