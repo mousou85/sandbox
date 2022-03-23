@@ -147,6 +147,51 @@ class Mysql {
 
     return [sqlUpdate, params];
   }
+  
+  /**
+   * create where clause
+   * @param {Object|Array} condition
+   * @return {{str: string, params: {}}}
+   */
+  static createWhere(condition) {
+    //set vars: where clause, bind parameter
+    let where = '';
+    let params = {};
+    
+    //파라미터가 object면 배열로 감싸줌
+    if (!Array.isArray(condition) && typeof condition == 'object') {
+      condition = [condition];
+    }
+    
+    //조건 배열 loop
+    for (const item of condition) {
+      const itemKeys = Object.keys(item);
+      
+      //set vars: 컬럼명, 조건값 바인드키, 연산자, 조건 연결자, 조건값
+      let column = itemKeys[0];
+      let bindKey = column.replace(/^[a-z0-9]+\./i, '');
+      let operator = item['!op'] ? item['!op'].toUpperCase() : '=';
+      let clauseConcat = item['!concat'] ? item['!concat'].toUpperCase() : 'AND';
+      let bindVal = item[column];
+      
+      //연산자가 IN 이면 별도 처리
+      if (operator == 'IN') {
+        where += ` ${clauseConcat} ${column} IN (${mysql.escape(bindVal)})`;
+      } else {
+        where += ` ${clauseConcat} ${column} ${operator} :${bindKey}`;
+        params[bindKey] = bindVal;
+      }
+    }
+    
+    //where 앞에 불필요한 연결자 제거
+    where = where.replace(/^\s?(AND|OR)/i, '').trim();
+    
+    return {
+      str: where,
+      params: params
+    }
+  }
+  
   /**
    * start transaction
    * @return {Promise<void>}
