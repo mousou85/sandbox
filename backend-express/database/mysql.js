@@ -148,7 +148,10 @@ class Mysql {
     //불필요한 문자 제거
     sqlUpdate = sqlUpdate.trim().replace(/,$/, '');
 
-    return [sqlUpdate, params];
+    return {
+      str: sqlUpdate,
+      params: params
+    }
   }
   
   /**
