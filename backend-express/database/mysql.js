@@ -18,11 +18,11 @@ class Mysql {
     dateStrings: 'date'
   };
   /**
-   * @type {Pool|PoolCluster}
+   * @type {mysql.Pool|mysql.PoolCluster}
    */
   connectionPool;
   /**
-   * @type {PoolConnection}
+   * @type {mysql.PoolConnection}
    */
   connection;
   /**
@@ -41,7 +41,7 @@ class Mysql {
   }
   /**
    * new connection return
-   * @return {Promise<PoolConnection>}
+   * @return {Promise<mysql.PoolConnection>}
    */
   async getConnection() {
     return await this.connectionPool.getConnection(conn => conn);
@@ -131,9 +131,10 @@ class Mysql {
   /**
    * create update clause
    * @param {Object} data
-   * @return {(string|{})[]}
+   * @return {{str: string, params: {}}}
    */
-  static createUpdateClause(data) {
+  static createUpdate(data) {
+    //set vars: update clause, bind parameter
     let sqlUpdate = '';
     let params = {};
 
@@ -143,6 +144,8 @@ class Mysql {
       sqlUpdate += `${key} = :${key}, `;
       params[key] = _item;
     }
+    
+    //불필요한 문자 제거
     sqlUpdate = sqlUpdate.trim().replace(/,$/, '');
 
     return [sqlUpdate, params];
