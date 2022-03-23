@@ -102,10 +102,11 @@ router.put('/:unit_idx', asyncHandler(async (req, res) => {
     if (unit) params.unit = unit;
     if (unitType) params.unit_type = unitType;
 
-    let [sqlUpdate, sqlParams] = Mysql.createUpdateClause(params);
+    let sqlUpdate = Mysql.createUpdate(params);
+    let sqlParams = sqlUpdate.params;
     sqlParams.unit_idx = unitIdx;
 
-    sqlUpdate = `UPDATE invest_unit SET ${sqlUpdate} WHERE unit_idx = :unit_idx`;
+    sqlUpdate = `UPDATE invest_unit SET ${sqlUpdate.str} WHERE unit_idx = :unit_idx`;
 
     let rsUpdate = await db.execute(sqlUpdate, sqlParams);
     if (!rsUpdate) throw new ResponseError('unit 수정 실패함');
