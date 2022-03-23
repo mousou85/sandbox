@@ -64,9 +64,18 @@ router.get('/:item_idx', asyncHandler(async (req, res) => {
   try {
     //set vars: request
     let itemIdx = req.params.item_idx;
+    let historyType = req.query.history_type ?? '';
     if (!itemIdx) throw new ResponseError('잘못된 접근');
 
-    //set vars: 데이터
+    //set vars: sql 조건 설정
+    let conditions = [{'h.item_idx': itemIdx}];
+    if (historyType) {
+      if (historyType == 'inout') conditions.push({'h.history_type': ['in','out'], '!op': 'in'});
+      else if (historyType == 'revenue') conditions.push({'h.history_type': 'revenue'});
+    }
+    const sqlWhere = Mysql.createWhere(conditions);
+    
+    //set vars: history 리스트
     let sql = `
       SELECT
         h.history_idx,
@@ -81,10 +90,10 @@ router.get('/:item_idx', asyncHandler(async (req, res) => {
         u.unit_type
       FROM invest_history h
         JOIN invest_unit u ON h.unit_idx = u.unit_idx
-      WHERE h.item_idx = :item_idx
+      WHERE ${sqlWhere.str}
       ORDER BY h.history_date DESC, h.history_idx DESC
     `;
-    const historyList = await db.queryAll(sql, {item_idx: itemIdx});
+    const historyList = await db.queryAll(sql, sqlWhere.params);
     for (let key in historyList) {
       const _historyType = historyList[key].history_type;
       const _inoutType = historyList[key].inout_type;
