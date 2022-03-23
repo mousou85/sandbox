@@ -97,7 +97,7 @@
 <script setup>
 import {onBeforeMount, reactive, ref, watch} from "vue";
 import http from "../../libs/http";
-import {numberComma, numberUncomma} from "../../libs/helper";
+import {numberComma} from "../../libs/helper";
 
 const formData = reactive({
   item_idx: '',
@@ -229,7 +229,6 @@ const addHistory = async ($event) => {
     alert('금액 입력');
     return false;
   }
-  formData.val = numberUncomma(formData.val);
 
   try {
     const res = await http.post(`http://localhost:5000/invest-history/history/${formData.item_idx}/`, formData);
@@ -247,7 +246,6 @@ const addHistory = async ($event) => {
 
     document.getElementById('valUnit').innerText = '';
 
-    historyList.value = await getHistoryList(formData.item_idx);
   } catch (err) {
     alert(err);
     return false;

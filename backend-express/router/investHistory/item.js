@@ -208,11 +208,10 @@ router.put('/:item_idx', asyncHandler(async (req, res) => {
     try {
       //update
       if (Object.keys(updateParams).length > 0) {
-        let sqlUpdate = Mysql.createUpdate(updateParams);
-        let sqlParams = sqlUpdate.params;
+        let [sqlUpdate, sqlParams] = Mysql.createUpdateClause(updateParams);
         sqlParams.item_idx = itemIdx;
         
-        await db.execute(`UPDATE invest_item SET ${sqlUpdate.str} WHERE item_idx = :item_idx`, sqlParams);
+        await db.execute(`UPDATE invest_item SET ${sqlUpdate} WHERE item_idx = :item_idx`, sqlParams);
       }
       
       //unit-set update
