@@ -60,37 +60,76 @@
       <button type="submit">추가</button>
     </form>
 
-    <table id="list">
-      <thead>
-        <tr>
-          <th>날짜</th>
-          <th>기록타입</th>
-          <th>금액</th>
-          <th>메모</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="history in historyList" :key="history.history_idx">
-          <td class="center">{{history.history_date}}</td>
-          <td class="center">
+    <div style="overflow: hidden;">
+      <div style="float: left;width: 45%;">
+        <h5>유입/유출</h5>
+        <table id="inoutList" class="list" style="width:100%;">
+          <thead>
+          <tr>
+            <th>날짜</th>
+            <th>기록타입</th>
+            <th>금액</th>
+            <th>메모</th>
+            <th></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="history in inoutList" :key="history.history_idx">
+            <td class="center">{{history.history_date}}</td>
+            <td class="center">
             <span v-if="['in','out'].includes(history.history_type)">
               {{history.history_type_text}} - {{history.inout_type_text}}
             </span>
-            <span v-else>
+              <span v-else>
               {{history.history_type_text}} - {{history.revenue_type_text}}
             </span>
-          </td>
-          <td class="right">
-            {{history.unit_type == 'int' ? parseInt(history.val).toLocaleString() : history.val.toLocaleString()}} {{history.unit}}
-          </td>
-          <td>{{history.memo}}</td>
-          <td class="center">
-            <button type="button" @click="delHistory(history.history_idx)">삭제</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+            <td class="right">
+              {{history.unit_type == 'int' ? parseInt(history.val).toLocaleString() : history.val.toLocaleString()}} {{history.unit}}
+            </td>
+            <td>{{history.memo}}</td>
+            <td class="center">
+              <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="float: left;width: 45%;margin-left: 20px;">
+        <h5>평가</h5>
+        <table id="revenueList" class="list" style="width: 100%;">
+          <thead>
+          <tr>
+            <th>날짜</th>
+            <th>기록타입</th>
+            <th>금액</th>
+            <th>메모</th>
+            <th></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="history in revenueList" :key="history.history_idx">
+            <td class="center">{{history.history_date}}</td>
+            <td class="center">
+            <span v-if="['in','out'].includes(history.history_type)">
+              {{history.history_type_text}} - {{history.inout_type_text}}
+            </span>
+              <span v-else>
+              {{history.history_type_text}} - {{history.revenue_type_text}}
+            </span>
+            </td>
+            <td class="right">
+              {{history.unit_type == 'int' ? parseInt(history.val).toLocaleString() : history.val.toLocaleString()}} {{history.unit}}
+            </td>
+            <td>{{history.memo}}</td>
+            <td class="center">
+              <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -111,7 +150,8 @@ const formData = reactive({
 });
 const itemList = ref([]);
 const unitList = ref([]);
-const historyList = ref([]);
+const inoutList = ref([]);
+const revenueList = ref([]);
 
 const $addFormUnitIdx = ref();
 const $valUnit = ref();
@@ -159,7 +199,8 @@ const selectItem = async ($event) => {
   formData.item_idx = $event.target.value;
   try {
     unitList.value = await getUnitList(formData.item_idx);
-    historyList.value = await getHistoryList(formData.item_idx);
+    inoutList.value = await getHistoryList(formData.item_idx, 'inout');
+    revenueList.value = await getHistoryList(formData.item_idx, 'revenue');
   } catch (err) {
   }
 }
@@ -176,11 +217,12 @@ const setValUnit = ($event) => {
 /**
  * 히스토리 리스트 반환
  * @param itemIdx
+ * @param historyType}
  * @return {Promise<*[]|*>}
  */
-const getHistoryList = async (itemIdx) => {
+const getHistoryList = async (itemIdx, historyType) => {
   try {
-    const res = await http.get(`http://localhost:5000/invest-history/history/${itemIdx}`);
+    const res = await http.get(`http://localhost:5000/invest-history/history/${itemIdx}`, {history_type: historyType});
     if (!res.result) throw new Error(res.resultMessage);
     return res.data.list;
   } catch (err) {
@@ -237,6 +279,12 @@ const addHistory = async ($event) => {
 
     alert('추가 완료');
 
+    if (['in', 'out'].includes(formData.history_type)) {
+      inoutList.value = await getHistoryList(formData.item_idx, 'inout');
+    } else if (formData.history_type == 'revenue') {
+      revenueList.value = await getHistoryList(formData.item_idx, 'revenue');
+    }
+
     formData.unit_idx = '';
     formData.history_date = '';
     formData.history_type = '';
@@ -246,8 +294,6 @@ const addHistory = async ($event) => {
     formData.memo = '';
 
     document.getElementById('valUnit').innerText = '';
-
-    historyList.value = await getHistoryList(formData.item_idx);
   } catch (err) {
     alert(err);
     return false;
@@ -257,14 +303,19 @@ const addHistory = async ($event) => {
 /**
  * 히스토리 삭제
  * @param historyIdx
+ * @param historyType
  * @return {Promise<boolean>}
  */
-const delHistory = async (historyIdx) => {
+const delHistory = async (historyIdx, historyType) => {
   try {
     const res = await http.delete(`http://localhost:5000/invest-history/history/${formData.item_idx}/${historyIdx}`);
     if (!res.result) throw new Error(res.resultMessage);
 
-    historyList.value = await getHistoryList(formData.item_idx);
+    if (['in', 'out'].includes(historyType)) {
+      inoutList.value = await getHistoryList(formData.item_idx, 'inout');
+    } else if (historyType == 'revenue') {
+      revenueList.value = await getHistoryList(formData.item_idx, 'revenue');
+    }
   } catch (err) {
     alert(err);
     return false;
@@ -274,19 +325,19 @@ const delHistory = async (historyIdx) => {
 </script>
 
 <style scoped>
-#list {
+.list {
   border: 1px solid;
   border-collapse: collapse;
   margin-top: 10px;
 }
-#list th, #list td {
+.list th, .list td {
   border: 1px solid;
   padding: 5px;
 }
-#list .center {
+.list .center {
   text-align: center;
 }
-#list .right {
+.list .right {
   text-align: right;
 }
 
