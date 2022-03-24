@@ -37,7 +37,7 @@ router.get('/', asyncHandler(async (req, res) => {
       SELECT i.*, ic.company_name
       FROM invest_item i
         JOIN invest_company ic ON i.company_idx = ic.company_idx
-      ORDER BY i.item_idx ASC
+      ORDER BY ic.company_name ASC, i.item_name ASC
     `;
     let list = await db.queryAll(sql);
     for (let i in list) {

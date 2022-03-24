@@ -182,6 +182,82 @@ router.post('/:item_idx', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * history summary
+ */
+router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
+  //set vars: db
+  const db = req.app.get('db');
+  
+  try {
+    //set vars: request
+    let itemIdx = req.params.item_idx;
+    let startDate = req.query.startDate ?? '';
+    let endDate = req.query.endDate ?? '';
+    
+    let summaryData = {
+      'inTotal': 0,
+      'inPrincipal': 0,
+      'inProceeds': 0,
+      'outTotal': 0,
+      'outPrincipal': 0,
+      'outProceeds': 0,
+      'revenueTotal': 0,
+      'revenueEval': 0,
+      'revenueInterest': 0,
+    };
+    
+    let conditions = [{'h.item_idx': itemIdx}];
+    const sqlWhere = Mysql.createWhere(conditions);
+    
+    let sql = `
+      SELECT
+        h.history_type,
+        CASE
+          WHEN h.history_type IN ('in','out') THEN h.inout_type
+          WHEN h.history_type = 'revenue' THEN h.revenue_type
+        END AS val_type,
+        SUM(h.val) AS total
+      FROM invest_history h
+      WHERE ${sqlWhere.str}
+      GROUP BY h.history_type, val_type
+    `;
+    let rsSummary = await db.queryAll(sql, sqlWhere.params);
+    
+    for (const data of rsSummary) {
+      let summaryKey = '';
+      switch (data.history_type) {
+        case 'in':
+          if (data.val_type == 'principal') summaryKey = 'inPrincipal';
+          else if (data.val_type == 'proceeds') summaryKey = 'inProceeds';
+          break;
+        case 'out':
+          if (data.val_type == 'principal') summaryKey = 'outPrincipal';
+          else if (data.val_type == 'proceeds') summaryKey = 'outProceeds';
+          break;
+        case 'revenue':
+          if (data.val_type == 'eval') summaryKey = 'revenueEval';
+          else if (data.val_type == 'interest') summaryKey = 'revenueInterest';
+          break;
+      }
+      
+      if (summaryKey) {
+        summaryData[summaryKey] += data.total;
+      }
+    }
+    
+    summaryData.inTotal = summaryData.inPrincipal + summaryData.inProceeds;
+    summaryData.outTotal = summaryData.outPrincipal + summaryData.outProceeds;
+    summaryData.revenueTotal = summaryData.revenueEval + summaryData.revenueInterest;
+    
+    res.json(createResult('success', summaryData));
+  } catch (err) {
+    throw err;
+  } finally {
+    await db.releaseConnection();
+  }
+}));
+
 // /**
 //  * item 수정
 //  */
