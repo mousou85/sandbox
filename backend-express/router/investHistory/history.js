@@ -190,66 +190,154 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
   const db = req.app.get('db');
   
   try {
-    //set vars: request
+    // set vars: request
     let itemIdx = req.params.item_idx;
     let startDate = req.query.startDate ?? '';
     let endDate = req.query.endDate ?? '';
     
+    // set vars: summary data
     let summaryData = {
-      'inTotal': 0,
-      'inPrincipal': 0,
-      'inProceeds': 0,
-      'outTotal': 0,
-      'outPrincipal': 0,
-      'outProceeds': 0,
-      'revenueTotal': 0,
-      'revenueEval': 0,
-      'revenueInterest': 0,
+      'in': {},
+      'out': {},
+      'revenue': {},
+      'revenueRate': {}
     };
     
-    let conditions = [{'h.item_idx': itemIdx}];
-    const sqlWhere = Mysql.createWhere(conditions);
+    let sql = '';
     
-    let sql = `
-      SELECT
-        h.history_type,
-        CASE
-          WHEN h.history_type IN ('in','out') THEN h.inout_type
-          WHEN h.history_type = 'revenue' THEN h.revenue_type
-        END AS val_type,
-        SUM(h.val) AS total
-      FROM invest_history h
-      WHERE ${sqlWhere.str}
-      GROUP BY h.history_type, val_type
+    // summary에 history_type와 단위별로 세부 항목 설정
+    sql = `
+      SELECT u.unit, u.unit_type
+      FROM invest_unit_set us
+        JOIN invest_unit u ON us.unit_idx = u.unit_idx
+      WHERE us.item_idx = :item_idx
     `;
-    let rsSummary = await db.queryAll(sql, sqlWhere.params);
+    let rsUnitSet = await db.queryAll(sql, {item_idx: itemIdx});
     
-    for (const data of rsSummary) {
-      let summaryKey = '';
-      switch (data.history_type) {
-        case 'in':
-          if (data.val_type == 'principal') summaryKey = 'inPrincipal';
-          else if (data.val_type == 'proceeds') summaryKey = 'inProceeds';
-          break;
-        case 'out':
-          if (data.val_type == 'principal') summaryKey = 'outPrincipal';
-          else if (data.val_type == 'proceeds') summaryKey = 'outProceeds';
-          break;
-        case 'revenue':
-          if (data.val_type == 'eval') summaryKey = 'revenueEval';
-          else if (data.val_type == 'interest') summaryKey = 'revenueInterest';
-          break;
-      }
-      
-      if (summaryKey) {
-        summaryData[summaryKey] += data.total;
+    for (const summaryKey of Object.keys(summaryData)) {
+      for (const unit of rsUnitSet) {
+        let _unit = unit.unit;
+        let _unitType = unit.unit_type;
+        
+        if (['in', 'out', 'revenue'].includes(summaryKey)) { // 유입/유출/평가 세부 항목 설정
+          // 유입/유출/평가 공통 세부 항목
+          summaryData[summaryKey][_unit] = {
+            'unit': _unit,
+            'unit_type': _unitType,
+            'total': 0,
+          };
+  
+          // 유형별 별도 세부 항목 설정
+          if (['in','out'].includes(summaryKey)) {
+            summaryData[summaryKey][_unit].principal = 0;
+            summaryData[summaryKey][_unit].proceeds = 0;
+          } else if (summaryKey == 'revenue') {
+            summaryData[summaryKey][_unit].eval = 0;
+            summaryData[summaryKey][_unit].interest = 0;
+          }
+        } else if (summaryKey == 'revenueRate') { // 수익율 세부 항목 설정
+          summaryData[summaryKey][_unit] = {
+            'rate': 0.0,
+            'diff': 0.0,
+            'excludeProceedsRate': 0.0,
+            'excludeProceedsDiff': 0.0
+          };
+        }
       }
     }
     
-    summaryData.inTotal = summaryData.inPrincipal + summaryData.inProceeds;
-    summaryData.outTotal = summaryData.outPrincipal + summaryData.outProceeds;
-    summaryData.revenueTotal = summaryData.revenueEval + summaryData.revenueInterest;
+    // 단위별 유입/유출/평가(이자) 항목 설정
+    sql = `
+      SELECT
+        h.history_type,
+        CASE
+          WHEN h.history_type in ('in', 'out') THEN h.inout_type
+          WHEN h.history_type = 'revenue' THEN h.revenue_type
+        END AS val_type,
+        u.unit,
+        SUM(h.val) AS totalVal
+      FROM invest_history h
+        JOIN invest_unit u ON h.unit_idx = u.unit_idx
+      WHERE
+        h.item_idx = :item_idx
+        AND (h.history_type IN ('in', 'out') OR (h.history_type = 'revenue' AND h.revenue_type = 'interest'))
+      GROUP BY h.history_type, val_type, h.unit_idx
+    `;
+    let rsSummary = await db.queryAll(sql, {item_idx: itemIdx});
+
+    for (const data of rsSummary) {
+      let _historyType = data.history_type;
+      let _valType = data.val_type;
+      let _unit = data.unit;
+      let _val = data.totalVal;
+
+      summaryData[_historyType][_unit].total += _val;
+      summaryData[_historyType][_unit][_valType] += _val;
+    }
     
+    // 단위별 평가(평가금액) 항목 설정
+    sql = `
+      SELECT t.unit, t.val
+      FROM (
+          SELECT h.val, u.unit
+          FROM invest_history h
+              JOIN invest_unit u ON h.unit_idx = u.unit_idx
+          WHERE h.item_idx = :item_idx AND h.history_type = 'revenue' AND h.revenue_type = 'eval'
+          ORDER BY h.history_date DESC, h.history_idx DESC
+          LIMIT 100
+      ) t
+      GROUP BY t.unit
+    `;
+    rsSummary = await db.queryAll(sql, {item_idx: itemIdx});
+    
+    for (const data of rsSummary) {
+      let _unit = data.unit;
+      let _val = data.val;
+      
+      summaryData['revenue'][_unit].total += _val;
+      summaryData['revenue'][_unit].eval = _val;
+    }
+    
+    // 단위별 수익율 항목 설정
+    for (const unit of Object.keys(summaryData.revenueRate)) {
+      // set vars: 단위 타입
+      let _unitType = summaryData['in'][unit].unit_type;
+      
+      // set vars: 유입금액(원금/수익 재투자 금액 별도 계산)
+      let _inTotal = summaryData['in'][unit].total;
+      let _inExcludeProceedsTotal = _inTotal - summaryData['in'][unit].proceeds;
+      
+      // set vars: 유입금액(원금/수익 재투자 금액 별도 계산)
+      let _outTotal = summaryData['out'][unit].total;
+      let _outExcludeProceedsTotal = _outTotal - summaryData['out'][unit].proceeds;
+      
+      // set vars: 평가 금액
+      // (이자만 있고 평가금액이 없으면 유입금액을 더해서 계산함)
+      let _revenueTotal = summaryData['revenue'][unit].total;
+      if (summaryData['revenue'][unit].interest > 0 && summaryData['revenue'][unit].eval == 0) {
+        _revenueTotal += (_inTotal - _outTotal);
+      }
+      
+      // 수익율/수익금 계산
+      let _diff = _revenueTotal - (_inTotal - _outTotal);
+      if (_unitType == 'int') _diff = parseInt(_diff.toString());
+      else if (_unitType == 'float') _diff = parseFloat(_diff.toString());
+      
+      let _rate = _diff / _revenueTotal;
+      
+      // 수익율/수익금 계산(수익 재투자 금액 제외한 금액)
+      let _excludeProceedsDiff = _revenueTotal - (_inExcludeProceedsTotal - _outExcludeProceedsTotal);
+      if (_unitType == 'int') _excludeProceedsDiff = parseInt(_excludeProceedsDiff.toString());
+      else if (_unitType == 'float') _excludeProceedsDiff = parseFloat(_excludeProceedsDiff.toString());
+      
+      let _excludeProceedsRate = _excludeProceedsDiff / _revenueTotal;
+      
+      summaryData['revenueRate'][unit].diff = _diff;
+      summaryData['revenueRate'][unit].rate = Math.floor(_rate * 10000) / 100;
+      summaryData['revenueRate'][unit].excludeProceedsDiff = _excludeProceedsDiff;
+      summaryData['revenueRate'][unit].excludeProceedsRate = Math.floor(_excludeProceedsRate * 10000) / 100;
+    }
+
     res.json(createResult('success', summaryData));
   } catch (err) {
     throw err;
