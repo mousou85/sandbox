@@ -28,11 +28,26 @@ class Mysql {
   
   /**
    * get raw query(no escape)
-   * @param str
+   * @param {string} str
    * @return {Knex.Raw<TResult>}
    */
   raw(str) {
     return this.#knex.raw(str);
+  }
+  
+  /**
+   * execute raw query
+   * @param {string} str
+   * @return {Promise<number>|Promise<Array>}
+   */
+  async executeRaw(str) {
+    return await this.#knex.raw(str).then((result) => {
+      if (Array.isArray(result[0])) {
+        return result[0];
+      } else {
+        return result[0].insertId || result[0].affectedRows;
+      }
+    });
   }
   
   /**
