@@ -116,7 +116,6 @@ class Mysql {
       if (trx) queryBuilder.transacting(trx);
       
       return await queryBuilder.then((result) => {
-        console.log(['execute', result]);
         return result;
       });
     } catch (err) {
