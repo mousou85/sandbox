@@ -67,33 +67,38 @@ router.get('/:item_idx', asyncHandler(async (req, res) => {
     let historyType = req.query.history_type ?? '';
     if (!itemIdx) throw new ResponseError('잘못된 접근');
 
-    //set vars: sql 조건 설정
-    let conditions = [{'h.item_idx': itemIdx}];
+    //set vars: sql 쿼리
+    let query = db.queryBuilder()
+      .select([
+        'h.history_idx',
+        'h.unit_idx',
+        'h.history_date',
+        'h.history_type',
+        'h.inout_type',
+        'h.revenue_type',
+        'h.val',
+        'h.memo',
+        'u.unit',
+        'u.unit_type'
+      ])
+      .from('invest_history AS h')
+      .join('invest_unit AS u', 'h.unit_idx', 'u.unit_idx')
+      .where('h.item_idx', itemIdx)
+      .orderBy([
+        {column: 'h.history_date', order: 'desc'},
+        {column: 'h.history_idx', order: 'desc'}
+      ])
+    ;
     if (historyType) {
-      if (historyType == 'inout') conditions.push({'h.history_type': ['in','out'], '!op': 'in'});
-      else if (historyType == 'revenue') conditions.push({'h.history_type': 'revenue'});
+      if (historyType == 'inout') {
+        query.whereIn('h.history_type', ['in', 'out'])
+      } else if (historyType == 'revenue') {
+        query.where('h.history_type', 'revenue');
+      }
     }
-    const sqlWhere = Mysql.createWhere(conditions);
-    
+
     //set vars: history 리스트
-    let sql = `
-      SELECT
-        h.history_idx,
-        h.unit_idx,
-        h.history_date,
-        h.history_type,
-        h.inout_type,
-        h.revenue_type,
-        h.val,
-        h.memo,
-        u.unit,
-        u.unit_type
-      FROM invest_history h
-        JOIN invest_unit u ON h.unit_idx = u.unit_idx
-      WHERE ${sqlWhere.str}
-      ORDER BY h.history_date DESC, h.history_idx DESC
-    `;
-    const historyList = await db.queryAll(sql, sqlWhere.params);
+    const historyList = await db.queryAll(query);
     for (let key in historyList) {
       const _historyType = historyList[key].history_type;
       const _inoutType = historyList[key].inout_type;
@@ -107,8 +112,6 @@ router.get('/:item_idx', asyncHandler(async (req, res) => {
     res.json(createResult('success', {'list': historyList}));
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 
@@ -203,22 +206,21 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
       'revenueRate': {}
     };
     
-    let sql = '';
+    let query = null;
     
     // summary에 history_type와 단위별로 세부 항목 설정
-    sql = `
-      SELECT u.unit, u.unit_type
-      FROM invest_unit_set us
-        JOIN invest_unit u ON us.unit_idx = u.unit_idx
-      WHERE us.item_idx = :item_idx
-    `;
-    let rsUnitSet = await db.queryAll(sql, {item_idx: itemIdx});
+    query = db.queryBuilder()
+      .select(['u.unit', 'u.unit_type'])
+      .from('invest_unit_set AS us')
+      .join('invest_unit AS u', 'u.unit_idx', 'us.unit_idx')
+      .where('us.item_idx', itemIdx);
+    let rsUnitSet = await db.queryAll(query);
     
     for (const summaryKey of Object.keys(summaryData)) {
       for (const unit of rsUnitSet) {
         let _unit = unit.unit;
         let _unitType = unit.unit_type;
-        
+
         if (['in', 'out', 'revenue'].includes(summaryKey)) { // 유입/유출/평가 세부 항목 설정
           // 유입/유출/평가 공통 세부 항목
           summaryData[summaryKey][_unit] = {
@@ -226,7 +228,7 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
             'unit_type': _unitType,
             'total': 0,
           };
-  
+
           // 유형별 별도 세부 항목 설정
           if (['in','out'].includes(summaryKey)) {
             summaryData[summaryKey][_unit].principal = 0;
@@ -247,23 +249,24 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
     }
     
     // 단위별 유입/유출/평가(이자) 항목 설정
-    sql = `
-      SELECT
-        h.history_type,
-        CASE
-          WHEN h.history_type in ('in', 'out') THEN h.inout_type
-          WHEN h.history_type = 'revenue' THEN h.revenue_type
-        END AS val_type,
-        u.unit,
-        SUM(h.val) AS totalVal
-      FROM invest_history h
-        JOIN invest_unit u ON h.unit_idx = u.unit_idx
-      WHERE
-        h.item_idx = :item_idx
-        AND (h.history_type IN ('in', 'out') OR (h.history_type = 'revenue' AND h.revenue_type = 'interest'))
-      GROUP BY h.history_type, val_type, h.unit_idx
-    `;
-    let rsSummary = await db.queryAll(sql, {item_idx: itemIdx});
+    query = db.queryBuilder()
+      .select([
+        'h.history_type',
+        db.raw(`
+            CASE
+              WHEN h.history_type in ('in', 'out') THEN h.inout_type
+              WHEN h.history_type = 'revenue' THEN h.revenue_type
+            END AS val_type
+          `),
+        'u.unit',
+        db.raw('SUM(h.val) AS totalVal')
+      ])
+      .from('invest_history AS h')
+      .join('invest_unit AS u', 'h.unit_idx', 'u.unit_idx')
+      .where('h.item_idx', itemIdx)
+      .andWhereRaw(`(h.history_type IN ('in', 'out') OR (h.history_type = 'revenue' AND h.revenue_type = 'interest'))`)
+      .groupByRaw(`h.history_type, val_type, h.unit_idx`);
+    let rsSummary = await db.queryAll(query);
 
     for (const data of rsSummary) {
       let _historyType = data.history_type;
@@ -276,19 +279,20 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
     }
     
     // 단위별 평가(평가금액) 항목 설정
-    sql = `
-      SELECT t.unit, t.val
-      FROM (
-          SELECT h.val, u.unit
-          FROM invest_history h
-              JOIN invest_unit u ON h.unit_idx = u.unit_idx
-          WHERE h.item_idx = :item_idx AND h.history_type = 'revenue' AND h.revenue_type = 'eval'
-          ORDER BY h.history_date DESC, h.history_idx DESC
-          LIMIT 100
-      ) t
-      GROUP BY t.unit
-    `;
-    rsSummary = await db.queryAll(sql, {item_idx: itemIdx});
+    query = db.queryBuilder()
+      .select(['t.unit', 't.val'])
+      .from((query) => {
+        query.select(['h.val', 'u.unit'])
+          .from('invest_history AS h')
+          .join('invest_unit AS u', 'h.unit_idx', 'u.unit_idx')
+          .where('h.item_idx', itemIdx)
+          .andWhereRaw(`h.history_type = 'revenue' AND h.revenue_type = 'eval'`)
+          .orderByRaw(`h.history_date DESC, h.history_idx DESC`)
+          .limit(1000)
+          .as('t');
+      })
+      .groupBy('t.unit');
+    rsSummary = await db.queryAll(query);
     
     for (const data of rsSummary) {
       let _unit = data.unit;
@@ -341,8 +345,6 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
     res.json(createResult('success', summaryData));
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 

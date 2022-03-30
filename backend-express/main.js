@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const {Mysql} = require('./database/mysql');
+const {Mysql} = require('./database/Mysql');
 const expressResponse = require('./helper/express-response');
 
 //set vars: express
@@ -13,7 +13,13 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
 //set database
-const db = new Mysql(process.env.MYSQL_HOST, process.env.MYSQL_USER, process.env.MYSQL_PASSWORD, process.env.MYSQL_DATABASE, process.env.MYSQL_PORT);
+const db = new Mysql(
+  process.env.MYSQL_HOST,
+  process.env.MYSQL_USER,
+  process.env.MYSQL_PASSWORD,
+  process.env.MYSQL_DATABASE,
+  process.env.MYSQL_PORT
+);
 app.set('db', db);
 
 /*
