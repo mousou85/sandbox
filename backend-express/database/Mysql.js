@@ -51,15 +51,15 @@ class Mysql {
   }
   
   /**
-   * @param {Knex.QueryBuilder} query
+   * @param {Knex.QueryBuilder} queryBuilder
    * @param {Knex.Transaction} [trx]
    * @return {Promise<Object[]>}
    */
-  async queryAll(query, trx) {
+  async queryAll(queryBuilder, trx) {
     try {
-      if (trx) query.transacting(trx);
+      if (trx) queryBuilder.transacting(trx);
       
-      return await query.then((result) => {
+      return await queryBuilder.then((result) => {
         return result;
       });
     } catch (err) {
@@ -69,15 +69,15 @@ class Mysql {
   
   /**
    * query 1 row
-   * @param {Knex.QueryBuilder} query
+   * @param {Knex.QueryBuilder} queryBuilder
    * @param {Knex.Transaction} [trx]
    * @return {Promise<Object|null>}
    */
-  async queryRow(query, trx) {
+  async queryRow(queryBuilder, trx) {
     try {
-      if (trx) query.transacting(trx);
+      if (trx) queryBuilder.transacting(trx);
       
-      return await query.first().then((result) => {
+      return await queryBuilder.first().then((result) => {
         return result ?? null;
       });
     } catch (err) {
@@ -87,15 +87,15 @@ class Mysql {
   
   /**
    * select 1 row 1 column
-   * @param {Knex.QueryBuilder|Knex.Raw} query
+   * @param {Knex.QueryBuilder|Knex.Raw} queryBuilder
    * @param {Knex.Transaction} [trx]
    * @return {Promise<null|*>}
    */
-  async queryScalar(query, trx) {
+  async queryScalar(queryBuilder, trx) {
     try {
-      if (trx) query.transacting(trx);
+      if (trx) queryBuilder.transacting(trx);
       
-      return await query.first().then((result) => {
+      return await queryBuilder.first().then((result) => {
         if (!result) return null;
         
         return result[Object.keys(result)[0]];
@@ -107,15 +107,15 @@ class Mysql {
   
   /**
    * execute query
-   * @param {Knex.QueryBuilder} query
+   * @param {Knex.QueryBuilder} queryBuilder
    * @param {Knex.Transaction} [trx]
    * @return {Promise<number>} last insert id or affected rows
    */
-  async execute(query, trx) {
+  async execute(queryBuilder, trx) {
     try {
-      if (trx) query.transacting(trx);
+      if (trx) queryBuilder.transacting(trx);
       
-      return await query.then((result) => {
+      return await queryBuilder.then((result) => {
         console.log(['execute', result]);
         return result;
       });

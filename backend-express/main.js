@@ -32,7 +32,6 @@ const investHistoryRouter = {
   item: require('./router/investHistory/item'),
   history: require('./router/investHistory/history')
 }
-
 app.use('/invest-history/unit', investHistoryRouter.unit);
 app.use('/invest-history/unit-set', investHistoryRouter.unitSet);
 app.use('/invest-history/company', investHistoryRouter.company);

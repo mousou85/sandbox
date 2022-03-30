@@ -58,7 +58,7 @@ const revenueTypeList = {
  * history 리스트
  */
 router.get('/:item_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -119,7 +119,7 @@ router.get('/:item_idx', asyncHandler(async (req, res) => {
  * history 등록
  */
 router.post('/:item_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
   
   try {
@@ -147,17 +147,27 @@ router.post('/:item_idx', asyncHandler(async (req, res) => {
     }
     
     //check data
-    const hasItem = await db.queryScalar('SELECT 1 FROM invest_item WHERE item_idx = :item_idx', {item_idx: itemIdx});
+    const hasItem = await db.queryScalar(
+      db.queryBuilder()
+        .select('1')
+        .from('invest_item')
+        .where('item_idx', itemIdx)
+    );
     if (!hasItem) throw new ResponseError('item이 존재하지 않음');
-    const hasUnit = await db.queryScalar('SELECT 1 FROM invest_unit_set WHERE item_idx = :item_idx AND unit_idx = :unit_idx', {item_idx: itemIdx, unit_idx: unitIdx});
+    const hasUnit = await db.queryScalar(
+      db.queryBuilder()
+        .select('1')
+        .from('invest_unit_set')
+        .where('item_idx', itemIdx)
+        .andWhere('unit_idx', unitIdx)
+    );
     if (!hasUnit) throw new ResponseError('unit이 존재하지 않음');
     
     //insert data
-    await db.beginTransaction();
+    const trx = await db.transaction();
     try {
       //history 등록
-      let sql = 'INSERT INTO invest_history(item_idx, unit_idx, history_date, history_type, inout_type, revenue_type, val, memo) VALUES(:item_idx, :unit_idx, :history_date, :history_type, :inout_type, :revenue_type, :val, :memo)';
-      let sqlParams = {
+      let insertData = {
         item_idx: itemIdx,
         unit_idx: unitIdx,
         history_date: historyDate,
@@ -168,20 +178,22 @@ router.post('/:item_idx', asyncHandler(async (req, res) => {
         memo: memo
       };
       
-      let rsInsert = await db.execute(sql, sqlParams);
+      let rsInsert = await db.execute(
+        db.queryBuilder()
+          .insert(insertData)
+          .into('invest_history')
+      , trx);
       if (!rsInsert) throw new ResponseError('history 추가 실패함');
       
-      await db.commit();
+      await trx.commit();
     } catch (err) {
-      await db.rollback();
+      await trx.rollback();
       throw err;
     }
     
     res.json(createResult());
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 
@@ -189,7 +201,7 @@ router.post('/:item_idx', asyncHandler(async (req, res) => {
  * history summary
  */
 router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
   
   try {
@@ -206,7 +218,7 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
       'revenueRate': {}
     };
     
-    let query = null;
+    let query;
     
     // summary에 history_type와 단위별로 세부 항목 설정
     query = db.queryBuilder()
@@ -437,7 +449,7 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
  * history 삭제
  */
 router.delete('/:item_idx/:history_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
   
   try {
@@ -447,18 +459,28 @@ router.delete('/:item_idx/:history_idx', asyncHandler(async (req, res) => {
     if (!itemIdx || !historyIdx) throw new ResponseError('item_idx, history_idx는 필수임');
     
     //check data
-    let hasData = await db.queryScalar('SELECT 1 FROM invest_history WHERE item_idx = :item_idx AND history_idx = :history_idx', {item_idx: itemIdx, history_idx: historyIdx});
+    let hasData = await db.queryScalar(
+      db.queryBuilder()
+        .select('1')
+        .from('invest_history')
+        .where('item_idx', itemIdx)
+        .andWhere('history_idx', historyIdx)
+    );
     if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
     
     //delete data
-    let rsDelete = await db.execute('DELETE FROM invest_history WHERE item_idx = :item_idx AND history_idx = :history_idx', {item_idx: itemIdx, history_idx: historyIdx});
+    let rsDelete = await db.execute(
+      db.queryBuilder()
+        .delete()
+        .from('invest_history')
+        .where('item_idx', itemIdx)
+        .andWhere('history_idx', historyIdx)
+    );
     if (!rsDelete) throw new ResponseError('삭제 실패');
     
     res.json(createResult());
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 

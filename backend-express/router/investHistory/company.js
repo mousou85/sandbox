@@ -7,7 +7,7 @@ const router = express.Router();
  * company 리스트
  */
 router.get('/', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -29,7 +29,7 @@ router.get('/', asyncHandler(async (req, res) => {
  * company 데이터
  */
 router.get('/:company_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -55,7 +55,7 @@ router.get('/:company_idx', asyncHandler(async (req, res) => {
  * company 추가
  */
 router.post('/', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -92,7 +92,7 @@ router.post('/', asyncHandler(async (req, res) => {
  * company 수정
  */
 router.put('/:company_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -131,7 +131,7 @@ router.put('/:company_idx', asyncHandler(async (req, res) => {
  * company 삭제
  */
 router.delete('/:company_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
