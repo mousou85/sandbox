@@ -12,12 +12,11 @@ router.get('/', asyncHandler(async (req, res) => {
 
   try {
     //set vars: 리스트
-    let list = await db.queryAll(
-      db.queryBuilder()
+    let list = await db.queryAll(db.queryBuilder()
         .select()
         .from('invest_company')
         .orderBy('company_idx', 'asc')
-    );
+      );
 
     res.json(createResult('success', {'list': list}));
   } catch (err) {
@@ -37,12 +36,11 @@ router.get('/:company_idx', asyncHandler(async (req, res) => {
     let companyIdx = req.params.company_idx;
 
     //set vars: 데이터
-    let company = await db.queryRow(
-      db.queryBuilder()
+    let company = await db.queryRow(db.queryBuilder()
         .select()
         .from('invest_company')
         .where('company_idx', companyIdx)
-    );
+      );
     if (!company) throw new ResponseError('데이터가 존재하지 않음');
 
     res.json(createResult('success', company));
@@ -66,20 +64,17 @@ router.post('/', asyncHandler(async (req, res) => {
     companyName = companyName.trim();
 
     //중복 체크
-    let hasData = await db.queryScalar(
-      db.queryBuilder()
-        .select(db.raw('COUNT(*)'))
+    let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
         .where('company_name', companyName)
-    );
+      );
     if (hasData) throw new ResponseError('이미 등록된 company임');
 
     //insert data
-    let rsInsert = await db.execute(
-      db.queryBuilder()
+    let rsInsert = await db.execute(db.queryBuilder()
         .insert({'company_name': companyName})
         .into('invest_company')
-    );
+      );
     if (!rsInsert) throw new ResponseError('company 추가 실패함');
 
     res.json(createResult());
@@ -104,21 +99,18 @@ router.put('/:company_idx', asyncHandler(async (req, res) => {
     companyName = companyName.trim();
 
     //check data
-    let hasData = await db.queryScalar(
-      db.queryBuilder()
-        .select(db.raw('COUNT(*)'))
-        .from('invest_companay')
+    let hasData = await db.exists(db.queryBuilder()
+        .from('invest_company')
         .where('company_idx', companyIdx)
-    )
+      );
     if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
 
     //update data
-    let rsUpdate = await db.execute(
-      db.queryBuilder()
+    let rsUpdate = await db.execute(db.queryBuilder()
         .update({'company_name': companyName})
         .from('invest_company')
         .where('company_idx', companyIdx)
-    );
+      );
     if (!rsUpdate) throw new ResponseError('company 수정 실패함');
 
     res.json(createResult());
@@ -139,29 +131,24 @@ router.delete('/:company_idx', asyncHandler(async (req, res) => {
     let companyIdx = req.params.company_idx;
 
     //check data
-    let hasData = await db.queryScalar(
-      db.queryBuilder()
-        .select(db.raw('COUNT(*)'))
+    let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
         .where('company_idx', companyIdx)
-    )
+      );
     if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
 
-    let hasItem = await db.queryScalar(
-      db.queryBuilder()
-        .select(db.raw('COUNT(*)'))
+    let hasItem = await db.exists(db.queryBuilder()
         .from('invest_item')
         .where('company_idx', companyIdx)
-    );
+      );
     if (hasItem) throw new ResponseError('item이 존재하는 company는 삭제 할 수 없음');
 
     //delete data
-    let rsDelete = await db.execute(
-      db.queryBuilder()
+    let rsDelete = await db.execute(db.queryBuilder()
         .delete()
         .from('invest_company')
         .where('company_idx', companyIdx)
-    )
+      );
     if (!rsDelete) throw new ResponseError('company 삭제 실패함');
 
     res.json(createResult());
