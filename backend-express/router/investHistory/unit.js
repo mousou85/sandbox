@@ -9,18 +9,21 @@ const router = express.Router();
  * unit 목록
  */
 router.get('/', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
     //set vars: 리스트
-    let unitList = await db.queryAll('SELECt * FROM invest_unit ORDER BY unit_idx ASC');
+    let unitList = await db.queryAll(
+      db.queryBuilder()
+        .select()
+        .from('invest_unit')
+        .orderBy('unit_idx', 'asc')
+    );
 
     res.json(createResult('success', {list: unitList}));
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 
@@ -28,7 +31,7 @@ router.get('/', asyncHandler(async (req, res) => {
  * unit 데이터
  */
 router.get('/:unit_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -36,14 +39,17 @@ router.get('/:unit_idx', asyncHandler(async (req, res) => {
     let unitIdx = req.params.unit_idx;
 
     //set vars: 데이터
-    let unit = await db.queryRow('SELECT * FROM invest_unit WHERE unit_idx = :unit_idx', {'unit_idx': unitIdx});
+    let unit = await db.queryRow(
+      db.queryBuilder()
+        .select()
+        .from('invest_unit')
+        .where('unit_idx', unitIdx)
+    );
     if (!unit) throw new ResponseError('데이터가 존재하지 않음');
 
     res.json(createResult('success', unit));
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 
@@ -51,7 +57,7 @@ router.get('/:unit_idx', asyncHandler(async (req, res) => {
  * unit 추가
  */
 router.post('/', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -63,18 +69,25 @@ router.post('/', asyncHandler(async (req, res) => {
     unitType = unitType.trim();
 
     //중복 체크
-    let hasData = await db.queryScalar('SELECT COUNT(*) FROM invest_unit WHERE unit = :unit', {'unit': unit});
+    let hasData = await db.queryScalar(
+      db.queryBuilder()
+        .select(db.raw('COUNT(*)'))
+        .from('invest_unit')
+        .where('unit', unit)
+    )
     if (hasData) throw new ResponseError('이미 등록된 unit입니다.');
 
     //insert data
-    let rsInsert = await db.execute('INSERT INTO invest_unit(unit, unit_type) VALUES(:unit, :unit_type)', {'unit': unit, 'unit_type': unitType});
+    let rsInsert = await db.execute(
+      db.queryBuilder()
+        .insert({'unit': unit, 'unit_type': unitType})
+        .into('invest_unit')
+    );
     if (!rsInsert) throw new ResponseError('unit 추가 실패함');
 
     res.json(createResult());
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 
@@ -82,7 +95,7 @@ router.post('/', asyncHandler(async (req, res) => {
  * unit 수정
  */
 router.put('/:unit_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -94,7 +107,12 @@ router.put('/:unit_idx', asyncHandler(async (req, res) => {
     unitType = unitType.trim();
 
     //check data
-    let hasData = await  db.queryScalar('SELECT unit_idx FROM invest_unit WHERE unit_idx = :unit_idx', {'unit_idx': unitIdx});
+    let hasData = await db.queryScalar(
+      db.queryBuilder()
+        .select('unit_idx')
+        .from('invest_unit')
+        .where('unit_idx', unitIdx)
+    );
     if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
 
     //update data
@@ -102,20 +120,17 @@ router.put('/:unit_idx', asyncHandler(async (req, res) => {
     if (unit) params.unit = unit;
     if (unitType) params.unit_type = unitType;
 
-    let sqlUpdate = Mysql.createUpdate(params);
-    let sqlParams = sqlUpdate.params;
-    sqlParams.unit_idx = unitIdx;
-
-    sqlUpdate = `UPDATE invest_unit SET ${sqlUpdate.str} WHERE unit_idx = :unit_idx`;
-
-    let rsUpdate = await db.execute(sqlUpdate, sqlParams);
+    let rsUpdate = await db.execute(
+      db.queryBuilder()
+        .update(params)
+        .from('invest_unit')
+        .where('unit_idx', unitIdx)
+    );
     if (!rsUpdate) throw new ResponseError('unit 수정 실패함');
 
     res.json(createResult());
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 
@@ -123,7 +138,7 @@ router.put('/:unit_idx', asyncHandler(async (req, res) => {
  * unit 삭제
  */
 router.delete('/:unit_idx', asyncHandler(async (req, res) => {
-  //set vars: db
+  /** @type {Mysql} */
   const db = req.app.get('db');
 
   try {
@@ -131,18 +146,26 @@ router.delete('/:unit_idx', asyncHandler(async (req, res) => {
     let unitIdx = req.params.unit_idx;
 
     //check data
-    let hasData = await  db.queryScalar('SELECT unit_idx FROM invest_unit WHERE unit_idx = :unit_idx', {'unit_idx': unitIdx});
+    let hasData = await db.queryScalar(
+      db.queryBuilder()
+        .select('unit_idx')
+        .from('invest_unit')
+        .where('unit_idx', unitIdx)
+    );
     if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
 
     //delete data
-    let rsDelete = await db.execute('DELETE FROM invest_unit WHERE unit_idx = :unit_idx', {'unit_idx': unitIdx});
+    let rsDelete = await db.execute(
+      db.queryBuilder()
+        .delete()
+        .from('invest_unit')
+        .where('unit_idx', unitIdx)
+    );
     if (!rsDelete) throw new ResponseError('unit 삭제 실패함');
 
     res.json(createResult());
   } catch (err) {
     throw err;
-  } finally {
-    await db.releaseConnection();
   }
 }));
 
