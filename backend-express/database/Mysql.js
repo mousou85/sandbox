@@ -51,6 +51,28 @@ class Mysql {
   }
   
   /**
+   * check exists record
+   * @param {Knex.QueryBuilder} queryBuilder
+   * @param {Knex.Transaction} [trx]
+   * @return {Promise<boolean>}
+   */
+  async exists(queryBuilder, trx) {
+    try {
+      if (trx) queryBuilder.transacting(trx);
+      
+      queryBuilder.clearSelect().count();
+      
+      return await queryBuilder.then((result) => {
+        if (!result.length) return false;
+        result = result[0];
+        return !!result[Object.keys(result)[0]];
+      })
+    } catch (err) {
+      throw err;
+    }
+  }
+  
+  /**
    * @param {Knex.QueryBuilder} queryBuilder
    * @param {Knex.Transaction} [trx]
    * @return {Promise<Object[]>}
@@ -109,14 +131,18 @@ class Mysql {
    * execute query
    * @param {Knex.QueryBuilder} queryBuilder
    * @param {Knex.Transaction} [trx]
-   * @return {Promise<number>} last insert id or affected rows
+   * @return {Promise<number>|Promise<Array>} last insert id or affected rows
    */
   async execute(queryBuilder, trx) {
     try {
       if (trx) queryBuilder.transacting(trx);
       
       return await queryBuilder.then((result) => {
-        return result;
+        if (Array.isArray(result)) {
+          return result.length > 1 ? result : result[0];
+        } else {
+          return result;
+        }
       });
     } catch (err) {
       throw err;
