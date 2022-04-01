@@ -1,7 +1,6 @@
 const express = require('express');
 const asyncHandler = require('../../helper/express-async-wrap');
 const {ResponseError, createResult} = require('../../helper/express-response');
-const {Mysql} = require("../../database/mysql");
 
 /**
  * @param {Mysql} db
@@ -9,6 +8,7 @@ const {Mysql} = require("../../database/mysql");
  */
 module.exports = (db) => {
   const router = express.Router();
+  const {upsertSummary, historyTypeList, inoutTypeList, revenueTypeList} = require('../../helper/db/investHistory')(db);
   
   /**
    * history 리스트
@@ -129,6 +129,9 @@ module.exports = (db) => {
             .into('invest_history')
           , trx);
         if (!rsInsert) throw new ResponseError('history 추가 실패함');
+        
+        //요약 데이터 생성/갱신
+        await upsertSummary(itemIdx, historyDate, trx);
         
         await trx.commit();
       } catch (err) {
@@ -336,19 +339,6 @@ module.exports = (db) => {
   return router;
 }
 
-const historyTypeList = {
-  'in': '유입',
-  'out': '유출',
-  'revenue': '평가'
-};
-const inoutTypeList = {
-  'principal': '원금',
-  'proceeds': '수익금',
-};
-const revenueTypeList = {
-  'interest': '이자',
-  'eval': '평가금액'
-};
 
 // router.get('/', asyncHandler(async (req, res) => {
 //   //set vars: db
