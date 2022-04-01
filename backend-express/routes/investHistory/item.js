@@ -1,17 +1,6 @@
 const express = require('express');
 const asyncHandler = require('../../helper/express-async-wrap');
 const {ResponseError, createResult} = require('../../helper/express-response');
-const {Mysql} = require("../../database/mysql");
-
-const itemTypeList = {
-  'cash': '현금',
-  'deposit': '예금',
-  'saving': '적금',
-  'trade': '매매',
-  'future': '선물',
-  'defi': '디파이',
-  'p2p': 'P2p'
-};
 
 /**
  * @param {Mysql} db
@@ -19,6 +8,8 @@ const itemTypeList = {
  */
 module.exports = (db) => {
   const router = express.Router();
+  
+  const {itemTypeList} = require('../../helper/db/investHistory')(db);
   
   /**
    * item type 리스트
