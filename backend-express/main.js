@@ -20,17 +20,16 @@ const db = new Mysql(
   process.env.MYSQL_DATABASE,
   process.env.MYSQL_PORT
 );
-app.set('db', db);
 
 /*
  * 라우터 설정
  */
 const investHistoryRouter = {
-  unit: require('./router/investHistory/unit'),
-  unitSet: require('./router/investHistory/unitSet'),
-  company: require('./router/investHistory/company'),
-  item: require('./router/investHistory/item'),
-  history: require('./router/investHistory/history')
+  unit: require('./routes/investHistory/unit')(db),
+  unitSet: require('./routes/investHistory/unitSet')(db),
+  company: require('./routes/investHistory/company')(db),
+  item: require('./routes/investHistory/item')(db),
+  history: require('./routes/investHistory/history')(db)
 }
 app.use('/invest-history/unit', investHistoryRouter.unit);
 app.use('/invest-history/unit-set', investHistoryRouter.unitSet);
