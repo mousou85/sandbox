@@ -41,8 +41,6 @@ router.get('/:item_idx', asyncHandler(async (req, res) => {
 router.post('/', asyncHandler(async (req, res) => {
   /** @type {Mysql} */
   const db = req.app.get('db');
-  
-  let query;
 
   try {
     //set vars: request
@@ -51,34 +49,31 @@ router.post('/', asyncHandler(async (req, res) => {
     if (!itemIdx || !unitIdx) throw new ResponseError('item_idx 또는 unit_idx는 필수입력임');
 
     //check data
-    query = db.queryBuilder()
-      .select(db.raw('1'))
-      .from('invest_item')
-      .where('item_idx', itemIdx);
-    let hasItemData = await db.queryScalar(query);
+    let hasItemData = await db.exists(db.queryBuilder()
+        .from('invest_item')
+        .where('item_idx', itemIdx)
+      );
     if (!hasItemData) throw new ResponseError('item이 존재하지 않음');
 
-    query = db.queryBuilder()
-      .select(db.raw('1'))
-      .from('invest_unit')
-      .where('unit_idx', unitIdx);
-    let hasUnitData = await db.queryScalar(query);
+    let hasUnitData = await db.exists(db.queryBuilder()
+        .from('invest_unit')
+        .where('unit_idx', unitIdx)
+      );
     if (!hasUnitData) throw new ResponseError('unit이 존재하지 않음');
 
     //중복 체크
-    query = db.queryBuilder()
-      .select(db.raw('1'))
-      .from('invest_unit_set')
-      .where('item_idx', itemIdx)
-      .andWhere('unit_idx', unitIdx);
-    let isDuplicate = await db.queryScalar(query);
+    let isDuplicate = await db.exists(db.queryBuilder()
+        .from('invest_unit_set')
+        .where('item_idx', itemIdx)
+        .andWhere('unit_idx', unitIdx)
+      );
     if (isDuplicate) throw new ResponseError('이미 등록된 unit set임');
 
     //insert data
-    query = db.queryBuilder()
-      .insert({'item_idx': itemIdx, 'unit_idx': unitIdx})
-      .into('invest_unit_set');
-    let rsInsert = await db.execute(query);
+    let rsInsert = await db.execute(db.queryBuilder()
+        .insert({'item_idx': itemIdx, 'unit_idx': unitIdx})
+        .into('invest_unit_set')
+      );
     if (!rsInsert) throw new ResponseError('unit set 추가 실패함');
 
     res.json(createResult());
@@ -97,23 +92,20 @@ router.delete('/:unit_set_idx', asyncHandler(async (req, res) => {
   try {
     //set vars: request
     let unitSetIdx = req.params.unit_set_idx;
-    
-    let query;
 
     //check data
-    query = db.queryBuilder()
-      .select(db.raw('1'))
-      .from('invest_unit_set')
-      .where('unit_set_idx', unitSetIdx);
-    let hasData = await db.queryScalar(query);
+    let hasData = await db.exists(db.queryBuilder()
+        .from('invest_unit_set')
+        .where('unit_set_idx', unitSetIdx)
+      );
     if (!hasData) throw new ResponseError('unit set가 존재하지 않음');
 
     //delete data
-    query = db.queryBuilder()
-      .delete()
-      .from('invest_unit_set')
-      .where('unit_set_idx', unitSetIdx);
-    let rsDelete = await db.execute(query);
+    let rsDelete = await db.execute(db.queryBuilder()
+        .delete()
+        .from('invest_unit_set')
+        .where('unit_set_idx', unitSetIdx)
+      );
     if (!rsDelete) throw new ResponseError('unit set 삭제 실패함');
 
     res.json(createResult());

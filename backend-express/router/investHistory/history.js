@@ -147,20 +147,16 @@ router.post('/:item_idx', asyncHandler(async (req, res) => {
     }
     
     //check data
-    const hasItem = await db.queryScalar(
-      db.queryBuilder()
-        .select('1')
+    const hasItem = await db.exists(db.queryBuilder()
         .from('invest_item')
         .where('item_idx', itemIdx)
-    );
+      );
     if (!hasItem) throw new ResponseError('item이 존재하지 않음');
-    const hasUnit = await db.queryScalar(
-      db.queryBuilder()
-        .select('1')
+    const hasUnit = await db.exists(db.queryBuilder()
         .from('invest_unit_set')
         .where('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
-    );
+      );
     if (!hasUnit) throw new ResponseError('unit이 존재하지 않음');
     
     //insert data
@@ -178,11 +174,10 @@ router.post('/:item_idx', asyncHandler(async (req, res) => {
         memo: memo
       };
       
-      let rsInsert = await db.execute(
-        db.queryBuilder()
+      let rsInsert = await db.execute(db.queryBuilder()
           .insert(insertData)
           .into('invest_history')
-      , trx);
+        , trx);
       if (!rsInsert) throw new ResponseError('history 추가 실패함');
       
       await trx.commit();
@@ -218,15 +213,13 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
       'revenueRate': {}
     };
     
-    let query;
-    
     // summary에 history_type와 단위별로 세부 항목 설정
-    query = db.queryBuilder()
-      .select(['u.unit', 'u.unit_type'])
-      .from('invest_unit_set AS us')
-      .join('invest_unit AS u', 'u.unit_idx', 'us.unit_idx')
-      .where('us.item_idx', itemIdx);
-    let rsUnitSet = await db.queryAll(query);
+    let rsUnitSet = await db.queryAll(db.queryBuilder()
+        .select(['u.unit', 'u.unit_type'])
+        .from('invest_unit_set AS us')
+        .join('invest_unit AS u', 'u.unit_idx', 'us.unit_idx')
+        .where('us.item_idx', itemIdx)
+      );
     
     for (const summaryKey of Object.keys(summaryData)) {
       for (const unit of rsUnitSet) {
@@ -261,7 +254,7 @@ router.get('/:item_idx/summary', asyncHandler(async (req, res) => {
     }
     
     // 단위별 유입/유출/평가(이자) 항목 설정
-    query = db.queryBuilder()
+    let query = db.queryBuilder()
       .select([
         'h.history_type',
         db.raw(`
@@ -459,23 +452,20 @@ router.delete('/:item_idx/:history_idx', asyncHandler(async (req, res) => {
     if (!itemIdx || !historyIdx) throw new ResponseError('item_idx, history_idx는 필수임');
     
     //check data
-    let hasData = await db.queryScalar(
-      db.queryBuilder()
-        .select('1')
+    let hasData = await db.exists(db.queryBuilder()
         .from('invest_history')
         .where('item_idx', itemIdx)
         .andWhere('history_idx', historyIdx)
-    );
+      );
     if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
     
     //delete data
-    let rsDelete = await db.execute(
-      db.queryBuilder()
+    let rsDelete = await db.execute(db.queryBuilder()
         .delete()
         .from('invest_history')
         .where('item_idx', itemIdx)
         .andWhere('history_idx', historyIdx)
-    );
+      );
     if (!rsDelete) throw new ResponseError('삭제 실패');
     
     res.json(createResult());
