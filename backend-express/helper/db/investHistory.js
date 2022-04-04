@@ -217,7 +217,7 @@ module.exports = (db) => {
         let rsSummary = await db.queryRow(query, trx ?? null);
         if (rsSummary) {
           for (const key of Object.keys(rsSummary)) {
-            upsertData[key] = rsSummary[key];
+            upsertData[key] = rsSummary[key] ?? 0;
           }
         }
   
@@ -233,7 +233,7 @@ module.exports = (db) => {
           .limit(1);
         rsSummary = await db.queryRow(query, trx ?? null);
         if (rsSummary) {
-          upsertData.revenue_eval = rsSummary.revenue_eval;
+          upsertData.revenue_eval = rsSummary.revenue_eval ?? 0;
         }
       
         // 요약 데이터 insert/update 처리
@@ -308,7 +308,7 @@ module.exports = (db) => {
         let rsSummary = await db.queryRow(query, trx ?? null);
         if (rsSummary) {
           for (const key of Object.keys(rsSummary)) {
-            upsertData[key] = rsSummary[key];
+            upsertData[key] = rsSummary[key] ?? 0;
           }
         }
   
@@ -322,7 +322,7 @@ module.exports = (db) => {
           .limit(1);
         rsSummary = await db.queryRow(query, trx ?? null);
         if (rsSummary) {
-          upsertData.revenue_eval = rsSummary.revenue_eval;
+          upsertData.revenue_eval = rsSummary.revenue_eval ?? 0;
         }
         
         // 요약 데이터 insert/update 처리
