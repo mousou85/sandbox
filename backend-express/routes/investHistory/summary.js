@@ -1,6 +1,7 @@
 const express = require('express');
 const asyncHandler = require('../../helper/express-async-wrap');
 const {ResponseError, createResult} = require('../../helper/express-response');
+const dayjs = require("dayjs");
 
 /**
  * @param {Mysql} db
@@ -8,7 +9,7 @@ const {ResponseError, createResult} = require('../../helper/express-response');
  */
 module.exports = (db) => {
   const router = express.Router();
-  // const {historyTypeList, inoutTypeList, revenueTypeList} = require('../../helper/db/investHistory')(db);
+  const {upsertSummary, upsertMonthSummary, upsertYearSummary, upsertTotalSummary} = require('../../helper/db/investHistory')(db);
   
   /**
    * summary
@@ -152,6 +153,64 @@ module.exports = (db) => {
       }
       
       res.json(createResult('success', summaryData));
+    } catch (err) {
+      throw err;
+    }
+  }));
+  
+  /**
+   * summary remake
+   */
+  router.get('/remake-all', asyncHandler(async (req, res) => {
+    try {
+      //set vars: 상품 목록
+      const itemList = await db.queryAll(db.queryBuilder()
+          .select(['item_idx'])
+          .from('invest_item')
+        );
+      
+      for (const item of itemList) {
+        const _itemIdx = item.item_idx;
+        
+        //set vars: 요약 데이터 만들 기간 범위
+        const rsDateRange = await db.queryRow(db.queryBuilder()
+            .select([
+              db.raw(`DATE_FORMAT(MIN(history_date), '%Y-%m-01') AS minDate`),
+              db.raw(`DATE_FORMAT(MAX(history_date), '%Y-%m-01') AS maxDate`)
+            ])
+            .from('invest_history')
+            .where('item_idx', _itemIdx)
+          );
+        if (!rsDateRange.minDate || !rsDateRange.maxDate) continue;
+        
+        const _minDate = dayjs(rsDateRange.minDate);
+        const _maxDate = dayjs(rsDateRange.maxDate);
+        
+        //기간 범위를 1달 단위로 반복하며 처리
+        let _targetDate = _minDate;
+        let _lastYear = _minDate.year();
+        let _summaryYear = [_lastYear];
+        while (_targetDate <= _maxDate) {
+          //월간 요약 데이터 생성
+          await upsertMonthSummary(_itemIdx, _targetDate.format('YYYY-MM-DD'));
+    
+          _targetDate = _targetDate.add(1, 'month');
+          if (_lastYear != _targetDate.year()) {
+            _lastYear = _targetDate.year();
+            _summaryYear.push(_lastYear);
+          }
+        }
+        
+        //년간 요약 데이터 생성
+        for (const year of _summaryYear) {
+          await upsertYearSummary(_itemIdx, `${year}-12-01`);
+        }
+  
+        //전체 요약 데이터 생성
+        await upsertTotalSummary(_itemIdx);
+      }
+      
+      res.json(createResult('success'));
     } catch (err) {
       throw err;
     }
