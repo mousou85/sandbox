@@ -29,11 +29,44 @@ const investHistoryRouter = {
   unitSet: require('./routes/investHistory/unitSet')(db),
   company: require('./routes/investHistory/company')(db),
   item: require('./routes/investHistory/item')(db),
-  history: require('./routes/investHistory/history')(db)
+  history: require('./routes/investHistory/history')(db),
+  summary: require('./routes/investHistory/summary')(db),
 }
 // const asyncHandler = require("./helper/express-async-wrap");
 // app.get('/', asyncHandler(async (req, res) => {
 //   const {upsertSummary, inoutTypeList} = require('./helper/db/investHistory')(db);
+//
+//   const rsUnitSet = await db.queryAll(db.queryBuilder()
+//       .select()
+//       .from('invest_unit_set')
+//   );
+//   const dateList = [
+//     '2021-09-01',
+//     '2021-10-01',
+//     '2021-11-01',
+//     '2021-12-01',
+//     '2022-01-01',
+//     '2022-02-01',
+//     '2022-03-01',
+//     '2022-04-01',
+//   ];
+//
+//   const trx = await db.transaction();
+//   try {
+//     for (const unitSet of rsUnitSet) {
+//       for (const date of dateList) {
+//         await upsertSummary(unitSet.item_idx, date, trx);
+//         // console.log([unitSet, date]);
+//       }
+//     }
+//
+//     await trx.commit();
+//   } catch (err) {
+//     await trx.rollback();
+//     throw err;
+//   }
+//
+//
 //   res.send('1');
 // }));
 app.use('/invest-history/unit', investHistoryRouter.unit);
@@ -41,6 +74,7 @@ app.use('/invest-history/unit-set', investHistoryRouter.unitSet);
 app.use('/invest-history/company', investHistoryRouter.company);
 app.use('/invest-history/item', investHistoryRouter.item);
 app.use('/invest-history/history', investHistoryRouter.history);
+app.use('/invest-history/summary', investHistoryRouter.summary);
 
 
 /*
