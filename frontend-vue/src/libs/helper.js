@@ -7,7 +7,10 @@ function numberComma(val) {
   if (typeof val != 'string') {
     val = String(val);
   }
-  return val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  let parts = val.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
 }
 
 /**
@@ -20,7 +23,9 @@ function numberUncomma(val) {
     val = String(val);
   }
   
-  return val.replace(/[^0-9]/g, '');
+  let parts = val.split('.');
+  parts[0] = parts[0].replace(/[^0-9]/g, '');
+  return parts.join('.');
 }
 
 
