@@ -13,7 +13,7 @@ module.exports = (db) => {
   /**
    * summary
    */
-  router.get('/:item_idx', asyncHandler(async (req, res) => {
+  router.get('/:item_idx([0-9]+)', asyncHandler(async (req, res) => {
     try {
       //set vars: request
       const itemIdx = req.params.item_idx;
