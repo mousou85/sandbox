@@ -154,24 +154,36 @@ module.exports = (db) => {
       const itemIdx = req.params.item_idx;
       const historyIdx=  req.params.history_idx;
       if (!itemIdx || !historyIdx) throw new ResponseError('item_idx, history_idx는 필수임');
+  
+      //set vars: 데이터
+      const rsHistory = await db.queryRow(db.queryBuilder()
+          .select()
+          .from('invest_history')
+          .where('item_idx', itemIdx)
+          .andWhere('history_idx', historyIdx)
+        );
+      if (!rsHistory) throw new ResponseError('데이터가 존재하지 않음');
       
-      //check data
-      let hasData = await db.exists(db.queryBuilder()
-        .from('invest_history')
-        .where('item_idx', itemIdx)
-        .andWhere('history_idx', historyIdx)
-      );
-      if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
-      
-      //delete data
-      let rsDelete = await db.execute(db.queryBuilder()
-        .delete()
-        .from('invest_history')
-        .where('item_idx', itemIdx)
-        .andWhere('history_idx', historyIdx)
-      );
-      if (!rsDelete) throw new ResponseError('삭제 실패');
-      
+      const trx = await db.transaction();
+      try {
+        //delete data
+        let rsDelete = await db.execute(db.queryBuilder()
+            .delete()
+            .from('invest_history')
+            .where('item_idx', itemIdx)
+            .andWhere('history_idx', historyIdx)
+          , trx);
+        if (!rsDelete) throw new ResponseError('삭제 실패');
+  
+        //요약 데이터 insert/update
+        await upsertSummary(itemIdx, rsHistory.history_date, trx);
+        
+        await trx.commit();
+      } catch (err) {
+        await trx.rollback();
+        throw err;
+      }
+
       res.json(createResult());
     } catch (err) {
       throw err;
