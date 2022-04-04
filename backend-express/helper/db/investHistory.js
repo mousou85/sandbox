@@ -48,9 +48,13 @@ module.exports = (db) => {
    * @return {Promise<void>}
    */
   const upsertSummary = async (itemIdx, date, trx) => {
-    await upsertMonthSummary(itemIdx, date, trx);
-    await upsertYearSummary(itemIdx, date, trx);
-    await upsertTotalSummary(itemIdx, trx);
+    try {
+      await upsertMonthSummary(itemIdx, date, trx);
+      await upsertYearSummary(itemIdx, date, trx);
+      await upsertTotalSummary(itemIdx, trx);
+    } catch (err) {
+      throw err;
+    }
   }
   
   /**
@@ -121,7 +125,6 @@ module.exports = (db) => {
           .from('invest_history')
           .where('item_idx', itemIdx)
           .andWhere('unit_idx', unit.unit_idx)
-          .andWhere('history_date', '>=', startDate)
           .andWhere('history_date', '<=', endDate)
           .andWhere('history_type', 'revenue')
           .andWhere('revenue_type', 'eval')
