@@ -61,71 +61,121 @@
     </form>
 
     <div style="overflow: hidden;">
+      <table width="100%" class="summaryTable">
+        <tr>
+          <th colspan="6">잔고</th>
+          <th colspan="3">현재평가</th>
+          <th colspan="4">수익율</th>
+        </tr>
+        <tr>
+          <th>잔고</th>
+          <th>유입</th>
+          <th>유출</th>
+          <th>잔고(수익금제외)</th>
+          <th>유입(수익금제외)</th>
+          <th>유출(수익금제외)</th>
+          <th>이자</th>
+          <th>평가금액</th>
+          <th>합계</th>
+          <th>수익(수익금제외)</th>
+          <th>수익율(수익금제외)</th>
+          <th>수익</th>
+          <th>수익율</th>
+        </tr>
+        <tr>
+          <td class="right bold">{{ printVal(summaryData.deposit, summaryData.unit, summaryData.unitType) }}</td>
+          <td class="right">{{ printVal(summaryData.in.total, summaryData.unit, summaryData.unitType) }}</td>
+          <td class="right" v-html="printVal(summaryData.out.total * -1, summaryData.unit, summaryData.unitType)"></td>
+          <td class="right bold">{{ printVal(summaryData.excludeProceedsDeposit, summaryData.unit, summaryData.unitType) }}</td>
+          <td class="right">{{ printVal(summaryData.in.principal, summaryData.unit, summaryData.unitType) }}</td>
+          <td class="right" v-html="printVal(summaryData.out.principal * -1, summaryData.unit, summaryData.unitType)"></td>
+          <td class="right">{{ printVal(summaryData.revenue.interest, summaryData.unit, summaryData.unitType) }}</td>
+          <td class="right" v-html="printVal(summaryData.revenue.eval, summaryData.unit, summaryData.unitType)"></td>
+          <td class="right bold" v-html="printVal(summaryData.revenue.total, summaryData.unit, summaryData.unitType)"></td>
+          <td class="right bold" v-html="printVal(summaryData.revenueRate.excludeProceedsDiff, summaryData.unit, summaryData.unitType)"></td>
+          <td class="right">{{ summaryData.revenueRate.excludeProceedsRate }}%</td>
+          <td class="right bold" v-html="printVal(summaryData.revenueRate.diff, summaryData.unit, summaryData.unitType)"></td>
+          <td class="right">{{ summaryData.revenueRate.rate }}%</td>
+        </tr>
+      </table>
+
       <div style="float: left;width: 45%;">
         <h5>유입/유출</h5>
         <table id="inoutList" class="list" style="width:100%;">
+          <colgroup>
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 130px;">
+            <col>
+            <col style="width: 80px;">
+          </colgroup>
           <thead>
-          <tr>
-            <th>날짜</th>
-            <th>기록타입</th>
-            <th>금액</th>
-            <th>메모</th>
-            <th></th>
-          </tr>
+            <tr>
+              <th>날짜</th>
+              <th>기록타입</th>
+              <th>금액</th>
+              <th>메모</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="history in inoutList" :key="history.history_idx">
-            <td class="center">{{history.history_date}}</td>
-            <td class="center">
-            <span v-if="['in','out'].includes(history.history_type)">
-              {{history.history_type_text}} - {{history.inout_type_text}}
-            </span>
-              <span v-else>
-              {{history.history_type_text}} - {{history.revenue_type_text}}
-            </span>
-            </td>
-            <td class="right">
-              {{history.unit_type == 'int' ? parseInt(history.val).toLocaleString() : history.val.toLocaleString()}} {{history.unit}}
-            </td>
-            <td>{{history.memo}}</td>
-            <td class="center">
-              <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
-            </td>
-          </tr>
+            <tr v-for="history in inoutList" :key="history.history_idx">
+              <td class="center">{{history.history_date}}</td>
+              <td class="center">
+              <span v-if="['in','out'].includes(history.history_type)">
+                {{history.history_type_text}} - {{history.inout_type_text}}
+              </span>
+                <span v-else>
+                {{history.history_type_text}} - {{history.revenue_type_text}}
+              </span>
+              </td>
+              <td class="right" v-html="printVal((history.history_type == 'out' ? (history.val * -1) : history.val), history.unit, history.unit_type)">
+              </td>
+              <td>{{history.memo}}</td>
+              <td class="center">
+                <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
       <div style="float: left;width: 45%;margin-left: 20px;">
         <h5>평가</h5>
         <table id="revenueList" class="list" style="width: 100%;">
+          <colgroup>
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 130px;">
+            <col>
+            <col style="width: 80px;">
+          </colgroup>
           <thead>
-          <tr>
-            <th>날짜</th>
-            <th>기록타입</th>
-            <th>금액</th>
-            <th>메모</th>
-            <th></th>
-          </tr>
+            <tr>
+              <th>날짜</th>
+              <th>기록타입</th>
+              <th>금액</th>
+              <th>메모</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="history in revenueList" :key="history.history_idx">
-            <td class="center">{{history.history_date}}</td>
-            <td class="center">
-            <span v-if="['in','out'].includes(history.history_type)">
-              {{history.history_type_text}} - {{history.inout_type_text}}
-            </span>
-              <span v-else>
-              {{history.history_type_text}} - {{history.revenue_type_text}}
-            </span>
-            </td>
-            <td class="right">
-              {{history.unit_type == 'int' ? parseInt(history.val).toLocaleString() : history.val.toLocaleString()}} {{history.unit}}
-            </td>
-            <td>{{history.memo}}</td>
-            <td class="center">
-              <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
-            </td>
-          </tr>
+            <tr v-for="history in revenueList" :key="history.history_idx">
+              <td class="center">{{history.history_date}}</td>
+              <td class="center">
+              <span v-if="['in','out'].includes(history.history_type)">
+                {{history.history_type_text}} - {{history.inout_type_text}}
+              </span>
+                <span v-else>
+                {{history.history_type_text}} - {{history.revenue_type_text}}
+              </span>
+              </td>
+              <td class="right" v-html="printVal(history.val, history.unit, history.unit_type)">
+              </td>
+              <td>{{history.memo}}</td>
+              <td class="center">
+                <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -148,6 +198,33 @@ const formData = reactive({
   val: '',
   memo: ''
 });
+const summaryData = reactive({
+  unit: '',
+  unitType: '',
+  deposit: 0,
+  excludeProceedsDeposit: 0,
+  in: {
+    total: 0,
+    principal: 0,
+    proceeds: 0,
+  },
+  out: {
+    total: 0,
+    principal: 0,
+    proceeds: 0,
+  },
+  revenue: {
+    total: 0,
+    interest: 0,
+    eval: 0,
+  },
+  revenueRate: {
+    diff: 0,
+    rate: 0,
+    excludeProceedsDiff: 0,
+    excludeProceedsRate: 0
+  }
+});
 const itemList = ref([]);
 const unitList = ref([]);
 const inoutList = ref([]);
@@ -168,6 +245,7 @@ onBeforeMount(async () => {
 });
 
 watch(() => formData.val, (newVal) => {
+  newVal = numberUncomma(newVal);
   formData.val = numberComma(newVal);
 });
 
@@ -195,12 +273,43 @@ const getUnitList = async (itemIdx) => {
   }
 }
 
+const getSummaryData = async (itemIdx) => {
+  try {
+    const res = await http.get(`http://localhost:5000/invest-history/summary/${itemIdx}`);
+    if (!res.result) throw new Error(res.resultMessage);
+
+    const data = res.data;
+
+    for (const key1 of Object.keys(data)) {
+      const val1 = data[key1];
+
+      if (summaryData.hasOwnProperty(key1)) {
+        if (typeof val1 == 'object') {
+          for (const key2 of Object.keys(val1)) {
+            const val2 = val1[key2];
+
+            if (summaryData[key1].hasOwnProperty(key2)) {
+              summaryData[key1][key2] = val2;
+            }
+          }
+        } else {
+          summaryData[key1] = val1;
+        }
+      }
+
+    }
+  } catch (err) {
+
+  }
+}
+
 const selectItem = async ($event) => {
   formData.item_idx = $event.target.value;
   try {
     unitList.value = await getUnitList(formData.item_idx);
     inoutList.value = await getHistoryList(formData.item_idx, 'inout');
     revenueList.value = await getHistoryList(formData.item_idx, 'revenue');
+    await getSummaryData(formData.item_idx);
   } catch (err) {
   }
 }
@@ -212,6 +321,13 @@ const setValUnit = ($event) => {
   }
 
   $valUnit.value.innerText = unit;
+}
+
+const printVal = (val, unit, unitType) => {
+  if (unitType == 'int') {
+    val = parseInt(val);
+  }
+  return val < 0 ? `<span style="color: blue">${numberComma(val)} ${unit}</span>` : `${numberComma(val)} ${unit}`;
 }
 
 /**
@@ -294,6 +410,8 @@ const addHistory = async ($event) => {
     formData.memo = '';
 
     document.getElementById('valUnit').innerText = '';
+
+    await getSummaryData(formData.item_idx);
   } catch (err) {
     alert(err);
     return false;
@@ -316,6 +434,8 @@ const delHistory = async (historyIdx, historyType) => {
     } else if (historyType == 'revenue') {
       revenueList.value = await getHistoryList(formData.item_idx, 'revenue');
     }
+
+    await getSummaryData(formData.item_idx);
   } catch (err) {
     alert(err);
     return false;
@@ -329,6 +449,7 @@ const delHistory = async (historyIdx, historyType) => {
   border: 1px solid;
   border-collapse: collapse;
   margin-top: 10px;
+  font-size: 0.8em;
 }
 .list th, .list td {
   border: 1px solid;
@@ -338,6 +459,27 @@ const delHistory = async (historyIdx, historyType) => {
   text-align: center;
 }
 .list .right {
+  text-align: right;
+}
+
+.summaryTable {
+  border: 1px solid;
+  border-collapse: collapse;
+  margin-top: 10px;
+  overflow: hidden;
+  font-size: 0.8em;
+}
+.summaryTable th, .summaryTable td {
+  border: 1px solid;
+  padding: 5px;
+}
+.summaryTable .bold {
+  font-weight: bold;
+}
+.summaryTable .center {
+  text-align: center;
+}
+.summaryTable .right {
   text-align: right;
 }
 

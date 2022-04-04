@@ -7,7 +7,6 @@ function numberComma(val) {
   if (typeof val != 'string') {
     val = String(val);
   }
-  val = numberUncomma(val);
   return val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
