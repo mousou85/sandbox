@@ -16,11 +16,11 @@
         <legend>기록 추가</legend>
 
         <div class="row">
-          <label for="addFormUnitIdx">단위</label>
-          <select id="addFormUnitIdx" name="unit_idx" ref="$addFormUnitIdx" v-model="formData.unit_idx" @change="setValUnit">
-            <option value="">단위선택</option>
-            <option v-for="unit in unitList" :key="unit.unit_idx" :value="unit.unit_idx">{{unit.unit}}</option>
-          </select>
+          <label>단위</label>
+          <label class="short" v-for="unit in unitList" :key="unit.unit_idx">
+            <input type="radio" name="unit_idx" ref="$addFormUnitIdx" v-model="formData.unit_idx" :value="unit.unit_idx" @change="setValUnit">
+            {{ unit.unit }}
+          </label>
         </div>
 
         <div class="row">
@@ -342,12 +342,12 @@ const switchTab = async (historyType, unit) => {
 }
 
 const setValUnit = ($event) => {
-  let unit = '';
-  if ($event.target.selectedIndex > 0) {
-    unit = unitList.value[$event.target.selectedIndex - 1].unit;
+  for (const unit of unitList.value) {
+    if (unit.unit_idx == $event.target.value) {
+      $valUnit.value.innerText = unit.unit;
+      break;
+    }
   }
-
-  $valUnit.value.innerText = unit;
 }
 
 const printVal = (val, unit, unitType) => {
@@ -390,6 +390,7 @@ const addHistory = async ($event) => {
     alert('상품 선택');
     return false;
   }
+  console.log(formData.unit_idx);
   if (!formData.unit_idx) {
     alert('단위 선택');
     $form.elements.unit_idx.focus();
@@ -425,19 +426,27 @@ const addHistory = async ($event) => {
     const res = await http.post(`http://localhost:5000/invest-history/history/${formData.item_idx}/`, formData);
     if (!res.result) throw new Error(res.resultMessage);
 
-    alert('추가 완료');
-
     if (['in', 'out'].includes(formData.history_type)) {
-      inoutList.value = await getHistoryList(formData.item_idx, 'inout');
+      for (const unit of unitList.value) {
+        if (formData.unit_idx == unit.unit_idx) {
+          selectedTab.inout = unit.unit;
+        }
+      }
+      inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout);
     } else if (formData.history_type == 'revenue') {
-      revenueList.value = await getHistoryList(formData.item_idx, 'revenue');
+      for (const unit of unitList.value) {
+        if (formData.unit_idx == unit.unit_idx) {
+          selectedTab.revenue = unit.unit;
+        }
+      }
+      revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue);
     }
 
-    formData.unit_idx = '';
-    formData.history_date = '';
-    formData.history_type = '';
-    formData.inout_type = '';
-    formData.revenue_type = '';
+    // formData.unit_idx = '';
+    // formData.history_date = '';
+    // formData.history_type = '';
+    // formData.inout_type = '';
+    // formData.revenue_type = '';
     formData.val = '';
     formData.memo = '';
 
