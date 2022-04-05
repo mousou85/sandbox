@@ -1,4 +1,5 @@
 const express = require('express');
+const dayjs = require('dayjs');
 const asyncHandler = require('../../helper/express-async-wrap');
 const {ResponseError, createResult} = require('../../helper/express-response');
 
@@ -19,6 +20,7 @@ module.exports = (db) => {
       const itemIdx = req.params.item_idx;
       const historyType = req.query.history_type ?? '';
       const unit = req.query.unit ? req.query.unit.toUpperCase() : '';
+      const date = req.query.date ?? '';
       if (!itemIdx) throw new ResponseError('잘못된 접근');
       
       //set vars: sql 쿼리
@@ -52,6 +54,12 @@ module.exports = (db) => {
       }
       if (unit) {
         query.where('u.unit', unit);
+      }
+      if (date) {
+        query.whereBetween('h.history_date', [
+            dayjs(date).format('YYYY-MM-01'),
+            dayjs(date).endOf('month').format('YYYY-MM-DD')
+          ]);
       }
       
       //set vars: history 리스트
