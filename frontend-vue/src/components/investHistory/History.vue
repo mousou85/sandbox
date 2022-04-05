@@ -101,6 +101,11 @@
 
       <div style="float: left;width: 45%;">
         <h5>유입/유출</h5>
+        <ul class="unitTab">
+          <li v-for="unit in unitList" :key="unit.unit_idx" :class="unit.unit == selectedTab.inout ? 'on' : ''" @click="switchTab('inout', unit.unit)">
+            {{unit.unit}}
+          </li>
+        </ul>
         <table id="inoutList" class="list" style="width:100%;">
           <colgroup>
             <col style="width: 90px;">
@@ -141,6 +146,11 @@
       </div>
       <div style="float: left;width: 45%;margin-left: 20px;">
         <h5>평가</h5>
+        <ul class="unitTab">
+          <li v-for="unit in unitList" :key="unit.unit_idx" :class="unit.unit == selectedTab.revenue ? 'on' : ''" @click="switchTab('revenue', unit.unit)">
+            {{unit.unit}}
+          </li>
+        </ul>
         <table id="revenueList" class="list" style="width: 100%;">
           <colgroup>
             <col style="width: 90px;">
@@ -229,6 +239,10 @@ const itemList = ref([]);
 const unitList = ref([]);
 const inoutList = ref([]);
 const revenueList = ref([]);
+const selectedTab = reactive({
+  'inout': '',
+  'revenue': ''
+});
 
 const $addFormUnitIdx = ref();
 const $valUnit = ref();
@@ -306,11 +320,24 @@ const getSummaryData = async (itemIdx) => {
 const selectItem = async ($event) => {
   formData.item_idx = $event.target.value;
   try {
+    selectedTab.inout = 'KRW';
+    selectedTab.revenue = 'KRW';
     unitList.value = await getUnitList(formData.item_idx);
-    inoutList.value = await getHistoryList(formData.item_idx, 'inout');
-    revenueList.value = await getHistoryList(formData.item_idx, 'revenue');
+    inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout);
+    revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue);
     await getSummaryData(formData.item_idx);
   } catch (err) {
+  }
+}
+
+const switchTab = async (historyType, unit) => {
+  const itemIdx = formData.item_idx;
+  if (historyType == 'inout') {
+    selectedTab.inout = unit;
+    inoutList.value = await getHistoryList(itemIdx, 'inout', unit);
+  } else if (historyType == 'revenue') {
+    selectedTab.revenue = unit;
+    revenueList.value = await getHistoryList(itemIdx, 'revenue', unit);
   }
 }
 
@@ -332,13 +359,18 @@ const printVal = (val, unit, unitType) => {
 
 /**
  * 히스토리 리스트 반환
- * @param itemIdx
- * @param historyType}
+ * @param {number} itemIdx
+ * @param {string} [historyType]
+ * @param {string} [unit]
  * @return {Promise<*[]|*>}
  */
-const getHistoryList = async (itemIdx, historyType) => {
+const getHistoryList = async (itemIdx, historyType, unit) => {
   try {
-    const res = await http.get(`http://localhost:5000/invest-history/history/${itemIdx}`, {history_type: historyType});
+    let params = {itemIdx: itemIdx};
+    if (historyType) params['history_type'] = historyType;
+    if (unit) params['unit'] = unit;
+
+    const res = await http.get(`http://localhost:5000/invest-history/history/${itemIdx}`, params);
     if (!res.result) throw new Error(res.resultMessage);
     return res.data.list;
   } catch (err) {
@@ -510,5 +542,32 @@ const delHistory = async (historyIdx, historyType) => {
 #addForm input.val {
   text-align: right;
   width: 10em;
+}
+
+.unitTab {
+  list-style: none;
+  padding: 0;
+  overflow: hidden;
+  margin: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  border-collapse: collapse;
+  border-bottom: 1px solid;
+  font-size: 0.8em;
+}
+.unitTab li {
+  flex-basis: 20%;
+  padding: 0.2em 0.5em;
+  text-align: center;
+  border-top: 1px solid;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  cursor: pointer;
+}
+.unitTab li.on {
+  background: lightyellow;
+  font-weight: bold;
 }
 </style>
