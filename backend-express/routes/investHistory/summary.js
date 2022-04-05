@@ -165,49 +165,63 @@ module.exports = (db) => {
     try {
       //set vars: 상품 목록
       const itemList = await db.queryAll(db.queryBuilder()
-          .select(['item_idx'])
+          .select('item_idx')
           .from('invest_item')
         );
       
+      //상품별로 처리
       for (const item of itemList) {
         const _itemIdx = item.item_idx;
         
-        //set vars: 요약 데이터 만들 기간 범위
-        const rsDateRange = await db.queryRow(db.queryBuilder()
-            .select([
-              db.raw(`DATE_FORMAT(MIN(history_date), '%Y-%m-01') AS minDate`),
-              db.raw(`DATE_FORMAT(MAX(history_date), '%Y-%m-01') AS maxDate`)
-            ])
-            .from('invest_history')
+        //set vars: 단위 리스트
+        const unitList = await db.queryAll(db.queryBuilder()
+            .select('unit_idx')
+            .from('invest_unit_set')
             .where('item_idx', _itemIdx)
           );
-        if (!rsDateRange.minDate || !rsDateRange.maxDate) continue;
         
-        const _minDate = dayjs(rsDateRange.minDate);
-        const _maxDate = dayjs(rsDateRange.maxDate);
-        
-        //기간 범위를 1달 단위로 반복하며 처리
-        let _targetDate = _minDate;
-        let _lastYear = _minDate.year();
-        let _summaryYear = [_lastYear];
-        while (_targetDate <= _maxDate) {
-          //월간 요약 데이터 생성
-          await upsertMonthSummary(_itemIdx, _targetDate.format('YYYY-MM-DD'));
-    
-          _targetDate = _targetDate.add(1, 'month');
-          if (_lastYear != _targetDate.year()) {
-            _lastYear = _targetDate.year();
-            _summaryYear.push(_lastYear);
-          }
-        }
-        
-        //년간 요약 데이터 생성
-        for (const year of _summaryYear) {
-          await upsertYearSummary(_itemIdx, `${year}-12-01`);
-        }
+        //단위별로 처리
+        for (const unit of unitList) {
+          const _unitIdx = unit.unit_idx;
+          
+          //set vars: 요약 데이터 만들 기간 범위
+          const rsDateRange = await db.queryRow(db.queryBuilder()
+              .select([
+                db.raw(`DATE_FORMAT(MIN(history_date), '%Y-%m-01') AS minDate`),
+                db.raw(`DATE_FORMAT(MAX(history_date), '%Y-%m-01') AS maxDate`)
+              ])
+              .from('invest_history')
+              .where('item_idx', _itemIdx)
+              .andWhere('unit_idx', _unitIdx)
+            );
+          if (!rsDateRange.minDate || !rsDateRange.maxDate) continue;
   
-        //전체 요약 데이터 생성
-        await upsertTotalSummary(_itemIdx);
+          const _minDate = dayjs(rsDateRange.minDate);
+          const _maxDate = dayjs(rsDateRange.maxDate);
+  
+          //기간 범위를 1달 단위로 반복하며 처리
+          let _targetDate = _minDate;
+          let _lastYear = _minDate.year();
+          let _summaryYear = [_lastYear];
+          while (_targetDate <= _maxDate) {
+            //월간 요약 데이터 생성
+            await upsertMonthSummary(_itemIdx, _targetDate.format('YYYY-MM-DD'), _unitIdx);
+    
+            _targetDate = _targetDate.add(1, 'month');
+            if (_lastYear != _targetDate.year()) {
+              _lastYear = _targetDate.year();
+              _summaryYear.push(_lastYear);
+            }
+          }
+  
+          //년간 요약 데이터 생성
+          for (const year of _summaryYear) {
+            await upsertYearSummary(_itemIdx, `${year}-12-01`, _unitIdx);
+          }
+  
+          //전체 요약 데이터 생성
+          await upsertTotalSummary(_itemIdx, _unitIdx);
+        }
       }
       
       res.json(createResult('success'));

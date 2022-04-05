@@ -135,7 +135,7 @@ module.exports = (db) => {
         if (!rsInsert) throw new ResponseError('history 추가 실패함');
         
         //요약 데이터 생성/갱신
-        await upsertSummary(itemIdx, historyDate, trx);
+        await upsertSummary(itemIdx, historyDate, unitIdx, trx);
         
         await trx.commit();
       } catch (err) {
@@ -180,7 +180,7 @@ module.exports = (db) => {
         if (!rsDelete) throw new ResponseError('삭제 실패');
   
         //요약 데이터 insert/update
-        await upsertSummary(itemIdx, rsHistory.history_date, trx);
+        await upsertSummary(itemIdx, rsHistory.history_date, rsHistory.unit_idx, trx);
         
         await trx.commit();
       } catch (err) {
