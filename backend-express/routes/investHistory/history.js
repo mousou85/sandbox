@@ -16,8 +16,9 @@ module.exports = (db) => {
   router.get('/:item_idx', asyncHandler(async (req, res) => {
     try {
       //set vars: request
-      let itemIdx = req.params.item_idx;
-      let historyType = req.query.history_type ?? '';
+      const itemIdx = req.params.item_idx;
+      const historyType = req.query.history_type ?? '';
+      const unit = req.query.unit ? req.query.unit.toUpperCase() : '';
       if (!itemIdx) throw new ResponseError('잘못된 접근');
       
       //set vars: sql 쿼리
@@ -40,8 +41,8 @@ module.exports = (db) => {
         .orderBy([
           {column: 'h.history_date', order: 'desc'},
           {column: 'h.history_idx', order: 'desc'}
-        ])
-      ;
+        ]);
+      
       if (historyType) {
         if (historyType == 'inout') {
           query.whereIn('h.history_type', ['in', 'out'])
@@ -49,10 +50,13 @@ module.exports = (db) => {
           query.where('h.history_type', 'revenue');
         }
       }
+      if (unit) {
+        query.where('u.unit', unit);
+      }
       
       //set vars: history 리스트
       const historyList = await db.queryAll(query);
-      for (let key in historyList) {
+      for (const key in historyList) {
         const _historyType = historyList[key].history_type;
         const _inoutType = historyList[key].inout_type;
         const _revenueType = historyList[key].revenue_type;
