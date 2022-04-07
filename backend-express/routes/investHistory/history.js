@@ -209,19 +209,17 @@ module.exports = (db) => {
   /**
    * history 삭제
    */
-  router.delete('/:item_idx/:history_idx', asyncHandler(async (req, res) => {
+  router.delete('/:history_idx', asyncHandler(async (req, res) => {
     try {
       //set vars: request
-      const itemIdx = req.params.item_idx;
       const historyIdx=  req.params.history_idx;
-      if (!itemIdx || !historyIdx) throw new ResponseError('item_idx, history_idx는 필수임');
+      if (!historyIdx) throw new ResponseError('history_idx는 필수임');
   
       //set vars: 데이터
       const rsHistory = await db.queryRow(db.queryBuilder()
           .select()
           .from('invest_history')
-          .where('item_idx', itemIdx)
-          .andWhere('history_idx', historyIdx)
+          .where('history_idx', historyIdx)
         );
       if (!rsHistory) throw new ResponseError('데이터가 존재하지 않음');
       
@@ -231,13 +229,12 @@ module.exports = (db) => {
         let rsDelete = await db.execute(db.queryBuilder()
             .delete()
             .from('invest_history')
-            .where('item_idx', itemIdx)
-            .andWhere('history_idx', historyIdx)
+            .where('history_idx', historyIdx)
           , trx);
         if (!rsDelete) throw new ResponseError('삭제 실패');
   
         //요약 데이터 insert/update
-        await upsertSummary(itemIdx, rsHistory.history_date, rsHistory.unit_idx, trx);
+        await upsertSummary(rsHistory.item_idx, rsHistory.history_date, rsHistory.unit_idx, trx);
         
         await trx.commit();
       } catch (err) {
