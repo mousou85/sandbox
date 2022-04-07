@@ -158,6 +158,55 @@ module.exports = (db) => {
   }));
   
   /**
+   * history 수정
+   */
+  router.put('/:history_idx', asyncHandler(async (req, res) => {
+    try {
+      //set vars: request
+      const historyIdx = req.params.history_idx;
+      const historyDate = req.body.history_date;
+      const val = req.body.val;
+      const memo = req.body.memo;
+      if (!historyIdx) throw new ResponseError('history_idx는 필수임');
+      if (!historyDate) throw new ResponseError('history_date는 필수임');
+      if (!val) throw new ResponseError('val은 필수임');
+      
+      //set vars: 데이터
+      const rsHistory = await db.queryRow(db.queryBuilder()
+          .select()
+          .from('invest_history')
+          .where('history_idx', historyIdx)
+        );
+      if (!rsHistory) throw new ResponseError('데이터자 존재하지 않음');
+      
+      const trx = await db.transaction();
+      try {
+        await db.execute(db.queryBuilder()
+            .update({
+              'history_date': historyDate,
+              'val': val,
+              'memo': memo
+            })
+            .from('invest_history')
+            .where('history_idx', historyIdx)
+          , trx);
+        
+        //요약데이터 update
+        await upsertSummary(rsHistory.item_idx, historyDate, rsHistory.unit_idx, trx);
+        
+        await trx.commit();
+      } catch (err) {
+        await trx.rollback();
+        throw err;
+      }
+      
+      res.json(createResult());
+    } catch (err) {
+      throw err;
+    }
+  }));
+  
+  /**
    * history 삭제
    */
   router.delete('/:item_idx/:history_idx', asyncHandler(async (req, res) => {
