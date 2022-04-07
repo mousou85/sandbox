@@ -9,95 +9,19 @@
         </option>
       </select>
     </div>
-    <form id="addForm" @submit.prevent="addHistory">
-      <input type="hidden" name="item_idx" v-model="formData.item_idx">
 
-      <fieldset>
-        <legend>기록 추가</legend>
-
-        <div class="row">
-          <label>단위</label>
-          <label class="short" v-for="unit in unitList" :key="unit.unit_idx">
-            <input type="radio" name="unit_idx" ref="$addFormUnitIdx" v-model="formData.unit_idx" :value="unit.unit_idx" @change="setValUnit">
-            {{ unit.unit }}
-          </label>
-        </div>
-
-        <div class="row">
-          <label for="addFormHistoryDate">일자</label>
-          <input type="date" id="addFormHistoryDate" name="history_date" v-model="formData.history_date">
-        </div>
-
-        <div class="row">
-          <label>기록 타입</label>
-          <label class="short"><input type="radio" name="history_type" value="in" v-model="formData.history_type">유입</label>
-          <label class="short"><input type="radio" name="history_type" value="out" v-model="formData.history_type">유출</label>
-          <label class="short"><input type="radio" name="history_type" value="revenue" v-model="formData.history_type">평가</label>
-        </div>
-
-        <div class="row" v-if="['in', 'out'].includes(formData.history_type)">
-          <label>유입/유출 타입</label>
-          <label class="short"><input type="radio" name="inout_type" value="principal" v-model="formData.inout_type">원금</label>
-          <label class="short"><input type="radio" name="inout_type" value="proceeds" v-model="formData.inout_type">수익금</label>
-        </div>
-
-        <div class="row" v-else-if="formData.history_type == 'revenue'">
-          <label>평가 타입</label>
-          <label class="short"><input type="radio" name="revenue_type" value="interest" v-model="formData.revenue_type">이자</label>
-          <label class="short"><input type="radio" name="revenue_type" value="eval" v-model="formData.revenue_type">평가금액</label>
-        </div>
-
-        <div class="row">
-          <label for="addFormVal">금액</label>
-          <input type="text" id="addFormVal" name="val" class="val" v-model="formData.val"><span id="valUnit" ref="$valUnit"></span>
-        </div>
-
-        <div class="row">
-          <label for="addFormMemo">메모</label>
-          <textarea id="addFormMemo" name="memo" cols="50" rows="5" v-model="formData.memo"></textarea>
-        </div>
-      </fieldset>
-      <button type="submit">추가</button>
-    </form>
+    <HistoryAddForm
+        :item-idx="currentItemIdx"
+        :usable-unit-list="currentItemUsableUnitList"
+    >
+    </HistoryAddForm>
 
     <div style="overflow: hidden;">
-      <table width="100%" class="summaryTable">
-        <tr>
-          <th colspan="6">잔고</th>
-          <th colspan="3">현재평가</th>
-          <th colspan="4">수익율</th>
-        </tr>
-        <tr>
-          <th>잔고</th>
-          <th>유입</th>
-          <th>유출</th>
-          <th>잔고(수익금제외)</th>
-          <th>유입(수익금제외)</th>
-          <th>유출(수익금제외)</th>
-          <th>이자</th>
-          <th>평가금액</th>
-          <th>합계</th>
-          <th>수익(수익금제외)</th>
-          <th>수익율(수익금제외)</th>
-          <th>수익</th>
-          <th>수익율</th>
-        </tr>
-        <tr>
-          <td class="right bold">{{ printVal(summaryData.deposit, summaryData.unit, summaryData.unitType) }}</td>
-          <td class="right">{{ printVal(summaryData.in.total, summaryData.unit, summaryData.unitType) }}</td>
-          <td class="right" v-html="printVal(summaryData.out.total * -1, summaryData.unit, summaryData.unitType)"></td>
-          <td class="right bold">{{ printVal(summaryData.excludeProceedsDeposit, summaryData.unit, summaryData.unitType) }}</td>
-          <td class="right">{{ printVal(summaryData.in.principal, summaryData.unit, summaryData.unitType) }}</td>
-          <td class="right" v-html="printVal(summaryData.out.principal * -1, summaryData.unit, summaryData.unitType)"></td>
-          <td class="right">{{ printVal(summaryData.revenue.interest, summaryData.unit, summaryData.unitType) }}</td>
-          <td class="right" v-html="printVal(summaryData.revenue.eval, summaryData.unit, summaryData.unitType)"></td>
-          <td class="right bold" v-html="printVal(summaryData.revenue.total, summaryData.unit, summaryData.unitType)"></td>
-          <td class="right bold" v-html="printVal(summaryData.revenueRate.excludeProceedsDiff, summaryData.unit, summaryData.unitType)"></td>
-          <td class="right">{{ summaryData.revenueRate.excludeProceedsRate }}%</td>
-          <td class="right bold" v-html="printVal(summaryData.revenueRate.diff, summaryData.unit, summaryData.unitType)"></td>
-          <td class="right">{{ summaryData.revenueRate.rate }}%</td>
-        </tr>
-      </table>
+      <HistoryItemSummary
+          :item-idx="currentItemIdx"
+      >
+      </HistoryItemSummary>
+
 
       <h4 style="text-align: center;">
         <button type="button" @click="changeHistoryListMonth('prev')">◀</button>&nbsp;&nbsp;
@@ -130,6 +54,45 @@
           </thead>
           <tbody>
             <tr v-for="history in inoutList" :key="history.history_idx">
+              <template v-if="!history.editFlag">
+                <td class="center">{{history.history_date}}</td>
+                <td class="center">
+                  <span v-if="['in','out'].includes(history.history_type)">
+                    {{history.history_type_text}} - {{history.inout_type_text}}
+                  </span>
+                  <span v-else>
+                    {{history.history_type_text}} - {{history.revenue_type_text}}
+                  </span>
+                </td>
+                <td class="right" v-html="printVal((history.history_type == 'out' ? (history.val * -1) : history.val), history.unit, history.unit_type)">
+                </td>
+                <td>{{history.memo}}</td>
+                <td class="center">
+                  <button type="button" @click="history.editFlag = true">수정</button>
+                  <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
+                </td>
+              </template>
+              <template v-else>
+                <td class="center"><input type="date" name="history_date" :value="history.history_date"></td>
+                <td class="center">
+                  <span v-if="['in','out'].includes(history.history_type)">
+                    {{history.history_type_text}} - {{history.inout_type_text}}
+                  </span>
+                  <span v-else>
+                    {{history.history_type_text}} - {{history.revenue_type_text}}
+                  </span>
+                </td>
+                <td>
+                  <input type="text" name="val" style="text-align: right;width: 80px;" :value="setEditInputVal(history)" @input="editInputVal($event, history)">{{history.unit}}
+                </td>
+                <td><textarea name="memo" v-model="history.memo"></textarea></td>
+                <td class="center">
+                  <button type="button" @click="editHistory(history)">수정</button>
+                  <button type="button" @click="editHistoryCancel(history)">취소</button>
+                </td>
+              </template>
+            </tr>
+            <!--<tr v-for="history in inoutList" :key="history.history_idx">
               <td class="center">{{history.history_date}}</td>
               <td class="center">
               <span v-if="['in','out'].includes(history.history_type)">
@@ -145,7 +108,7 @@
               <td class="center">
                 <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
               </td>
-            </tr>
+            </tr>-->
           </tbody>
         </table>
       </div>
@@ -199,10 +162,15 @@
 </template>
 
 <script setup>
-import {onBeforeMount, reactive, ref, watch} from "vue";
+import {onBeforeMount, onBeforeUpdate, reactive, ref, watch} from "vue";
 import dayjs from 'dayjs';
 import http from "../../libs/http";
 import {numberComma, numberUncomma} from "../../libs/helper";
+import HistoryAddForm from './HistoryAddForm.vue';
+import HistoryItemSummary from './HistoryItemSummary.vue';
+
+const currentItemIdx = ref(0);
+const currentItemUsableUnitList = ref([]);
 
 const formData = reactive({
   item_idx: '',
@@ -253,6 +221,19 @@ const thisMonth = ref(dayjs());
 
 const $addFormUnitIdx = ref();
 const $valUnit = ref();
+
+const editInputVal = ($event, history) => {
+  let val = $event.target.value;
+  val = numberUncomma(val);
+  val = numberComma(val);
+  $event.target.value = val;
+  history.val = val;
+  // console.log($event);
+}
+const setEditInputVal = (history) => {
+  history.val = numberComma(history.val);
+  return history.val;
+}
 
 onBeforeMount(async () => {
   try {
@@ -326,6 +307,17 @@ const getSummaryData = async (itemIdx) => {
 
 const selectItem = async ($event) => {
   formData.item_idx = $event.target.value;
+
+  const selectedVal = $event.target.value;
+
+  currentItemIdx.value = selectedVal;
+
+  for (const item of itemList.value) {
+    if (item.item_idx == selectedVal) {
+      currentItemUsableUnitList.value = item.unit_set;
+    }
+  }
+
   try {
     selectedTab.inout = 'KRW';
     selectedTab.revenue = 'KRW';
@@ -357,15 +349,6 @@ const changeHistoryListMonth = async (type) => {
 
   inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout, thisMonth.value.format('YYYY-MM-DD'));
   revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue, thisMonth.value.format('YYYY-MM-DD'));
-}
-
-const setValUnit = ($event) => {
-  for (const unit of unitList.value) {
-    if (unit.unit_idx == $event.target.value) {
-      $valUnit.value.innerText = unit.unit;
-      break;
-    }
-  }
 }
 
 const printVal = (val, unit, unitType) => {
@@ -480,6 +463,32 @@ const addHistory = async ($event) => {
   }
 }
 
+const editHistory = async(history) => {
+  try {
+    console.log(['1', history.val]);
+    history.val = numberUncomma(history.val);
+    console.log(['2', history.val]);
+    const reqData = {
+      history_date: history.history_date,
+      val: history.val,
+      memo: history.memo
+    };
+
+    const res = await http.put(`http://localhost:5000/invest-history/history/${history.history_idx}`, reqData);
+    if (!res.result) throw new Error(res.resultMessage);
+
+    history.editFlag = false;
+    console.log(['3', history.val]);
+  } catch (err) {
+    alert(err);
+    return false;
+  }
+}
+
+const editHistoryCancel = async(history) => {
+  history.editFlag = false;
+}
+
 /**
  * 히스토리 삭제
  * @param historyIdx
@@ -488,7 +497,7 @@ const addHistory = async ($event) => {
  */
 const delHistory = async (historyIdx, historyType) => {
   try {
-    const res = await http.delete(`http://localhost:5000/invest-history/history/${formData.item_idx}/${historyIdx}`);
+    const res = await http.delete(`http://localhost:5000/invest-history/history/${historyIdx}`);
     if (!res.result) throw new Error(res.resultMessage);
 
     if (['in', 'out'].includes(historyType)) {
@@ -521,27 +530,6 @@ const delHistory = async (historyIdx, historyType) => {
   text-align: center;
 }
 .list .right {
-  text-align: right;
-}
-
-.summaryTable {
-  border: 1px solid;
-  border-collapse: collapse;
-  margin-top: 10px;
-  overflow: hidden;
-  font-size: 0.8em;
-}
-.summaryTable th, .summaryTable td {
-  border: 1px solid;
-  padding: 5px;
-}
-.summaryTable .bold {
-  font-weight: bold;
-}
-.summaryTable .center {
-  text-align: center;
-}
-.summaryTable .right {
   text-align: right;
 }
 
