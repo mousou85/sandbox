@@ -1,5 +1,5 @@
 <template>
-  <table width="100%" class="summaryTable" v-if="itemIdx > 0">
+  <table width="100%" class="summaryTable" v-if="currentItemIdx > 0">
     <tr>
       <th colspan="6">잔고</th>
       <th colspan="3">현재평가</th>
@@ -39,71 +39,17 @@
 </template>
 
 <script>
-import {watch, reactive} from "vue";
-import {getItemSummary} from '../../modules/investHistory';
-import {numberComma} from "../../libs/helper";
+import {computed} from "vue";
+import {useStore} from 'vuex';
+import {numberComma} from "@/libs/helper";
 
 export default {
-  props: ['itemIdx'],
-  setup(props) {
-    const summaryData = reactive({
-      unit: '',
-      unitType: '',
-      deposit: 0,
-      excludeProceedsDeposit: 0,
-      in: {
-        total: 0,
-        principal: 0,
-        proceeds: 0,
-      },
-      out: {
-        total: 0,
-        principal: 0,
-        proceeds: 0,
-      },
-      revenue: {
-        total: 0,
-        interest: 0,
-        eval: 0,
-      },
-      revenueRate: {
-        diff: 0,
-        rate: 0,
-        excludeProceedsDiff: 0,
-        excludeProceedsRate: 0
-      }
-    });
+  setup() {
+    const store = useStore();
 
-    /**
-     * 요약 데이터
-     * @param {number} itemIdx
-     * @return {Promise<void>}
-     */
-    const getSummary = async (itemIdx) => {
-      try {
-        const data = await getItemSummary(itemIdx);
-
-        for (const key1 of Object.keys(data)) {
-          const val1 = data[key1];
-
-          if (summaryData.hasOwnProperty(key1)) {
-            if (typeof val1 == 'object') {
-              for (const key2 of Object.keys(val1)) {
-                const val2 = val1[key2];
-
-                if (summaryData[key1].hasOwnProperty(key2)) {
-                  summaryData[key1][key2] = val2;
-                }
-              }
-            } else {
-              summaryData[key1] = val1;
-            }
-          }
-
-        }
-      } catch (err) {
-      }
-    }
+    //set vars: summary data(vuex)
+    const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
+    const summaryData = computed(() => store.getters['investHistory/getCurrentItemSummary']);
 
     /**
      * 값 출력
@@ -118,30 +64,22 @@ export default {
 
       let retStr;
       if (valType == 'plain') {
-        retStr = `${numberComma(val)} ${summaryData.unit}`;
+        retStr = `${numberComma(val)} ${summaryData.value.unit}`;
       } else if (valType == 'percent') {
         if (val < 0) retStr = `<span style="color: blue">${val}</span> %`;
         else if (val > 0) retStr = `<span style="color: red;">${val}</span> %`;
         else retStr = `${val} %`;
       } else {
-        if (val < 0) retStr = `<span style="color: blue">${numberComma(val)}</span> ${summaryData.unit}`;
-        else if (val > 0) retStr = `<span style="color: red;">${numberComma(val)}</span> ${summaryData.unit}`;
-        else retStr = `${numberComma(val)} ${summaryData.unit}`;
+        if (val < 0) retStr = `<span style="color: blue">${numberComma(val)}</span> ${summaryData.value.unit}`;
+        else if (val > 0) retStr = `<span style="color: red;">${numberComma(val)}</span> ${summaryData.value.unit}`;
+        else retStr = `${numberComma(val)} ${summaryData.value.unit}`;
       }
 
       return retStr;
     }
 
-    /**
-     * watch vars
-     */
-    watch(() => props.itemIdx, (newValue, oldValue) => {
-      if (newValue != oldValue) {
-        getSummary(newValue);
-      }
-    });
-
     return {
+      currentItemIdx,
       summaryData,
       printVal
     }

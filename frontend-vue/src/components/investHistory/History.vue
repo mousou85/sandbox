@@ -11,17 +11,12 @@
     </div>
 
     <HistoryAddForm
-        :item-idx="currentItemIdx"
         :usable-unit-list="currentItemUsableUnitList"
     >
     </HistoryAddForm>
 
     <div style="overflow: hidden;">
-      <HistoryItemSummary
-          :item-idx="currentItemIdx"
-      >
-      </HistoryItemSummary>
-
+      <HistoryItemSummary></HistoryItemSummary>
 
       <h4 style="text-align: center;">
         <button type="button" @click="changeHistoryListMonth('prev')">◀</button>&nbsp;&nbsp;
@@ -29,88 +24,11 @@
         &nbsp;&nbsp;<button type="button" @click="changeHistoryListMonth('next')">▶</button>
       </h4>
       <div style="float: left;width: 45%;">
-        <h5>유입/유출</h5>
-        <ul class="unitTab">
-          <li v-for="unit in unitList" :key="unit.unit_idx" :class="unit.unit == selectedTab.inout ? 'on' : ''" @click="switchTab('inout', unit.unit)">
-            {{unit.unit}}
-          </li>
-        </ul>
-        <table id="inoutList" class="list" style="width:100%;">
-          <colgroup>
-            <col style="width: 90px;">
-            <col style="width: 90px;">
-            <col style="width: 130px;">
-            <col>
-            <col style="width: 80px;">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>날짜</th>
-              <th>기록타입</th>
-              <th>금액</th>
-              <th>메모</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="history in inoutList" :key="history.history_idx">
-              <template v-if="!history.editFlag">
-                <td class="center">{{history.history_date}}</td>
-                <td class="center">
-                  <span v-if="['in','out'].includes(history.history_type)">
-                    {{history.history_type_text}} - {{history.inout_type_text}}
-                  </span>
-                  <span v-else>
-                    {{history.history_type_text}} - {{history.revenue_type_text}}
-                  </span>
-                </td>
-                <td class="right" v-html="printVal((history.history_type == 'out' ? (history.val * -1) : history.val), history.unit, history.unit_type)">
-                </td>
-                <td>{{history.memo}}</td>
-                <td class="center">
-                  <button type="button" @click="history.editFlag = true">수정</button>
-                  <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
-                </td>
-              </template>
-              <template v-else>
-                <td class="center"><input type="date" name="history_date" :value="history.history_date"></td>
-                <td class="center">
-                  <span v-if="['in','out'].includes(history.history_type)">
-                    {{history.history_type_text}} - {{history.inout_type_text}}
-                  </span>
-                  <span v-else>
-                    {{history.history_type_text}} - {{history.revenue_type_text}}
-                  </span>
-                </td>
-                <td>
-                  <input type="text" name="val" style="text-align: right;width: 80px;" :value="setEditInputVal(history)" @input="editInputVal($event, history)">{{history.unit}}
-                </td>
-                <td><textarea name="memo" v-model="history.memo"></textarea></td>
-                <td class="center">
-                  <button type="button" @click="editHistory(history)">수정</button>
-                  <button type="button" @click="editHistoryCancel(history)">취소</button>
-                </td>
-              </template>
-            </tr>
-            <!--<tr v-for="history in inoutList" :key="history.history_idx">
-              <td class="center">{{history.history_date}}</td>
-              <td class="center">
-              <span v-if="['in','out'].includes(history.history_type)">
-                {{history.history_type_text}} - {{history.inout_type_text}}
-              </span>
-                <span v-else>
-                {{history.history_type_text}} - {{history.revenue_type_text}}
-              </span>
-              </td>
-              <td class="right" v-html="printVal((history.history_type == 'out' ? (history.val * -1) : history.val), history.unit, history.unit_type)">
-              </td>
-              <td>{{history.memo}}</td>
-              <td class="center">
-                <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
-              </td>
-            </tr>-->
-          </tbody>
-        </table>
+        <HistoryInOutList
+          :this-month="thisMonth"
+          :usable-unit-list="currentItemUsableUnitList"
+        >
+        </HistoryInOutList>
       </div>
       <div style="float: left;width: 45%;margin-left: 20px;">
         <h5>평가</h5>
@@ -162,15 +80,22 @@
 </template>
 
 <script setup>
-import {onBeforeMount, onBeforeUpdate, reactive, ref, watch} from "vue";
-import dayjs from 'dayjs';
-import http from "../../libs/http";
-import {numberComma, numberUncomma} from "../../libs/helper";
-import HistoryAddForm from './HistoryAddForm.vue';
-import HistoryItemSummary from './HistoryItemSummary.vue';
+import {computed, onBeforeMount, onBeforeUpdate, reactive, ref, watch} from "vue";
+import {useStore} from 'vuex';
+import {investHistory} from "@/store/modules/investHistory";
 
-const currentItemIdx = ref(0);
+import dayjs from 'dayjs';
+import http from "@/libs/http";
+import {numberComma, numberUncomma} from "@/libs/helper";
+
+import HistoryAddForm from '@/components/investHistory/HistoryAddForm.vue';
+import HistoryItemSummary from '@/components/investHistory/HistoryItemSummary.vue';
+import HistoryInOutList from '@/components/investHistory/HistoryInOutList.vue';
+
+
 const currentItemUsableUnitList = ref([]);
+const store = useStore();
+const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
 
 const formData = reactive({
   item_idx: '',
@@ -217,7 +142,7 @@ const selectedTab = reactive({
   'inout': '',
   'revenue': ''
 });
-const thisMonth = ref(dayjs());
+const thisMonth = ref(dayjs('2022-03-01'));
 
 const $addFormUnitIdx = ref();
 const $valUnit = ref();
@@ -237,6 +162,12 @@ const setEditInputVal = (history) => {
 
 onBeforeMount(async () => {
   try {
+    //load vuex module
+    if (store.hasModule('investHistory')) {
+      store.unregisterModule('investHistory');
+    }
+    store.registerModule('investHistory', investHistory);
+
     let res;
 
     res = await getItemList();
@@ -310,7 +241,12 @@ const selectItem = async ($event) => {
 
   const selectedVal = $event.target.value;
 
-  currentItemIdx.value = selectedVal;
+  store.commit('investHistory/setCurrentItemIdx', selectedVal);
+  try {
+    await store.dispatch('investHistory/requestItemSummary');
+  } catch (err) {
+    alert(err);
+  }
 
   for (const item of itemList.value) {
     if (item.item_idx == selectedVal) {

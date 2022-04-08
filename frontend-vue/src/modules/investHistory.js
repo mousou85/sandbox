@@ -15,11 +15,31 @@ const getItemList = async () => {
 
 /**
  * get item usable unit list
- * @param itemIdx
+ * @param {number} itemIdx
  * @return {Promise<Object[]>}
  */
 const getItemUsableUnitList = async (itemIdx) => {
   const res = await http.get(`${baseURL}/invest-history/unit-set/${itemIdx}`);
+  if (!res.result) throw new Error(res.resultMessage);
+  
+  return res.data.list;
+}
+
+/**
+ * get history list
+ * @param {number} itemIdx
+ * @param {string} [historyType=inout,revenue]
+ * @param {string} [unit]
+ * @param {string} [date]
+ * @return {Promise<Object[]>}
+ */
+const getHistoryList = async (itemIdx, historyType, unit, date) => {
+  let params = {};
+  if (historyType) params['history_type'] = historyType;
+  if (unit) params['unit'] = unit;
+  if (date) params['date'] = date;
+  
+  const res = await http.get(`${baseURL}/invest-history/history/${itemIdx}`, params);
   if (!res.result) throw new Error(res.resultMessage);
   
   return res.data.list;
@@ -37,7 +57,7 @@ const getItemSummary = async (itemIdx) => {
 }
 
 /**
- *
+ * 히스토리 추가
  * @param {{item_idx: number, unit_idx: number, history_date: string, history_type: string, [inout_type]: string, [revenue_type]: string, val: number, memo: string}} requestBody
  * @return {Promise<void>}
  */
@@ -55,9 +75,21 @@ const addHistory = async (requestBody) => {
   if (!res.result) throw new Error(res.resultMessage);
 }
 
+/**
+ * 히스토리 삭제
+ * @param {number} historyIdx
+ * @return {Promise<void>}
+ */
+const delHistory = async (historyIdx) => {
+  const res = await http.delete(`${baseURL}/invest-history/history/${historyIdx}`);
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
 export {
   getItemList,
   getItemUsableUnitList,
+  getHistoryList,
   addHistory,
+  delHistory,
   getItemSummary
 }

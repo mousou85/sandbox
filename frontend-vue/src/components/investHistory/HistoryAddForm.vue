@@ -1,6 +1,6 @@
 <template>
   <form id="addForm" @submit.prevent="submitAddHistory">
-    <input type="hidden" name="item_idx" :value="itemIdx">
+    <input type="hidden" name="item_idx" :value="currentItemIdx">
 
     <fieldset>
       <legend>기록 추가</legend>
@@ -52,19 +52,22 @@
 </template>
 
 <script>
-import {watch, reactive, computed} from "vue";
-import {addHistory} from '../../modules/investHistory';
-import {numberComma, numberUncomma} from "../../libs/helper";
+import {reactive, computed} from "vue";
+import {useStore} from 'vuex';
+import {addHistory} from '@/modules/investHistory';
+import {numberComma, numberUncomma} from "@/libs/helper";
 
 export default  {
   props: [
-      'itemIdx',
       'usableUnitList'
   ],
-  setup(props) {
+  setup() {
+    const store = useStore();
+
+    const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
+
     //set vars: form data
     const formData = reactive({
-      itemIdx: props.itemIdx,
       unitIdx: 0,
       historyDate: '',
       historyType: '',
@@ -91,7 +94,7 @@ export default  {
     const submitAddHistory = async ($event) => {
       const $form = $event.target;
 
-      if (formData.itemIdx == '' || formData.itemIdx == 0) {
+      if (currentItemIdx.value == 0) {
         alert('상품 선택');
         return false;
       }
@@ -127,7 +130,7 @@ export default  {
 
       try {
         await addHistory({
-          item_idx: formData.itemIdx,
+          item_idx: currentItemIdx.value,
           unit_idx: formData.unitIdx,
           history_type: formData.historyType,
           history_date: formData.historyDate,
@@ -158,7 +161,7 @@ export default  {
 
         // document.getElementById('valUnit').innerText = '';
 
-        // await getSummaryData(formData.item_idx);
+        await store.dispatch('investHistory/requestItemSummary');
       } catch (err) {
         alert(err);
         return false;
@@ -172,23 +175,8 @@ export default  {
       document.getElementById('valUnitText').innerText = unitText;
     }
 
-    /**
-     * watch vars
-     */
-    watch(() => props.itemIdx, (newValue, oldValue) => {
-      if (newValue != oldValue) {
-        formData.itemIdx = newValue;
-        formData.unitIdx = 0;
-        formData.historyDate = '';
-        formData.historyType = '';
-        formData.inoutType = '';
-        formData.revenueType = '';
-        formData.valText = 0;
-        formData.memo = '';
-      }
-    });
-
     return {
+      currentItemIdx,
       formData,
       submitAddHistory,
       setInputValUnitText
