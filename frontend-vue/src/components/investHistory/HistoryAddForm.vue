@@ -62,8 +62,10 @@ export default  {
       'usableUnitList'
   ],
   setup() {
+    //set vars: vuex
     const store = useStore();
 
+    //set vars: 필요 변수
     const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
 
     //set vars: form data
@@ -140,28 +142,15 @@ export default  {
           memo: formData.memo
         });
 
-        // if (['in', 'out'].includes(formData.history_type)) {
-        //   for (const unit of unitList.value) {
-        //     if (formData.unit_idx == unit.unit_idx) {
-        //       selectedTab.inout = unit.unit;
-        //     }
-        //   }
-        //   inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout, thisMonth.value.format('YYYY-MM-DD'));
-        // } else if (formData.history_type == 'revenue') {
-        //   for (const unit of unitList.value) {
-        //     if (formData.unit_idx == unit.unit_idx) {
-        //       selectedTab.revenue = unit.unit;
-        //     }
-        //   }
-        //   revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue, thisMonth.value.format('YYYY-MM-DD'));
-        // }
-
         formData.valText = '';
         formData.memo = '';
 
-        // document.getElementById('valUnit').innerText = '';
-
-        await store.dispatch('investHistory/requestItemSummary');
+        store.commit('investHistory/setUpdateSummaryFlag', true);
+        if (formData.historyType == 'in' || formData.historyType == 'out') {
+          store.commit('investHistory/setUpdateInOutListFlag', true);
+        } else if (formData.historyType == 'revenue') {
+          store.commit('investHistory/setUpdateRevenueListFlag', true);
+        }
       } catch (err) {
         alert(err);
         return false;

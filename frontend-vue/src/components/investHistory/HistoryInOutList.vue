@@ -38,25 +38,20 @@
             <button type="button" @click="delHistory(history.history_idx)">삭제</button>
           </td>
         </template>
-        <!--<template v-else>-->
-        <!--  <td class="center"><input type="date" name="history_date" :value="history.history_date"></td>-->
-        <!--  <td class="center">-->
-        <!--          <span v-if="['in','out'].includes(history.history_type)">-->
-        <!--            {{history.history_type_text}} - {{history.inout_type_text}}-->
-        <!--          </span>-->
-        <!--    <span v-else>-->
-        <!--            {{history.history_type_text}} - {{history.revenue_type_text}}-->
-        <!--          </span>-->
-        <!--  </td>-->
-        <!--  <td>-->
-        <!--    <input type="text" name="val" style="text-align: right;width: 80px;" :value="setEditInputVal(history)" @input="editInputVal($event, history)">{{history.unit}}-->
-        <!--  </td>-->
-        <!--  <td><textarea name="memo" v-model="history.memo"></textarea></td>-->
-        <!--  <td class="center">-->
-        <!--    <button type="button" @click="editHistory(history)">수정</button>-->
-        <!--    <button type="button" @click="editHistoryCancel(history)">취소</button>-->
-        <!--  </td>-->
-        <!--</template>-->
+        <template v-else>
+          <td class="center"><input type="date" name="history_date" :value="history.history_date"></td>
+          <td class="center">
+            {{history.history_type_text}} - {{history.inout_type_text}}
+          </td>
+          <td>
+            <input type="text" name="val" style="text-align: right;width: 80px;" :value="setEditInputVal(history)" @input="editInputVal($event, history)">{{history.unit}}
+          </td>
+          <td><textarea name="memo" v-model="history.memo"></textarea></td>
+          <td class="center">
+            <button type="button" @click="editHistory(history)">수정</button>
+            <button type="button" @click="editHistoryCancel(history)">취소</button>
+          </td>
+        </template>
       </tr>
       <!--<tr v-for="history in inoutList" :key="history.history_idx">
         <td class="center">{{history.history_date}}</td>
@@ -82,8 +77,11 @@
 
 <script>
 import {useStore} from "vuex";
-import {computed, onBeforeMount, onUpdated, ref} from "vue";
-import {getHistoryList as requestHistoryList} from "@/modules/investHistory";
+import {computed, onBeforeMount, ref, watch} from "vue";
+import {
+  getHistoryList as requestHistoryList,
+  delHistory as requestDelHistory
+} from "@/modules/investHistory";
 import {numberComma} from "@/libs/helper";
 
 export default {
@@ -91,30 +89,72 @@ export default {
       'thisMonth',
       'usableUnitList',
   ],
-  setup(props, { emit }) {
-    // console.log(emit);
+  setup(props) {
+    //set vars: vuex
     const store = useStore();
 
+    //set vars: 필요 변수
     const itemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
+    const updateInOutListFlag = computed(() => store.getters['investHistory/getUpdateInOutListFlag']);
     const selectedTab = ref('KRW');
     const historyList = ref([]);
 
+    /*
+    lifecycle hook
+     */
     onBeforeMount(async () => {
       await getHistoryList();
     });
-    onUpdated(async () => {
-      await getHistoryList();
+
+    /*
+    watch variables
+     */
+    watch(updateInOutListFlag, async (newUpdateInOutListFlag) => {
+      if (newUpdateInOutListFlag) {
+        await getHistoryList();
+      }
     });
 
+    /**
+     * 히스토리 목록 반환
+     * @returns {Promise<void>}
+     */
     const getHistoryList = async() => {
       try {
-        historyList.value = await requestHistoryList(itemIdx.value, 'inout', selectedTab.value, props.thisMonth.format('YYYY-MM-DDD'));
-        for (const history of historyList.value) {
-          history.editFlag = false;
+        if (itemIdx.value > 0) {
+          historyList.value = await requestHistoryList(
+              itemIdx.value,
+              'inout',
+              selectedTab.value,
+              props.thisMonth.value.format('YYYY-MM-DD')
+            );
+          for (const history of historyList.value) {
+            history.editFlag = false;
+          }
+        } else {
+          historyList.value = [];
         }
       } catch (err) {
         alert(err);
         historyList.value = [];
+      } finally {
+        store.commit('investHistory/setUpdateInOutListFlag', false);
+      }
+    }
+
+    /**
+     * 히스토리 삭제
+     * @param historyIdx
+     * @returns {Promise<void>}
+     */
+    const delHistory = async (historyIdx) => {
+      try {
+        await requestDelHistory(historyIdx);
+
+        store.commit('investHistory/setUpdateSummaryFlag', true);
+        store.commit('investHistory/setUpdateInOutListFlag', true);
+      } catch (err) {
+        alert(err);
       }
     }
 
@@ -123,17 +163,10 @@ export default {
      * @param {string} unit
      * @return {Promise<void>}
      */
-    const switchTab = async (unit) => {
-      // if (selectedTab.value == unit) return;
-
+    const switchTab =  (unit) => {
       selectedTab.value = unit;
 
-      try {
-        await getHistoryList();
-      } catch (err) {
-        alert(err);
-        historyList.value = [];
-      }
+      store.commit('investHistory/setUpdateInOutListFlag', true);
     }
 
     /**
@@ -154,17 +187,6 @@ export default {
       else retStr = `${numberComma(val)} ${history.unit}`;
 
       return retStr;
-    }
-
-    const delHistory = async (historyIdx) => {
-      try {
-        await delHistory(historyIdx);
-
-        await getHistoryList();
-      } catch (err) {
-        alert(err);
-        return;
-      }
     }
 
     return {

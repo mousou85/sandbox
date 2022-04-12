@@ -20,7 +20,7 @@
 
       <h4 style="text-align: center;">
         <button type="button" @click="changeHistoryListMonth('prev')">◀</button>&nbsp;&nbsp;
-        <span>{{thisMonth.format('YYYY-MM')}}</span>
+        <span>{{thisMonth.value.format('YYYY-MM')}}</span>
         &nbsp;&nbsp;<button type="button" @click="changeHistoryListMonth('next')">▶</button>
       </h4>
       <div style="float: left;width: 45%;">
@@ -92,10 +92,13 @@ import HistoryAddForm from '@/components/investHistory/HistoryAddForm.vue';
 import HistoryItemSummary from '@/components/investHistory/HistoryItemSummary.vue';
 import HistoryInOutList from '@/components/investHistory/HistoryInOutList.vue';
 
+const store = useStore();
+
+const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
 
 const currentItemUsableUnitList = ref([]);
-const store = useStore();
-const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
+
+
 
 const formData = reactive({
   item_idx: '',
@@ -142,7 +145,8 @@ const selectedTab = reactive({
   'inout': '',
   'revenue': ''
 });
-const thisMonth = ref(dayjs('2022-03-01'));
+
+const thisMonth = reactive({value: dayjs()});
 
 const $addFormUnitIdx = ref();
 const $valUnit = ref();
@@ -241,38 +245,26 @@ const selectItem = async ($event) => {
 
   const selectedVal = $event.target.value;
 
-  store.commit('investHistory/setCurrentItemIdx', selectedVal);
-  try {
-    await store.dispatch('investHistory/requestItemSummary');
-  } catch (err) {
-    alert(err);
-  }
-
   for (const item of itemList.value) {
     if (item.item_idx == selectedVal) {
       currentItemUsableUnitList.value = item.unit_set;
     }
   }
 
-  try {
-    selectedTab.inout = 'KRW';
-    selectedTab.revenue = 'KRW';
-    unitList.value = await getUnitList(formData.item_idx);
-    inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout, thisMonth.value.format('YYYY-MM-DD'));
-    revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue, thisMonth.value.format('YYYY-MM-DD'));
-    await getSummaryData(formData.item_idx);
-  } catch (err) {
-  }
+  store.commit('investHistory/setCurrentItemIdx', selectedVal);
+  store.commit('investHistory/setUpdateSummaryFlag', true);
+  store.commit('investHistory/setUpdateInOutListFlag', true);
+  store.commit('investHistory/setUpdateRevenueListFlag', true);
 }
 
 const switchTab = async (historyType, unit) => {
   const itemIdx = formData.item_idx;
   if (historyType == 'inout') {
     selectedTab.inout = unit;
-    inoutList.value = await getHistoryList(itemIdx, 'inout', unit, thisMonth.value.format('YYYY-MM-DD'));
+    // inoutList.value = await getHistoryList(itemIdx, 'inout', unit, thisMonth.value.format('YYYY-MM-DD'));
   } else if (historyType == 'revenue') {
     selectedTab.revenue = unit;
-    revenueList.value = await getHistoryList(itemIdx, 'revenue', unit, thisMonth.value.format('YYYY-MM-DD'));
+    // revenueList.value = await getHistoryList(itemIdx, 'revenue', unit, thisMonth.value.format('YYYY-MM-DD'));
   }
 }
 
@@ -283,8 +275,8 @@ const changeHistoryListMonth = async (type) => {
     thisMonth.value = thisMonth.value.add(1, 'month');
   }
 
-  inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout, thisMonth.value.format('YYYY-MM-DD'));
-  revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue, thisMonth.value.format('YYYY-MM-DD'));
+  store.commit('investHistory/setUpdateInOutListFlag', true);
+  store.commit('investHistory/setUpdateRevenueListFlag', true);
 }
 
 const printVal = (val, unit, unitType) => {
@@ -372,14 +364,14 @@ const addHistory = async ($event) => {
           selectedTab.inout = unit.unit;
         }
       }
-      inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout, thisMonth.value.format('YYYY-MM-DD'));
+      // inoutList.value = await getHistoryList(formData.item_idx, 'inout', selectedTab.inout, thisMonth.value.format('YYYY-MM-DD'));
     } else if (formData.history_type == 'revenue') {
       for (const unit of unitList.value) {
         if (formData.unit_idx == unit.unit_idx) {
           selectedTab.revenue = unit.unit;
         }
       }
-      revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue, thisMonth.value.format('YYYY-MM-DD'));
+      // revenueList.value = await getHistoryList(formData.item_idx, 'revenue', selectedTab.revenue, thisMonth.value.format('YYYY-MM-DD'));
     }
 
     // formData.unit_idx = '';
@@ -437,9 +429,9 @@ const delHistory = async (historyIdx, historyType) => {
     if (!res.result) throw new Error(res.resultMessage);
 
     if (['in', 'out'].includes(historyType)) {
-      inoutList.value = await getHistoryList(formData.item_idx, 'inout', formData.unit_idx, thisMonth.value.format('YYYY-MM-DD'));
+      // inoutList.value = await getHistoryList(formData.item_idx, 'inout', formData.unit_idx, thisMonth.value.format('YYYY-MM-DD'));
     } else if (historyType == 'revenue') {
-      revenueList.value = await getHistoryList(formData.item_idx, 'revenue', formData.unit_idx, thisMonth.value.format('YYYY-MM-DD'));
+      // revenueList.value = await getHistoryList(formData.item_idx, 'revenue', formData.unit_idx, thisMonth.value.format('YYYY-MM-DD'));
     }
 
     await getSummaryData(formData.item_idx);

@@ -39,17 +39,89 @@
 </template>
 
 <script>
-import {computed} from "vue";
+import {computed, reactive, watch} from "vue";
 import {useStore} from 'vuex';
 import {numberComma} from "@/libs/helper";
+import {getItemSummary} from "@/modules/investHistory";
 
 export default {
   setup() {
+    //set vars: vuex
     const store = useStore();
 
-    //set vars: summary data(vuex)
+    //set vars: 필요 변수
     const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
-    const summaryData = computed(() => store.getters['investHistory/getCurrentItemSummary']);
+    const updateSummaryFlag = computed(() => store.getters['investHistory/getUpdateSummaryFlag']);
+    const summaryData = reactive({
+      unit: '',
+      unitType: '',
+      deposit: 0,
+      excludeProceedsDeposit: 0,
+      in: {
+        total: 0,
+        principal: 0,
+        proceeds: 0,
+      },
+      out: {
+        total: 0,
+        principal: 0,
+        proceeds: 0,
+      },
+      revenue: {
+        total: 0,
+        interest: 0,
+        eval: 0,
+      },
+      revenueRate: {
+        diff: 0,
+        rate: 0,
+        excludeProceedsDiff: 0,
+        excludeProceedsRate: 0
+      }
+    });
+
+    /*
+    watch variables
+     */
+    watch(updateSummaryFlag, async (newSummaryFlag) => {
+      if (newSummaryFlag) {
+        await getSummary();
+      }
+    });
+
+    /**
+     * 요약 데이터 반환
+     * @returns {Promise<void>}
+     */
+    const getSummary = async () => {
+      try {
+        if (currentItemIdx.value > 0) {
+          const data = await getItemSummary(currentItemIdx.value);
+
+          for (const key1 of Object.keys(data)) {
+            const val1 = data[key1];
+
+            if (summaryData.hasOwnProperty(key1)) {
+              if (typeof val1 == 'object') {
+                for (const key2 of Object.keys(val1)) {
+                  const val2 = val1[key2];
+
+                  if (summaryData[key1].hasOwnProperty(key2)) {
+                    summaryData[key1][key2] = val2;
+                  }
+                }
+              } else {
+                summaryData[key1] = val1;
+              }
+            }
+          }
+        }
+      } catch (err) {
+
+      } finally {
+        store.commit('investHistory/setUpdateSummaryFlag', false);
+      }
+    };
 
     /**
      * 값 출력
@@ -64,15 +136,15 @@ export default {
 
       let retStr;
       if (valType == 'plain') {
-        retStr = `${numberComma(val)} ${summaryData.value.unit}`;
+        retStr = `${numberComma(val)} ${summaryData.unit}`;
       } else if (valType == 'percent') {
         if (val < 0) retStr = `<span style="color: blue">${val}</span> %`;
         else if (val > 0) retStr = `<span style="color: red;">${val}</span> %`;
         else retStr = `${val} %`;
       } else {
-        if (val < 0) retStr = `<span style="color: blue">${numberComma(val)}</span> ${summaryData.value.unit}`;
-        else if (val > 0) retStr = `<span style="color: red;">${numberComma(val)}</span> ${summaryData.value.unit}`;
-        else retStr = `${numberComma(val)} ${summaryData.value.unit}`;
+        if (val < 0) retStr = `<span style="color: blue">${numberComma(val)}</span> ${summaryData.unit}`;
+        else if (val > 0) retStr = `<span style="color: red;">${numberComma(val)}</span> ${summaryData.unit}`;
+        else retStr = `${numberComma(val)} ${summaryData.unit}`;
       }
 
       return retStr;
