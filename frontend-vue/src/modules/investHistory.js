@@ -58,6 +58,47 @@ const getItemSummary = async (itemIdx) => {
 }
 
 /**
+ * get company list
+ * @returns {Promise<Object[]>}
+ */
+const getCompanyList = async() => {
+  const res = await http.get(`${baseURL}/invest-history/company`);
+  if (!res.result) throw new Error(res.resultMessage);
+  return res.data.list;
+}
+
+/**
+ * add company
+ * @param {string} companyName
+ * @returns {Promise<void>}
+ */
+const addCompany = async(companyName) => {
+  const res = await http.post(`${baseURL}/invest-history/company`, {company_name: companyName});
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
+/**
+ * edit company
+ * @param {number} companyIdx
+ * @param {string} companyName
+ * @returns {Promise<void>}
+ */
+const editCompany = async(companyIdx, companyName) => {
+  const res = await http.put(`${baseURL}/invest-history/company/${companyIdx}`, {company_name: companyName});
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
+/**
+ * delete company
+ * @param {number} companyIdx
+ * @returns {Promise<void>}
+ */
+const delCompany = async(companyIdx) => {
+  const res = await http.delete(`${baseURL}/invest-history/company/${companyIdx}`);
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
+/**
  * 히스토리 추가
  * @param {{item_idx: number, unit_idx: number, history_date: string, history_type: string, [inout_type]: string, [revenue_type]: string, val: number, memo: string}} requestBody
  * @return {Promise<void>}
@@ -107,5 +148,9 @@ export {
   addHistory,
   editHistory,
   delHistory,
-  getItemSummary
+  getItemSummary,
+  getCompanyList,
+  addCompany,
+  editCompany,
+  delCompany,
 }

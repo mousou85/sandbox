@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      <input type="text" id="addCompanyName" maxlength="20" placeholder="기업명 입력">
+      <input type="text" id="addCompanyName" maxlength="20" v-model="addForm.company_name" placeholder="기업명 입력">
       <button type="button" @click="addCompany">추가</button>
     </div>
     <table id="companyList">
@@ -15,7 +15,7 @@
         <tr v-for="company in companyList" :key="company.company_idx">
           <td class="center">{{company.company_idx}}</td>
           <td>
-            <input type="text" maxlength="20" :value="company.company_name"  @blur="updateCompany(company.company_idx, $event.target.value)">
+            <input type="text" maxlength="20" v-model="company.company_name" @blur="updateCompany(company)">
             <button type="button" @click="deleteCompany(company.company_idx)">삭제</button>
           </td>
         </tr>
@@ -24,77 +24,106 @@
   </div>
 </template>
 
+<script>
+import {onBeforeMount, reactive, ref} from "vue";
 
-<script  setup>
-import {onMounted, ref} from "vue";
-import http from '../../libs/http';
+import {
+  getCompanyList as requestCompanyList,
+  addCompany as requestAddCompany,
+  editCompany as requestEditCompany,
+  delCompany as requestDelCompany
+} from '@/modules/investHistory';
 
-const companyList = ref([]);
+export default {
+  setup() {
+    //set vars: 필요 변수
+    const companyList = ref([]);
+    const addForm = reactive({
+      company_name: ''
+    });
 
-onMounted(async () => {
-  companyList.value = await getCompanyList();
-});
+    /*
+    lifecycle hook
+     */
+    onBeforeMount(async () => {
+      await getCompanyList();
+    });
 
-const addCompany = async() => {
-  const $companyName = document.getElementById('addCompanyName');
-  if ($companyName) {
-    if (!$companyName.value.length) {
-      alert('기업명을 입력해주세요.');
-      $companyName.focus();
-      return false;
-    }
-
-    try {
-      const res = await http.post('http://localhost:5000/invest-history/company', {company_name: $companyName.value});
-      if (!res.result) throw new Error(res.resultMessage);
-
-      $companyName.value = '';
-
-      companyList.value = await getCompanyList();
-    } catch (err) {
-      alert(err);
-    }
-  }
-}
-
-const getCompanyList = async () => {
-  try {
-    const res = await http.get('http://localhost:5000/invest-history/company');
-    if (!res.result) throw new Error(res.resultMessage);
-
-    return res.data.list;
-  } catch (err) {
-    alert(err);
-  }
-}
-
-const updateCompany = async (companyIdx, companyName) => {
-  try {
-    const res = await http.put(`http://localhost:5000/invest-history/company/${companyIdx}`, {company_name: companyName});
-    if (!res.result) throw new Error(res.resultMessage);
-  } catch (err) {
-    alert(err);
-  }
-}
-
-const deleteCompany = async (companyIdx) => {
-  try {
-    const res = await http.delete(`http://localhost:5000/invest-history/company/${companyIdx}`);
-    if (!res.result) throw new Error(res.resultMessage);
-
-    for (let key in companyList.value) {
-      const item = companyList.value[key];
-      if (item.company_idx == companyIdx) {
-        companyList.value.splice(parseInt(key), 1);
+    /**
+     * 기업 목록
+     * @returns {Promise<void>}
+     */
+    const getCompanyList = async () => {
+      try {
+        companyList.value = await requestCompanyList();
+      } catch (err) {
+        companyList.value = [];
       }
     }
-  } catch (err) {
-    alert(err);
+
+    /**
+     * 기업 추가
+     * @returns {Promise<boolean>}
+     */
+    const addCompany = async() => {
+      if (!addForm.company_name) {
+        alert('기업명을 입력해주세요.');
+        document.getElementById('addCompanyName').focus();
+        return false;
+      }
+
+      try {
+        await requestAddCompany(addForm.company_name);
+
+        await getCompanyList();
+
+        addForm.company_name = '';
+      } catch (err) {
+        alert(err);
+        return false;
+      }
+    }
+
+    /**
+     * 기업 수정
+     * @param company
+     * @returns {Promise<void>}
+     */
+    const updateCompany = async (company) => {
+      try {
+        await requestEditCompany(company.company_idx, company.company_name);
+      } catch (err) {
+        alert(err);
+      }
+    }
+
+    /**
+     * 기업 삭제
+     * @param companyIdx
+     * @returns {Promise<void>}
+     */
+    const deleteCompany = async (companyIdx) => {
+      try {
+        await requestDelCompany(companyIdx);
+
+        await getCompanyList();
+      } catch (err) {
+        alert(err);
+      }
+    }
+
+    return {
+      companyList,
+      addForm,
+      addCompany,
+      updateCompany,
+      deleteCompany,
+    }
   }
 }
 </script>
 
-<style>
+<style scoped>
 #companyList {
   border: 1px solid;
   border-collapse: collapse;
