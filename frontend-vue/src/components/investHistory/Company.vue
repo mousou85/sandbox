@@ -56,6 +56,10 @@ export default {
     const getCompanyList = async () => {
       try {
         companyList.value = await requestCompanyList();
+
+        for (const company of companyList.value) {
+          company.original_company_name = company.company_name;
+        }
       } catch (err) {
         companyList.value = [];
       }
@@ -91,7 +95,11 @@ export default {
      */
     const updateCompany = async (company) => {
       try {
-        await requestEditCompany(company.company_idx, company.company_name);
+        if (company.company_name != company.original_company_name) {
+          await requestEditCompany(company.company_idx, company.company_name);
+
+          company.original_company_name = company.company_name;
+        }
       } catch (err) {
         alert(err);
       }

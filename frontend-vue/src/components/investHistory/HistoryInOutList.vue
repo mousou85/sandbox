@@ -28,7 +28,7 @@
         <template v-if="!history.edit_flag">
           <td class="center">{{history.history_date}}</td>
           <td class="center">
-            {{history.history_type_text}} - {{history.inout_type_text}}
+            {{history.inout_type_text}}
           </td>
           <td class="right" v-html="printVal(history)">
           </td>
