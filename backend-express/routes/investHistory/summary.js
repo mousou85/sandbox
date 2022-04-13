@@ -134,16 +134,31 @@ module.exports = (db) => {
         
         // 수익율/수익금 계산
         if (revenueTotal > 0) {
+          // 수익율/수익금 계산(수익 재투자 금액 포함)
           let diff = revenueTotal - (inTotal - outTotal);
-          if (summaryData['unitType'] == 'int') diff = parseInt(diff.toString());
-          else if (summaryData['unitType'] == 'float') diff = parseFloat(diff.toString());
-          const rate = diff / (inTotal - outTotal);
+          if (summaryData['unitType'] == 'int') {
+            diff = parseInt(diff.toString());
+          } else if (summaryData['unitType'] == 'float') {
+            diff = parseFloat(diff.toString());
+          }
+          
+          let rate = 0.0;
+          if (diff != 0 && (inTotal - outTotal) != 0) {
+            rate = diff / (inTotal - outTotal);
+          }
   
           // 수익율/수익금 계산(수익 재투자 금액 제외한 금액)
           let excludeProceedsDiff = revenueTotal - (inExcludeProceedsTotal - outExcludeProceedsTotal);
-          if (summaryData['unitType'] == 'int') excludeProceedsDiff = parseInt(excludeProceedsDiff.toString());
-          else if (summaryData['unitType'] == 'float') excludeProceedsDiff = parseFloat(excludeProceedsDiff.toString());
-          const excludeProceedsRate = excludeProceedsDiff / (inExcludeProceedsTotal - outExcludeProceedsTotal);
+          if (summaryData['unitType'] == 'int') {
+            excludeProceedsDiff = parseInt(excludeProceedsDiff.toString());
+          } else if (summaryData['unitType'] == 'float') {
+            excludeProceedsDiff = parseFloat(excludeProceedsDiff.toString());
+          }
+          
+          let excludeProceedsRate = 0.0;
+          if (excludeProceedsDiff != 0 && (inExcludeProceedsTotal - outExcludeProceedsTotal) != 0) {
+            excludeProceedsRate = excludeProceedsDiff / (inExcludeProceedsTotal - outExcludeProceedsTotal);
+          }
   
           summaryData['revenueRate']['diff'] = diff;
           summaryData['revenueRate']['rate'] = Math.floor(rate * 10000) / 100;
