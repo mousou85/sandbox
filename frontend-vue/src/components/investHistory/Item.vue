@@ -1,6 +1,6 @@
 <template>
   <div>
-    <form id="itemAddForm" @submit.prevent="itemFormSubmit">
+    <form id="itemAddForm" @submit.prevent="formSubmit">
       <input type="hidden" id="item_idx" name="item_idx" v-model="itemFormData.item_idx">
 
       <div class="row">
@@ -33,7 +33,7 @@
           </option>
         </select>
       </div>
-      <button ref="btnFormSubmit">등록</button>
+      <button ref="htmlBtnFormSubmit">등록</button>
     </form>
 
     <table id="list">
@@ -55,8 +55,8 @@
           <td>{{item.item_type_text}}</td>
           <td>{{printUnitText(item.unit_set)}}</td>
           <td>
-            <button type="button" @click="itemEdit(item.item_idx)">수정</button>
-            <button type="button" @click="itemDel(item.item_idx)">삭제</button>
+            <button type="button" @click="setEditForm(item)">수정</button>
+            <button type="button" @click="delItem(item.item_idx)">삭제</button>
           </td>
         </tr>
       </tbody>
@@ -64,176 +64,191 @@
   </div>
 </template>
 
-<script setup>
+<script>
+
 import {onBeforeMount, reactive, ref} from "vue";
-import http from '../../libs/http';
 
-const companyList = ref([]);
-const itemTypeList = ref([]);
-const unitList = ref([]);
-const itemFormData = reactive({
-  item_idx: '',
-  company_idx: '',
-  item_type: '',
-  item_name: '',
-  units: [],
-});
-const itemList = ref([]);
-const btnFormSubmit = ref();
+import {
+  getItemList as requestItemList,
+  getCompanyList as requestCompanyList,
+  getUnitList as requestUnitList,
+  getItemTypeList as requestItemTypeList,
+  addItem as requestAddItem,
+  editItem as requestEditItem,
+  delItem as requestDelItem,
+} from '@/modules/investHistory';
 
-onBeforeMount(async () => {
-  try {
-    let res = null;
+export default {
+  setup() {
+    //set vars: 필요 변수
+    const companyList = ref([]);
+    const itemTypeList = ref([]);
+    const unitList = ref([]);
+    const itemList = ref([]);
+    const itemFormData = reactive({
+      item_idx: '',
+      company_idx: '',
+      item_type: '',
+      item_name: '',
+      units: [],
+    });
+    const htmlBtnFormSubmit = ref();
 
-    res = await http.get('http://localhost:5000/invest-history/company');
-    if (!res.result) throw new Error(res.resultMessage);
-    companyList.value = res.data.list;
+    /*
+    lifecycle hook
+     */
+    onBeforeMount(async () => {
+      try {
+        companyList.value = await requestCompanyList();
 
-    res = await http.get('http://localhost:5000/invest-history/unit');
-    if (!res.result) throw new Error(res.resultMessage);
-    unitList.value = res.data.list;
+        itemTypeList.value = await requestItemTypeList();
 
-    res = await http.get('http://localhost:5000/invest-history/item/item-type');
-    if (!res.result) throw new Error(res.resultMessage);
-    itemTypeList.value = res.data.list;
+        unitList.value = await requestUnitList();
 
-    itemList.value = await getItemList();
-  } catch (err) {
+        await getItemList();
+      } catch (err) {
+      }
+    });
 
-  }
-});
+    /**
+     * print unit set list
+     * @param {Object[]} unitSet
+     * @returns {string}
+     */
+    const printUnitText = (unitSet) => {
+      let list = [];
+      for (const unit of unitSet) {
+        list.push(unit.unit);
+      }
 
-/**
- * get item list
- * @return {Promise<[]>}
- */
-const getItemList = async () => {
-  try {
-    const res = await http.get('http://localhost:5000/invest-history/item/');
-    if (!res.result) throw new Error(res.resultMessage);
-    return res.data.list;
-  } catch (err) {
-    return [];
-  }
-};
-
-/**
- * print list unit
- * @param {Array<Object>} unitSet
- * @return {string}
- */
-const printUnitText = (unitSet) => {
-  let list = [];
-  for (let unit of unitSet) {
-    list.push(unit.unit);
-  }
-  return list.join(',');
-}
-
-/**
- * add/edit item form submit
- * @param e
- * @return {Promise<boolean>}
- */
-const itemFormSubmit = async (e) => {
-  const $form = e.target;
-  const $companyIdx = $form.elements.company_idx;
-  const $itemType = $form.elements.item_type;
-  const $itemName = $form.elements.item_name;
-
-  if (!itemFormData.company_idx) {
-    alert('기업선택');
-    $companyIdx.focus();
-    return false;
-  }
-  if (!itemFormData.item_type) {
-    alert('상품타입선택');
-    $itemType.focus();
-    return false;
-  }
-  if (!itemFormData.item_name) {
-    alert('상품명 입력');
-    $itemName.focus();
-    return false;
-  }
-
-  try {
-    if (itemFormData.item_idx) {
-      const res = await http.put(`http://localhost:5000/invest-history/item/${itemFormData.item_idx}`, itemFormData);
-      if (!res.result) throw new Error(res.resultMessage);
-      alert('수정완료');
-    } else {
-      const res = await http.post('http://localhost:5000/invest-history/item/', itemFormData);
-      if (!res.result) throw new Error(res.resultMessage);
-      alert('등록완료');
+      return list.join(',');
     }
 
-    itemList.value = await getItemList();
-  } catch (err) {
-    alert(err);
-    return false;
-  }
+    /**
+     * reset form
+     */
+    const resetForm = () => {
+      for (let key of Object.keys(itemFormData)) {
+        if (key == 'units') {
+          itemFormData[key] = [];
+        } else {
+          itemFormData[key] = '';
+        }
+      }
 
-  resetForm();
-};
-
-/**
- * edit item form setting
- * @param {number} itemIdx
- * @return {Promise<boolean>}
- */
-const itemEdit = async (itemIdx) => {
-  try {
-    const res = await http.get(`http://localhost:5000/invest-history/item/${itemIdx}`);
-    if (!res.result) throw new Error(res.resultMessage);
-
-    const data = res.data;
-    itemFormData.item_idx = data.item_idx;
-    itemFormData.item_name = data.item_name;
-    itemFormData.company_idx = data.company_idx;
-    itemFormData.item_type = data.item_type;
-    itemFormData.units = [];
-    for (let unit of data.unit_set) {
-      itemFormData.units.push(unit.unit_idx);
+      htmlBtnFormSubmit.value.innerText = '등록';
     }
 
-    btnFormSubmit.value.innerText = '수정';
-  } catch (err) {
-    alert(err);
-    return false;
-  }
-}
+    /**
+     * get item list
+     * @return {Promise<void>}
+     */
+    const getItemList = async () => {
+      try {
+        itemList.value = await requestItemList();
+      } catch (err) {
+        itemList.value = [];
+      }
+    };
 
-const itemDel = async (itemIdx) => {
-  try {
-    const res = await http.delete(`http://localhost:5000/invest-history/item/${itemIdx}`);
-    if (!res.result) throw new Error(res.resultMessage);
+    /**
+     * add item
+     * @param $event
+     * @returns {Promise<boolean>}
+     */
+    const formSubmit = async ($event) => {
+      const $form = $event.target;
+      const $companyIdx = $form.elements.company_idx;
+      const $itemType = $form.elements.item_type;
+      const $itemName = $form.elements.item_name;
 
-    itemList.value = await getItemList();
-  } catch (err) {
-    alert(err);
-    return false;
-  }
-}
+      if (!itemFormData.company_idx) {
+        alert('기업선택');
+        $companyIdx.focus();
+        return false;
+      }
+      if (!itemFormData.item_type) {
+        alert('상품타입선택');
+        $itemType.focus();
+        return false;
+      }
+      if (!itemFormData.item_name) {
+        alert('상품명 입력');
+        $itemName.focus();
+        return false;
+      }
 
-/**
- * form reset
- */
-const resetForm = () => {
-  for (let key of Object.keys(itemFormData)) {
-    if (key == 'units') {
-      itemFormData[key] = [];
-    } else {
-      itemFormData[key] = '';
+      try {
+        if (itemFormData.item_idx > 0) {
+          await requestEditItem({
+              item_idx: itemFormData.item_idx,
+              company_idx: itemFormData.company_idx,
+              item_type: itemFormData.item_type,
+              item_name: itemFormData.item_name,
+              units: itemFormData.units
+            });
+
+          alert('수정 완료');
+        } else {
+          await requestAddItem({
+              company_idx: itemFormData.company_idx,
+              item_name: itemFormData.item_name,
+              item_type: itemFormData.item_type,
+              units: itemFormData.units
+            });
+
+          alert('등록 완료');
+        }
+
+        await getItemList();
+
+        resetForm();
+      } catch (err) {
+        alert(err);
+        return false;
+      }
+    }
+
+    const setEditForm = async (item) => {
+      itemFormData.item_idx = item.item_idx;
+      itemFormData.company_idx = item.company_idx;
+      itemFormData.item_type = item.item_type;
+      itemFormData.item_name = item.item_name;
+      itemFormData.units = [];
+      for (const unit of item.unit_set) {
+        itemFormData.units.push(unit.unit_idx);
+      }
+
+      htmlBtnFormSubmit.value.innerText = '수정';
+    }
+
+    const delItem = async (itemIdx) => {
+      try {
+        await requestDelItem(itemIdx);
+
+        await getItemList();
+      } catch (err) {
+        alert(err);
+      }
+    }
+
+    return {
+      companyList,
+      itemTypeList,
+      unitList,
+      itemList,
+      htmlBtnFormSubmit,
+      itemFormData,
+      formSubmit,
+      setEditForm,
+      delItem,
+      printUnitText,
     }
   }
-
-  btnFormSubmit.value.innerText = '등록';
 }
-
 </script>
 
-<style>
+<style scoped>
 #itemAddForm .row {
   padding: 5px 0;
 }
