@@ -209,7 +209,12 @@ export default {
       }
     }
 
-    const setEditForm = async (item) => {
+    /**
+     * set edit form
+     * @param item
+     * @returns {Promise<void>}
+     */
+    const setEditForm = (item) => {
       itemFormData.item_idx = item.item_idx;
       itemFormData.company_idx = item.company_idx;
       itemFormData.item_type = item.item_type;
@@ -222,6 +227,11 @@ export default {
       htmlBtnFormSubmit.value.innerText = '수정';
     }
 
+    /**
+     * delete item
+     * @param {number} itemIdx
+     * @returns {Promise<void>}
+     */
     const delItem = async (itemIdx) => {
       try {
         await requestDelItem(itemIdx);
