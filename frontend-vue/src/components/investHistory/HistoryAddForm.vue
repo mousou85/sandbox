@@ -162,6 +162,7 @@ export default  {
      */
     const setInputValUnitText = (unitText) => {
       document.getElementById('valUnitText').innerText = unitText;
+      store.commit('investHistory/setSelectedUnit', unitText);
     }
 
     return {

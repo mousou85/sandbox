@@ -80,6 +80,7 @@ export default {
     //set vars: 필요 변수
     const itemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
     const updateListFlag = computed(() => store.getters['investHistory/getUpdateRevenueListFlag']);
+    const selectedUnit = computed(() => store.getters['investHistory/getSelectedUnit']);
     const selectedTab = ref('KRW');
     const historyList = ref([]);
 
@@ -93,8 +94,24 @@ export default {
     /*
      watch variables
      */
-    watch(updateListFlag, async (newUpdateListFlag) => {
-      if (newUpdateListFlag) {
+    watch([itemIdx, updateListFlag, selectedUnit], async (
+        [newItemIdx, newUpdateListFlag, newSelectedUnit],
+        [oldItemIdx, oldUpdateListFlag, oldSelectedUnit]
+    ) => {
+      //선택한 상품 변경 여부 체크
+      if (newItemIdx != oldItemIdx) {
+        selectedTab.value = 'KRW';
+        newUpdateListFlag = true;
+      }
+
+      //기록 추가 form에서 단위 변경 여부 체크
+      if (newSelectedUnit != '' && newSelectedUnit != oldSelectedUnit) {
+        selectedTab.value = newSelectedUnit;
+        newUpdateListFlag = true;
+      }
+
+      //리스트 업데이트 필요 체크
+      if (newUpdateListFlag === true) {
         await getHistoryList();
       }
     });

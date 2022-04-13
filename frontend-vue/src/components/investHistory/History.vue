@@ -103,6 +103,7 @@ export default {
       store.commit('investHistory/setUpdateSummaryFlag', true);
       store.commit('investHistory/setUpdateInOutListFlag', true);
       store.commit('investHistory/setUpdateRevenueListFlag', true);
+      store.commit('investHistory/setSelectedUnit', '');
     }
 
     /**
