@@ -1,12 +1,12 @@
 <template>
   <div>
-    <h5>유입/유출</h5>
+    <h5>평가</h5>
     <ul class="unitTab">
       <li v-for="unit in usableUnitList" :key="unit.unit_idx" :class="unit.unit == selectedTab ? 'on' : ''" @click="switchTab(unit.unit)">
         {{unit.unit}}
       </li>
     </ul>
-    <table id="inoutList" class="list" style="width:100%;">
+    <table id="revenueList" class="list" style="width:100%;">
       <colgroup>
         <col style="width: 90px;">
         <col style="width: 90px;">
@@ -28,7 +28,7 @@
         <template v-if="!history.edit_flag">
           <td class="center">{{history.history_date}}</td>
           <td class="center">
-            {{history.history_type_text}} - {{history.inout_type_text}}
+            {{history.revenue_type_text}}
           </td>
           <td class="right" v-html="printVal(history)">
           </td>
@@ -41,7 +41,7 @@
         <template v-else>
           <td class="center"><input type="date" name="history_date" v-model="history.history_date"></td>
           <td class="center">
-            {{history.history_type_text}} - {{history.inout_type_text}}
+            {{history.revenue_type_text}}
           </td>
           <td>
             <input type="text" name="val" style="text-align: right;width: 80px;" v-model="history.valText">{{history.unit}}
@@ -70,8 +70,8 @@ import {numberComma, numberUncomma} from "@/libs/helper";
 
 export default {
   props: [
-      'thisMonth',
-      'usableUnitList',
+    'thisMonth',
+    'usableUnitList',
   ],
   setup(props) {
     //set vars: vuex
@@ -79,19 +79,19 @@ export default {
 
     //set vars: 필요 변수
     const itemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
-    const updateListFlag = computed(() => store.getters['investHistory/getUpdateInOutListFlag']);
+    const updateListFlag = computed(() => store.getters['investHistory/getUpdateRevenueListFlag']);
     const selectedTab = ref('KRW');
     const historyList = ref([]);
 
     /*
-    lifecycle hook
+     lifecycle hook
      */
     onBeforeMount(async () => {
       await getHistoryList();
     });
 
     /*
-    watch variables
+     watch variables
      */
     watch(updateListFlag, async (newUpdateListFlag) => {
       if (newUpdateListFlag) {
@@ -108,10 +108,10 @@ export default {
         if (itemIdx.value > 0) {
           historyList.value = await requestHistoryList(
               itemIdx.value,
-              'inout',
+              'revenue',
               selectedTab.value,
               props.thisMonth.value.format('YYYY-MM-DD')
-            );
+          );
 
           for (const history of historyList.value) {
             history.edit_flag = false;
@@ -136,7 +136,7 @@ export default {
         alert(err);
         historyList.value = [];
       } finally {
-        store.commit('investHistory/setUpdateInOutListFlag', false);
+        store.commit('investHistory/setUpdateRevenueListFlag', false);
       }
     }
 
@@ -157,7 +157,7 @@ export default {
         await requestEditHistory(reqData);
 
         store.commit('investHistory/setUpdateSummaryFlag', true);
-        store.commit('investHistory/setUpdateInOutListFlag', true);
+        store.commit('investHistory/setUpdateRevenueListFlag', true);
       } catch (err) {
         alert(err);
         return false;
@@ -185,7 +185,7 @@ export default {
         await requestDelHistory(historyIdx);
 
         store.commit('investHistory/setUpdateSummaryFlag', true);
-        store.commit('investHistory/setUpdateInOutListFlag', true);
+        store.commit('investHistory/setUpdateRevenueListFlag', true);
       } catch (err) {
         alert(err);
       }
@@ -199,7 +199,7 @@ export default {
     const switchTab =  (unit) => {
       selectedTab.value = unit;
 
-      store.commit('investHistory/setUpdateInOutListFlag', true);
+      store.commit('investHistory/setUpdateRevenueListFlag', true);
     }
 
     /**
