@@ -3,12 +3,12 @@
     <form id="unitForm" @submit.prevent="addUnit">
       <div class="row">
         <label for="unit">단위</label>
-        <input type="text" id="unit" maxlength="10" v-model="unitForm.unit">
+        <input type="text" id="unit" maxlength="10" v-model="addForm.unit">
       </div>
       <div class="row">
         <label>타입</label>
-        <label><input type="radio" name="unit_type" value="int" v-model="unitForm.unit_type">INT</label>
-        <label><input type="radio" name="unit_type" value="float" v-model="unitForm.unit_type">FLOAT</label>
+        <label><input type="radio" name="unit_type" value="int" v-model="addForm.unit_type">INT</label>
+        <label><input type="radio" name="unit_type" value="float" v-model="addForm.unit_type">FLOAT</label>
       </div>
       <button type="submit">등록</button>
     </form>
@@ -42,97 +42,110 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import {onBeforeMount, reactive, ref} from "vue";
-import http from '../../libs/http';
 
-const unitList = ref([]);
-const unitForm = reactive({unit: '', unit_type: ''});
+import {
+  getUnitList as requestUnitList,
+  addUnit as requestAddUnit,
+  editUnit as requestEditUnit,
+  delUnit as requestDelUnit
+} from '@/modules/investHistory';
 
-onBeforeMount(async () => {
-  unitList.value = await getUnitList();
-});
+export default {
+  setup() {
+    //set vars: 필요 변수
+    const unitList = ref([]);
+    const addForm = reactive({unit: '', unit_type: ''});
 
-/**
- * get unit list
- * @return {Promise<[]>}
- */
-const getUnitList = async () => {
-  try {
-    const res = await http.get('http://localhost:5000/invest-history/unit');
-    if (!res.result) throw new Error(res.resultMessage);
-    return res.data.list;
-  } catch (err) {
-    return [];
-  }
-}
-
-/**
- * add unit
- * @param e
- * @return {Promise<boolean>}
- */
-const addUnit = async (e) => {
-  const $form = e.target;
-
-  if (!unitForm.unit) {
-    alert('단위 입력');
-    $form.elements.unit.focus();
-    return false;
-  }
-  if (!unitForm.unit_type) {
-    alert('타입 선택');
-    return false;
-  }
-
-  try {
-    const res = await http.post('http://localhost:5000/invest-history/unit', unitForm);
-    if (!res.result) throw new Error(res.resultMessage);
-
-    unitForm.unit = '';
-    unitForm.unit_type = '';
-
-    unitList.value = await getUnitList();
-  } catch (err) {
-    alert(err);
-    return false;
-  }
-}
-
-/**
- * edit unit
- * @param {Object} unit
- * @return {Promise<boolean>}
- */
-const editUnit = async (unit) => {
-  try {
-    const res = await http.put(`http://localhost:5000/invest-history/unit/${unit.unit_idx}`, {
-      unit: unit.unit,
-      unit_type: unit.unit_type
+    /*
+    lifecycle hook
+     */
+    onBeforeMount(async () => {
+      await getUnitList();
     });
-    if (!res.result) throw new Error(res.resultMessage);
-  } catch (err) {
-    alert(err);
-    return false;
+
+    /**
+     * get all unit list
+     * @returns {Promise<void>}
+     */
+    const getUnitList = async () => {
+      try {
+        unitList.value = await requestUnitList();
+      } catch (err) {
+        unitList.value = [];
+      }
+    }
+
+    /**
+     * add unit
+     * @param e
+     * @return {Promise<boolean>}
+     */
+    const addUnit = async (e) => {
+      const $form = e.target;
+
+      if (!addForm.unit) {
+        alert('단위 입력');
+        $form.elements.unit.focus();
+        return false;
+      }
+      if (!addForm.unit_type) {
+        alert('타입 선택');
+        return false;
+      }
+
+      try {
+        await requestAddUnit(addForm.unit, addForm.unit_type);
+
+        addForm.unit = '';
+        addForm.unit_type = '';
+
+        await getUnitList();
+      } catch (err) {
+        alert(err);
+        return false;
+      }
+    }
+
+    /**
+     * edit unit
+     * @param {Object} unit
+     * @return {Promise<boolean>}
+     */
+    const editUnit = async (unit) => {
+      try {
+        await requestEditUnit(unit.unit_idx, unit.unit, unit.unit_type);
+      } catch (err) {
+        alert(err);
+        return false;
+      }
+    }
+
+    /**
+     * delete unit
+     * @param {number} unitIdx
+     * @return {Promise<void>}
+     */
+    const delUnit = async (unitIdx) => {
+      try {
+        await requestDelUnit(unitIdx);
+
+        await getUnitList();
+      } catch (err) {
+        alert(err);
+      }
+    }
+
+    return {
+      unitList,
+      addForm,
+      addUnit,
+      editUnit,
+      delUnit,
+    }
   }
 }
-
-/**
- * delete unit
- * @param {number} unitIdx
- * @return {Promise<void>}
- */
-const delUnit = async (unitIdx) => {
-  try {
-    const res = await http.delete(`http://localhost:5000/invest-history/unit/${unitIdx}`);
-    if (!res.result) throw new Error(res.resultMessage);
-
-    unitList.value = await getUnitList();
-  } catch (err) {
-    alert(err);
-  }
-}
-
 </script>
 
 <style scoped>

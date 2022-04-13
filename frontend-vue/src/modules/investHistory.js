@@ -99,6 +99,52 @@ const delCompany = async(companyIdx) => {
 }
 
 /**
+ * get all unit list
+ * @returns {Promise<Object[]>}
+ */
+const getUnitList = async() => {
+  const res = await http.get(`${baseURL}/invest-history/unit`);
+  if (!res.result) throw new Error(res.resultMessage);
+  return res.data.list;
+}
+
+/**
+ * add unit
+ * @param {string} unit
+ * @param {string} unitType
+ * @returns {Promise<void>}
+ */
+const addUnit = async(unit, unitType) => {
+  const res = await http.post(`${baseURL}/invest-history/unit`, {unit: unit, unit_type: unitType});
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
+/**
+ * edit unit
+ * @param {number} unitIdx
+ * @param {string} unit
+ * @param {string} unitType
+ * @returns {Promise<void>}
+ */
+const editUnit = async(unitIdx, unit, unitType) => {
+  const res = await http.put(`${baseURL}/invest-history/unit/${unitIdx}`, {
+      unit: unit,
+      unit_type: unitType
+    });
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
+/**
+ * delete unit
+ * @param {number} unitIdx
+ * @returns {Promise<void>}
+ */
+const delUnit = async (unitIdx) => {
+  const res = await http.delete(`${baseURL}/invest-history/unit/${unitIdx}`);
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
+/**
  * 히스토리 추가
  * @param {{item_idx: number, unit_idx: number, history_date: string, history_type: string, [inout_type]: string, [revenue_type]: string, val: number, memo: string}} requestBody
  * @return {Promise<void>}
@@ -153,4 +199,8 @@ export {
   addCompany,
   editCompany,
   delCompany,
+  getUnitList,
+  addUnit,
+  editUnit,
+  delUnit,
 }
