@@ -1,4 +1,5 @@
 import http from "../libs/http";
+import {numberUncomma} from "@/libs/helper";
 
 let baseURL = 'http://localhost:5000';
 
@@ -76,6 +77,20 @@ const addHistory = async (requestBody) => {
 }
 
 /**
+ * 히스토리 수정
+ * @param {{history_idx: number, history_date: string, val: number, memo: string}} requestBody
+ * @returns {Promise<void>}
+ */
+const editHistory = async (requestBody) => {
+  const historyIdx = requestBody.history_idx;
+  
+  delete requestBody.history_idx;
+  
+  const res = await http.put(`${baseURL}/invest-history/history/${historyIdx}`, requestBody);
+  if (!res.result) throw new Error(res.resultMessage);
+}
+
+/**
  * 히스토리 삭제
  * @param {number} historyIdx
  * @return {Promise<void>}
@@ -90,6 +105,7 @@ export {
   getItemUsableUnitList,
   getHistoryList,
   addHistory,
+  editHistory,
   delHistory,
   getItemSummary
 }

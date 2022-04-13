@@ -25,7 +25,7 @@
       </thead>
       <tbody>
       <tr v-for="history in historyList" :key="history.history_idx">
-        <template v-if="!history.editFlag">
+        <template v-if="!history.edit_flag">
           <td class="center">{{history.history_date}}</td>
           <td class="center">
             {{history.history_type_text}} - {{history.inout_type_text}}
@@ -34,42 +34,25 @@
           </td>
           <td>{{history.memo}}</td>
           <td class="center">
-            <button type="button" @click="history.editFlag = true">수정</button>
+            <button type="button" @click="history.edit_flag = true">수정</button>
             <button type="button" @click="delHistory(history.history_idx)">삭제</button>
           </td>
         </template>
         <template v-else>
-          <td class="center"><input type="date" name="history_date" :value="history.history_date"></td>
+          <td class="center"><input type="date" name="history_date" v-model="history.history_date"></td>
           <td class="center">
             {{history.history_type_text}} - {{history.inout_type_text}}
           </td>
           <td>
-            <input type="text" name="val" style="text-align: right;width: 80px;" :value="setEditInputVal(history)" @input="editInputVal($event, history)">{{history.unit}}
+            <input type="text" name="val" style="text-align: right;width: 80px;" v-model="history.valText">{{history.unit}}
           </td>
           <td><textarea name="memo" v-model="history.memo"></textarea></td>
           <td class="center">
             <button type="button" @click="editHistory(history)">수정</button>
-            <button type="button" @click="editHistoryCancel(history)">취소</button>
+            <button type="button" @click="cancelEditHistory(history)">취소</button>
           </td>
         </template>
       </tr>
-      <!--<tr v-for="history in inoutList" :key="history.history_idx">
-        <td class="center">{{history.history_date}}</td>
-        <td class="center">
-        <span v-if="['in','out'].includes(history.history_type)">
-          {{history.history_type_text}} - {{history.inout_type_text}}
-        </span>
-          <span v-else>
-          {{history.history_type_text}} - {{history.revenue_type_text}}
-        </span>
-        </td>
-        <td class="right" v-html="printVal((history.history_type == 'out' ? (history.val * -1) : history.val), history.unit, history.unit_type)">
-        </td>
-        <td>{{history.memo}}</td>
-        <td class="center">
-          <button type="button" @click="delHistory(history.history_idx, history.history_type)">삭제</button>
-        </td>
-      </tr>-->
       </tbody>
     </table>
   </div>
@@ -80,9 +63,10 @@ import {useStore} from "vuex";
 import {computed, onBeforeMount, ref, watch} from "vue";
 import {
   getHistoryList as requestHistoryList,
+  editHistory as requestEditHistory,
   delHistory as requestDelHistory
 } from "@/modules/investHistory";
-import {numberComma} from "@/libs/helper";
+import {numberComma, numberUncomma} from "@/libs/helper";
 
 export default {
   props: [
@@ -128,8 +112,22 @@ export default {
               selectedTab.value,
               props.thisMonth.value.format('YYYY-MM-DD')
             );
+
           for (const history of historyList.value) {
-            history.editFlag = false;
+            history.edit_flag = false;
+            history.original_history_date = history.history_date;
+            history.original_memo = history.memo;
+            history.original_val = history.val;
+
+            history.valText = computed({
+              get: () => {
+                return numberComma(history.val);
+              },
+              set: (val) => {
+                val = numberUncomma(val);
+                history.val = val;
+              }
+            })
           }
         } else {
           historyList.value = [];
@@ -140,6 +138,41 @@ export default {
       } finally {
         store.commit('investHistory/setUpdateInOutListFlag', false);
       }
+    }
+
+    /**
+     * 히스토리 수정
+     * @param history
+     * @returns {Promise<boolean>}
+     */
+    const editHistory = async(history) => {
+      try {
+        const reqData = {
+          history_idx: history.history_idx,
+          history_date: history.history_date,
+          val: history.val,
+          memo: history.memo
+        };
+
+        await requestEditHistory(reqData);
+
+        store.commit('investHistory/setUpdateSummaryFlag', true);
+        store.commit('investHistory/setUpdateInOutListFlag', true);
+      } catch (err) {
+        alert(err);
+        return false;
+      }
+    }
+
+    /**
+     * 히스토리 수정 취소
+     * @param history
+     */
+    const cancelEditHistory = (history) => {
+      history.val = history.original_val;
+      history.history_date = history.original_history_date;
+      history.memo = history.original_memo;
+      history.edit_flag = false;
     }
 
     /**
@@ -194,6 +227,8 @@ export default {
       historyList,
       switchTab,
       printVal,
+      editHistory,
+      cancelEditHistory,
       delHistory
     }
   }
