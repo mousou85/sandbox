@@ -1,7 +1,6 @@
 const dayjs = require('dayjs');
 
 /**
- *
  * @param {Mysql} [db]
  */
 module.exports = (db) => {
@@ -62,11 +61,11 @@ module.exports = (db) => {
    * 월간 요약 데이터 insert/update
    * @param {number} itemIdx 상품 IDX
    * @param {string} date 날짜
-   * @param {number} unixIdx 단위 IDX
+   * @param {number} unitIdx 단위 IDX
    * @param {Knex.Transaction} [trx] DB 트랜잭션
    * @return {Promise<void>}
    */
-  const upsertMonthSummary = async (itemIdx, date, unixIdx, trx) => {
+  const upsertMonthSummary = async (itemIdx, date, unitIdx, trx) => {
     //set vars: 날짜 관련
     const targetDate = date ? dayjs(date) : dayjs();
     const startDate = targetDate.format('YYYY-MM-01');
@@ -82,7 +81,7 @@ module.exports = (db) => {
     const hasUnit = await db.execute(db.queryBuilder()
         .from('invest_unit_set')
         .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unixIdx)
+        .andWhere('unit_idx', unitIdx)
       );
     if (!hasUnit) return;
     
@@ -92,46 +91,94 @@ module.exports = (db) => {
     try {
       //set vars: insert/update 할 데이터
       const upsertData = {
-        'in_principal': 0,
-        'in_proceeds': 0,
-        'out_principal': 0,
-        'out_proceeds': 0,
-        'revenue_interest': 0,
-        'revenue_eval': 0
+        'inout_total': 0,
+        'inout_principal_prev': 0,
+        'inout_principal_current': 0,
+        'inout_principal_total': 0,
+        'inout_proceeds_prev': 0,
+        'inout_proceeds_current': 0,
+        'inout_proceeds_total': 0,
+        'revenue_total': 0,
+        'revenue_interest_prev': 0,
+        'revenue_interest_current': 0,
+        'revenue_interest_total': 0,
+        'revenue_eval': 0,
+        'earn': 0,
+        'earn_prev_diff': 0,
+        'earn_rate': 0,
+        'earn_rate_prev_diff': 0,
+        'earn_inc_proceeds': 0,
+        'earn_inc_proceeds_prev_diff': 0,
+        'earn_rate_inc_proceeds': 0,
+        'earn_rate_inc_proceeds_prev_diff': 0
       };
-  
-      // 유입/유출/평가(이자) 요약 데이터 생성
+      
+      //set vars: 이전달 요약 데이터
       query = db.queryBuilder()
-        .select(db.raw(`
-          history_type,
-          CASE
-            WHEN history_type in ('in', 'out') THEN inout_type
-            WHEN history_type = 'revenue' THEN revenue_type
-          END AS val_type,
-          SUM(val) AS totalVal
-        `))
-        .from('invest_history')
+        .select()
+        .from('invest_summary_month')
         .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unixIdx)
-        .andWhere('history_date', '>=', startDate)
-        .andWhere('history_date', '<=', endDate)
-        .andWhere(builder => {
-          builder.whereIn('history_type', ['in', 'out'])
-            .orWhereRaw(`(history_type = 'revenue' AND revenue_type = 'interest')`);
-        })
-        .groupBy(['history_type', 'val_type']);
-      let rsSummary = await db.queryAll(query, trx ?? null);
-      for (const summary of rsSummary) {
-        let column = `${summary.history_type}_${summary.val_type}`;
-        upsertData[column] = summary.totalVal;
-      }
+        .andWhere('unit_idx', unitIdx)
+        .andWhere('summary_date', '<', summaryDate)
+        .orderBy('summary_date', 'desc')
+        .limit(1);
+      const rsPrevSummary = await db.queryRow(query, trx ?? null);
+      
+      //생성할 요약 데이터에 이전달 요약 데이터 저장
+      let prevEarn = 0;
+      let prevEarnIncProceeds = 0;
+      if (rsPrevSummary) {
+        prevEarn = rsPrevSummary.earn;
+        prevEarnIncProceeds = rsPrevSummary.earn_inc_proceeds;
+        
+        upsertData.inout_principal_prev = rsPrevSummary.inout_principal_total;
+        upsertData.inout_principal_total += rsPrevSummary.inout_principal_total;
   
-      // 평가(평가금액) 요약 데이터 생성
+        upsertData.inout_proceeds_prev = rsPrevSummary.inout_proceeds_total;
+        upsertData.inout_proceeds_total += rsPrevSummary.inout_proceeds_total;
+  
+        upsertData.revenue_interest_prev = rsPrevSummary.revenue_interest_total;
+        upsertData.revenue_interest_total += rsPrevSummary.revenue_interest_total;
+      }
+      
+      //set vars: 유입/유출/평가(이자) 요약 데이터
+      query = `
+        SELECT
+          history_type,
+          IF(history_type = 'inout', inout_type, revenue_type) AS val_type,
+          SUM(val) as total_val
+        FROM invest_history
+        WHERE
+          item_idx = :itemIdx
+          AND unit_idx = :unitIdx
+          AND history_date BETWEEN :startDate AND :endDate
+          AND (history_type = 'inout' OR (history_type = 'revenue' AND revenue_type = 'interest'))
+        GROUP BY history_type, val_type
+      `;
+      const rsSummary1 = await db.executeRaw(query, {itemIdx, unitIdx, startDate, endDate}, trx ?? null);
+      
+      //생성할 요약 데이터에 가져온 데이터 저장
+      for (const summary of rsSummary1) {
+        if (summary['history_type'] == 'inout') {
+          if (summary['val_type'] == 'principal') {
+            upsertData.inout_principal_current = summary['total_val'];
+            upsertData.inout_principal_total += summary['total_val'];
+          } else {
+            upsertData.inout_proceeds_current = summary['total_val'];
+            upsertData.inout_proceeds_total += summary['total_val'];
+          }
+        } else {
+          upsertData.revenue_interest_current = summary['total_val'];
+          upsertData.revenue_interest_total += summary['total_val'];
+        }
+      }
+      
+      //set vars: 평가(평가금액) 요약 데이터
       query = db.queryBuilder()
         .select('val')
         .from('invest_history')
         .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unixIdx)
+        .andWhere('unit_idx', unitIdx)
         .andWhere('history_date', '<=', endDate)
         .andWhere('history_type', 'revenue')
         .andWhere('revenue_type', 'eval')
@@ -140,30 +187,69 @@ module.exports = (db) => {
           {column: 'history_idx', order: 'desc'}
         ])
         .limit(1);
-      rsSummary = await db.queryRow(query, trx ?? null);
-      if (rsSummary) upsertData['revenue_eval'] = rsSummary.val;
-  
-      // 요약 데이터 insert/update 처리
+      const rsSummary2 = await db.queryRow(query, trx ?? null);
+      
+      //생성할 요약 데이터에 가져온 데이터 저장
+      if (rsSummary2) {
+        upsertData.revenue_eval = rsSummary2.val;
+      }
+      
+      //유입/유출/평가 총합 계산
+      upsertData.inout_total = upsertData.inout_principal_total + upsertData.inout_proceeds_total;
+      upsertData.revenue_total = upsertData.revenue_interest_total + upsertData.revenue_eval;
+      
+      //수익율/수익금 계산
+      upsertData.earn = upsertData.revenue_interest_total;
+      upsertData.earn_inc_proceeds = upsertData.revenue_interest_total;
+      if (upsertData.revenue_eval > 0) {
+        upsertData.earn += upsertData.revenue_eval - upsertData.inout_principal_total;
+        upsertData.earn_inc_proceeds += upsertData.revenue_eval - upsertData.inout_total;
+      }
+      if (upsertData.inout_principal_total != 0 && upsertData.earn != 0) {
+        upsertData.earn_rate = upsertData.earn / upsertData.inout_principal_total;
+      }
+      if (upsertData.inout_total != 0 && upsertData.earn_inc_proceeds != 0) {
+        upsertData.earn_rate_inc_proceeds = upsertData.earn_inc_proceeds / upsertData.inout_total;
+      }
+      
+      // 이전달 대비 수익율/수익금 계산
+      upsertData.earn_prev_diff = upsertData.earn;
+      upsertData.earn_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds;
+      if (prevEarn > 0) {
+        upsertData.earn_prev_diff -= prevEarn;
+      }
+      if (prevEarnIncProceeds > 0) {
+        upsertData.earn_inc_proceeds_prev_diff -= prevEarnIncProceeds;
+      }
+      if (upsertData.earn_prev_diff > 0 && upsertData.earn > 0) {
+        upsertData.earn_rate_prev_diff = upsertData.earn_prev_diff / upsertData.earn;
+      }
+      if (upsertData.earn_inc_proceeds_prev_diff > 0 && upsertData.earn_inc_proceeds > 0) {
+        upsertData.earn_rate_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds_prev_diff / upsertData.earn_inc_proceeds;
+      }
+      
+      //set vars: 요약 데이터 존재 유무
       query = db.queryBuilder()
         .from('invest_summary_month')
         .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unixIdx)
+        .andWhere('unit_idx', unitIdx)
         .andWhere('summary_date', summaryDate);
-      if (await db.exists(query, trx ?? null)) {
+      const hasSummary = await db.exists(query, trx ?? null);
+      
+      // 요약 데이터 존재 유무에 따라 insert/update 처리
+      if (!hasSummary) {
+        upsertData['summary_date'] = summaryDate;
+        upsertData['item_idx'] = itemIdx;
+        upsertData['unit_idx'] = unitIdx;
+        
+        query = db.queryBuilder().insert(upsertData).into('invest_summary_month');
+      } else {
         query = db.queryBuilder()
           .update(upsertData)
           .from('invest_summary_month')
           .where('item_idx', itemIdx)
-          .andWhere('unit_idx', unixIdx)
+          .andWhere('unit_idx', unitIdx)
           .andWhere('summary_date', summaryDate);
-      } else {
-        upsertData['summary_date'] = summaryDate;
-        upsertData['item_idx'] = itemIdx;
-        upsertData['unit_idx'] = unixIdx;
-    
-        query = db.queryBuilder()
-          .insert(upsertData)
-          .into('invest_summary_month');
       }
   
       await db.execute(query, trx ?? null);
@@ -206,71 +292,154 @@ module.exports = (db) => {
     try {
       //set vars: insert/update 할 데이터
       const upsertData = {
-        'in_principal': 0,
-        'in_proceeds': 0,
-        'out_principal': 0,
-        'out_proceeds': 0,
-        'revenue_interest': 0,
-        'revenue_eval': 0
+        'inout_total': 0,
+        'inout_principal_prev': 0,
+        'inout_principal_current': 0,
+        'inout_principal_total': 0,
+        'inout_proceeds_prev': 0,
+        'inout_proceeds_current': 0,
+        'inout_proceeds_total': 0,
+        'revenue_total': 0,
+        'revenue_interest_prev': 0,
+        'revenue_interest_current': 0,
+        'revenue_interest_total': 0,
+        'revenue_eval': 0,
+        'earn': 0,
+        'earn_prev_diff': 0,
+        'earn_rate': 0,
+        'earn_rate_prev_diff': 0,
+        'earn_inc_proceeds': 0,
+        'earn_inc_proceeds_prev_diff': 0,
+        'earn_rate_inc_proceeds': 0,
+        'earn_rate_inc_proceeds_prev_diff': 0
       };
-    
-      //유입/유출/평가(이자) 요약 데이터 생성
+      
+      //set vars: 이전년도 요약 데이터
       query = db.queryBuilder()
-        .sum('in_principal AS in_principal')
-        .sum('in_proceeds AS in_proceeds')
-        .sum('out_principal AS out_principal')
-        .sum('out_proceeds AS out_proceeds')
-        .sum('revenue_interest AS revenue_interest')
-        .from('invest_summary_month')
+        .select()
+        .from('invest_summary_year')
         .where('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
-        .andWhere('summary_date', '>=', startDate)
-        .andWhere('summary_date', '<=', endDate);
-      let rsSummary = await db.queryRow(query, trx ?? null);
-      if (rsSummary) {
-        for (const key of Object.keys(rsSummary)) {
-          upsertData[key] = rsSummary[key] ?? 0;
-        }
+        .andWhere('summary_year', '<', summaryYear)
+        .orderBy('summary_year', 'desc')
+        .limit(1);
+      const rsPrevSummary = await db.queryRow(query, trx ?? null);
+  
+      //생성할 요약 데이터에 이전달 요약 데이터 저장
+      let prevEarn = 0;
+      let prevEarnIncProceeds = 0;
+      if (rsPrevSummary) {
+        prevEarn = rsPrevSummary.earn;
+        prevEarnIncProceeds = rsPrevSummary.earn_inc_proceeds;
+    
+        upsertData.inout_principal_prev = rsPrevSummary.inout_principal_total;
+        upsertData.inout_principal_total += rsPrevSummary.inout_principal_total;
+    
+        upsertData.inout_proceeds_prev = rsPrevSummary.inout_proceeds_total;
+        upsertData.inout_proceeds_total += rsPrevSummary.inout_proceeds_total;
+    
+        upsertData.revenue_interest_prev = rsPrevSummary.revenue_interest_total;
+        upsertData.revenue_interest_total += rsPrevSummary.revenue_interest_total;
       }
-
-      // 평가(평가금액) 요약 데이터 생성
+      
+      //set vars: 이번 년도 요약 데이터(유입/유출, 평가-이자)
+      query = `
+        SELECT
+          SUM(inout_principal_current) AS inout_principal_current,
+          SUM(inout_proceeds_current) AS inout_proceeds_current,
+          SUM(revenue_interest_current) AS revenue_interest_current
+        FROM invest_summary_month
+        WHERE item_idx = :itemIdx AND unit_idx = :unitIdx AND summary_date BETWEEN :startDate AND :endDate
+      `;
+      let rsSummary1 = await db.executeRaw(query, {itemIdx, unitIdx, startDate, endDate}, trx ?? null);
+      rsSummary1 = rsSummary1.length > 0 ? rsSummary1[0] : null;
+  
+      //생성할 요약 데이터에 가져온 데이터 저장
+      if (rsSummary1) {
+        upsertData.inout_principal_current = rsSummary1['inout_principal_current'];
+        upsertData.inout_principal_total +=  rsSummary1['inout_principal_current'];
+        
+        upsertData.inout_proceeds_current = rsSummary1['inout_proceeds_current'];
+        upsertData.inout_proceeds_total += rsSummary1['inout_proceeds_current'];
+        
+        upsertData.revenue_interest_current = rsSummary1['revenue_interest_current'];
+        upsertData.revenue_interest_total += rsSummary1['revenue_interest_current'];
+      }
+      
+      //set vars: 이번 년도 요약 데이터(평가-평가금액)
       query = db.queryBuilder()
         .select('revenue_eval')
         .from('invest_summary_month')
         .where('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
-        .andWhere('summary_date', '>=', startDate)
-        .andWhere('summary_date', '<=', endDate)
+        .andWhereBetween('summary_date', [startDate, endDate])
         .orderBy('summary_date', 'desc')
         .limit(1);
-      rsSummary = await db.queryRow(query, trx ?? null);
-      if (rsSummary) {
-        upsertData.revenue_eval = rsSummary.revenue_eval ?? 0;
+      const rsSummary2 = await db.queryRow(query, trx ?? null);
+      
+      //생성할 요약 데이터에 가져온 데이터 저장
+      if (rsSummary2) {
+        upsertData.revenue_eval = rsSummary2.revenue_eval;
       }
-    
-      // 요약 데이터 insert/update 처리
+  
+      //유입/유출/평가 총합 계산
+      upsertData.inout_total = upsertData.inout_principal_total + upsertData.inout_proceeds_total;
+      upsertData.revenue_total = upsertData.revenue_interest_total + upsertData.revenue_eval;
+  
+      //수익율/수익금 계산
+      upsertData.earn = upsertData.revenue_interest_total;
+      upsertData.earn_inc_proceeds = upsertData.revenue_interest_total;
+      if (upsertData.revenue_eval > 0) {
+        upsertData.earn += upsertData.revenue_eval - upsertData.inout_principal_total;
+        upsertData.earn_inc_proceeds += upsertData.revenue_eval - upsertData.inout_total;
+      }
+      if (upsertData.inout_principal_total != 0 && upsertData.earn != 0) {
+        upsertData.earn_rate = upsertData.earn / upsertData.inout_principal_total;
+      }
+      if (upsertData.inout_total != 0 && upsertData.earn_inc_proceeds != 0) {
+        upsertData.earn_rate_inc_proceeds = upsertData.earn_inc_proceeds / upsertData.inout_total;
+      }
+  
+      // 이전년도 대비 수익율/수익금 계산
+      upsertData.earn_prev_diff = upsertData.earn;
+      upsertData.earn_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds;
+      if (prevEarn > 0) {
+        upsertData.earn_prev_diff -= prevEarn;
+      }
+      if (prevEarnIncProceeds > 0) {
+        upsertData.earn_inc_proceeds_prev_diff -= prevEarnIncProceeds;
+      }
+      if (upsertData.earn_prev_diff > 0 && upsertData.earn > 0) {
+        upsertData.earn_rate_prev_diff = upsertData.earn_prev_diff / upsertData.earn;
+      }
+      if (upsertData.earn_inc_proceeds_prev_diff > 0 && upsertData.earn_inc_proceeds > 0) {
+        upsertData.earn_rate_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds_prev_diff / upsertData.earn_inc_proceeds;
+      }
+  
+      //set vars: 요약 데이터 존재 유무
       query = db.queryBuilder()
         .from('invest_summary_year')
         .where('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
         .andWhere('summary_year', summaryYear);
-      if (await db.exists(query, trx ?? null)) {
+      const hasSummary = await db.exists(query, trx ?? null);
+  
+      // 요약 데이터 존재 유무에 따라 insert/update 처리
+      if (!hasSummary) {
+        upsertData['summary_year'] = summaryYear;
+        upsertData['item_idx'] = itemIdx;
+        upsertData['unit_idx'] = unitIdx;
+        
+        query = db.queryBuilder().insert(upsertData).into('invest_summary_year');
+      } else {
         query = db.queryBuilder()
           .update(upsertData)
           .from('invest_summary_year')
           .where('item_idx', itemIdx)
           .andWhere('unit_idx', unitIdx)
           .andWhere('summary_year', summaryYear);
-      } else {
-        upsertData['summary_year'] = summaryYear;
-        upsertData['item_idx'] = itemIdx;
-        upsertData['unit_idx'] = unitIdx;
-      
-        query = db.queryBuilder()
-          .insert(upsertData)
-          .into('invest_summary_year');
       }
-    
+
       await db.execute(query, trx ?? null);
     } catch (err) {
       throw err;
@@ -304,62 +473,62 @@ module.exports = (db) => {
     try {
       //set vars: insert/update 할 데이터
       const upsertData = {
-        'in_principal': 0,
-        'in_proceeds': 0,
-        'out_principal': 0,
-        'out_proceeds': 0,
+        'inout_total': 0,
+        'inout_principal': 0,
+        'inout_proceeds': 0,
+        'revenue_total': 0,
         'revenue_interest': 0,
-        'revenue_eval': 0
+        'revenue_eval': 0,
+        'earn': 0,
+        'earn_rate': 0,
+        'earn_inc_proceeds': 0,
+        'earn_rate_inc_proceeds': 0,
       };
       
-      //유입/유출/평가(이자) 요약 데이터 생성
+      //set vars: 마지막 연간 데이터
       query = db.queryBuilder()
-        .sum('in_principal AS in_principal')
-        .sum('in_proceeds AS in_proceeds')
-        .sum('out_principal AS out_principal')
-        .sum('out_proceeds AS out_proceeds')
-        .sum('revenue_interest AS revenue_interest')
-        .from('invest_summary_year')
-        .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unitIdx);
-      let rsSummary = await db.queryRow(query, trx ?? null);
-      if (rsSummary) {
-        for (const key of Object.keys(rsSummary)) {
-          upsertData[key] = rsSummary[key] ?? 0;
-        }
-      }
-
-      // 평가(평가금액) 요약 데이터 생성
-      query = db.queryBuilder()
-        .select('revenue_eval')
+        .select()
         .from('invest_summary_year')
         .where('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
-        .orderBy('summary_year', 'desc')
-        .limit(1);
-      rsSummary = await db.queryRow(query, trx ?? null);
+        .orderBy('summary_year', 'desc');
+      const rsSummary = await db.queryRow(query, trx ?? null);
+  
+      //생성할 요약 데이터에 가져온 데이터 저장
       if (rsSummary) {
-        upsertData.revenue_eval = rsSummary.revenue_eval ?? 0;
+        upsertData.inout_total = rsSummary.inout_total;
+        upsertData.inout_principal = rsSummary.inout_principal_total;
+        upsertData.inout_proceeds = rsSummary.inout_proceeds_total;
+        
+        upsertData.revenue_total = rsSummary.revenue_total;
+        upsertData.revenue_interest = rsSummary.revenue_interest_total;
+        upsertData.revenue_eval = rsSummary.revenue_eval;
+        
+        upsertData.earn = rsSummary.earn;
+        upsertData.earn_rate = rsSummary.earn_rate;
+        upsertData.earn_inc_proceeds = rsSummary.earn_inc_proceeds;
+        upsertData.earn_rate_inc_proceeds = rsSummary.earn_rate_inc_proceeds;
       }
-      
-      // 요약 데이터 insert/update 처리
+  
+      //set vars: 요약 데이터 존재 유무
       query = db.queryBuilder()
         .from('invest_summary')
         .where('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx);
-      if (await db.exists(query, trx ?? null)) {
+      const hasSummary = await db.exists(query, trx ?? null);
+  
+      // 요약 데이터 존재 유무에 따라 insert/update 처리
+      if (!hasSummary) {
+        upsertData['item_idx'] = itemIdx;
+        upsertData['unit_idx'] = unitIdx;
+        
+        query = db.queryBuilder().insert(upsertData).into('invest_summary');
+      } else {
         query = db.queryBuilder()
           .update(upsertData)
           .from('invest_summary')
           .where('item_idx', itemIdx)
           .andWhere('unit_idx', unitIdx);
-      } else {
-        upsertData['item_idx'] = itemIdx;
-        upsertData['unit_idx'] = unitIdx;
-        
-        query = db.queryBuilder()
-          .insert(upsertData)
-          .into('invest_summary');
       }
       
       await db.execute(query, trx ?? null);
@@ -367,6 +536,112 @@ module.exports = (db) => {
       throw err;
     }
   };
+  
+  /**
+   * 지정 날짜 이후의 월간 요약 데이터 update
+   * @param {number} itemIdx 상품 IDX
+   * @param {string} date 날짜
+   * @param {number} unitIdx 단위 IDX
+   * @param {Knex.Transaction} [trx] DB 트랜잭션
+   * @return {Promise<void>}
+   */
+  const updateBeforeMonthSummary = async (itemIdx, date, unitIdx, trx) => {
+    //set vars: 날짜 관련
+    const targetDate = date ? dayjs(date) : dayjs();
+    const summaryDate = targetDate.format('YYYY-MM-01');
+  
+    //check data
+    const hasItem = await db.exists(db.queryBuilder()
+      .from('invest_item')
+      .where('item_idx', itemIdx)
+    );
+    if (!hasItem) return;
+    const hasUnit = await db.execute(db.queryBuilder()
+      .from('invest_unit_set')
+      .where('item_idx', itemIdx)
+      .andWhere('unit_idx', unitIdx)
+    );
+    if (!hasUnit) return;
+  
+    //set vars: 쿼리 빌더
+    let query;
+    
+    //set vars: 요약 데이터 만들 기간 범위
+    query = `
+      SELECT
+        MIN(summary_date) AS minDate,
+        MAX(summary_date) AS maxDate
+      FROM invest_summary_month
+      WHERE item_idx = :itemIdx AND unit_idx = :unitIdx AND summary_date > :summaryDate
+    `;
+    let rsDateRange = await db.executeRaw(query, {itemIdx, unitIdx, summaryDate}, trx ?? null);
+    if (rsDateRange.length == 0) return;
+    
+    rsDateRange = rsDateRange[0];
+    if (!rsDateRange['minDate'] || !rsDateRange['maxDate']) return;
+    
+    const minDate = dayjs(rsDateRange['minDate']);
+    const maxDate = dayjs(rsDateRange['maxDate']);
+    
+    let loopDate = minDate;
+    while (loopDate <= maxDate) {
+      //월간 요약 데이터 갱신
+      await upsertMonthSummary(itemIdx, loopDate.format('YYYY-MM-DD'), unitIdx, trx ?? null);
+  
+      loopDate = loopDate.add(1, 'month');
+    }
+  }
+  
+  /**
+   * 지정 날짜 이후의 년간 요약 데이터 update
+   * @param {number} itemIdx 상품 IDX
+   * @param {string} date 날짜
+   * @param {number} unitIdx 단위 IDX
+   * @param {Knex.Transaction} [trx] DB 트랜잭션
+   * @return {Promise<void>}
+   */
+  const updateBeforeYearSummary = async (itemIdx, date, unitIdx, trx) => {
+    //set vars: 날짜 관련
+    const targetDate = date ? dayjs(date) : dayjs();
+    const summaryYear = targetDate.format('YYYY');
+    
+    //check data
+    const hasItem = await db.exists(db.queryBuilder()
+      .from('invest_item')
+      .where('item_idx', itemIdx)
+    );
+    if (!hasItem) return;
+    const hasUnit = await db.execute(db.queryBuilder()
+      .from('invest_unit_set')
+      .where('item_idx', itemIdx)
+      .andWhere('unit_idx', unitIdx)
+    );
+    if (!hasUnit) return;
+    
+    //set vars: 쿼리 빌더
+    let query;
+    
+    //set vars: 요약 데이터 만들 기간 범위
+    query = `
+      SELECT
+        MIN(summary_year) AS minYear,
+        MAX(summary_year) AS maxYear
+      FROM invest_summary_year
+      WHERE item_idx = :itemIdx AND unit_idx = :unitIdx AND summary_year > :summaryYear
+    `;
+    let rsYearRange = await db.executeRaw(query, {itemIdx, unitIdx, summaryYear}, trx ?? null);
+    if (rsYearRange.length == 0) return;
+  
+    rsYearRange = rsYearRange[0];
+    if (!rsYearRange['minYear'] || !rsYearRange['maxYear']) return;
+    
+    const minYear = rsYearRange['minYear'];
+    const maxYear = rsYearRange['maxYear'];
+    
+    for (let year = minYear; year <= maxYear; year++) {
+      await upsertYearSummary(itemIdx, `${year}-01-01`, unitIdx, trx ?? null);
+    }
+  }
   
   return {
     itemTypeList,
@@ -376,6 +651,8 @@ module.exports = (db) => {
     upsertMonthSummary,
     upsertYearSummary,
     upsertTotalSummary,
-    upsertSummary
+    upsertSummary,
+    updateBeforeMonthSummary,
+    updateBeforeYearSummary,
   }
 }

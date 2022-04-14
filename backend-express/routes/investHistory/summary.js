@@ -9,7 +9,81 @@ const dayjs = require("dayjs");
  */
 module.exports = (db) => {
   const router = express.Router();
-  const {upsertSummary, upsertMonthSummary, upsertYearSummary, upsertTotalSummary} = require('../../helper/db/investHistory')(db);
+  const {
+    upsertMonthSummary,
+    upsertYearSummary,
+    upsertTotalSummary,
+  } = require('../../helper/db/investHistory')(db);
+  
+  /**
+   * summary total
+   */
+  router.get('/:item_idx([0-9]+)/total', asyncHandler(async (req, res) => {
+    try {
+      //set vars: request
+      const itemIdx = req.params.item_idx;
+      const unit = req.query.unit ? req.query.unit.toUpperCase() : 'KRW';
+  
+      if (!itemIdx) throw new ResponseError('잘못된 접근');
+  
+      //item 유무 체크
+      const hasItem = await db.exists(db.queryBuilder()
+        .from('invest_item')
+        .where('item_idx', itemIdx)
+      );
+      if (!hasItem) throw new ResponseError('item이 존재하지 않음');
+      
+      //set vars: 요약 데이터
+      let query = db.queryBuilder()
+        .select()
+        .from('invest_summary AS s')
+        .join('invest_unit AS u', 's.unit_idx', 'u.unit_idx')
+        .where('s.item_idx', itemIdx)
+        .andWhere('u.unit', unit);
+      const rsSummary = await db.queryRow(query);
+  
+      // set vars: summary data
+      let summaryData = {
+        'unit': unit,
+        'unitType': '',
+        'inout': {
+          'total': 0,
+          'principal': 0,
+          'proceeds': 0,
+        },
+        'revenue': {
+          'total': 0,
+          'interest': 0,
+          'eval': 0
+        },
+        'earn': {
+          'earn': 0,
+          'rate': 0.0,
+          'earnIncProceeds': 0,
+          'rateIncProceeds': 0
+        }
+      };
+  
+  
+      if (rsSummary) {
+        summaryData.unitType = rsSummary.unit_type;
+        summaryData.inout.total = rsSummary.inout_total;
+        summaryData.inout.principal = rsSummary.inout_principal;
+        summaryData.inout.proceeds = rsSummary.inout_proceeds;
+        summaryData.revenue.total = rsSummary.revenue_total;
+        summaryData.revenue.interest = rsSummary.revenue_interest;
+        summaryData.revenue.eval = rsSummary.revenue_eval;
+        summaryData.earn.earn = rsSummary.earn;
+        summaryData.earn.rate = rsSummary.earn_rate;
+        summaryData.earn.earnIncProceeds = rsSummary.earn_inc_proceeds;
+        summaryData.earn.rateIncProceeds = rsSummary.earn_rate_inc_proceeds;
+      }
+  
+      res.json(createResult('success', summaryData));
+    } catch (err) {
+      throw err;
+    }
+  }));
   
   /**
    * summary
