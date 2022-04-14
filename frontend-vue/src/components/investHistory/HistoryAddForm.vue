@@ -20,12 +20,11 @@
 
       <div class="row">
         <label>기록 타입</label>
-        <label class="short"><input type="radio" name="history_type" value="in" v-model="formData.historyType">유입</label>
-        <label class="short"><input type="radio" name="history_type" value="out" v-model="formData.historyType">유출</label>
+        <label class="short"><input type="radio" name="history_type" value="inout" v-model="formData.historyType">유입/유출</label>
         <label class="short"><input type="radio" name="history_type" value="revenue" v-model="formData.historyType">평가</label>
       </div>
 
-      <div class="row" v-if="['in', 'out'].includes(formData.historyType)">
+      <div class="row" v-if="formData.historyType == 'inout'">
         <label>유입/유출 타입</label>
         <label class="short"><input type="radio" name="inout_type" value="principal" v-model="formData.inoutType">원금</label>
         <label class="short"><input type="radio" name="inout_type" value="proceeds" v-model="formData.inoutType">수익금</label>
@@ -114,7 +113,7 @@ export default  {
         alert('기록 타입 선택');
         return false;
       }
-      if (['in', 'out'].includes(formData.historyType)) {
+      if (formData.historyType == 'inout') {
         if (!formData.inoutType) {
           alert('유입/유출 타입 선택');
           return false;
@@ -146,7 +145,7 @@ export default  {
         formData.memo = '';
 
         store.commit('investHistory/setUpdateSummaryFlag', true);
-        if (formData.historyType == 'in' || formData.historyType == 'out') {
+        if (formData.historyType == 'inout') {
           store.commit('investHistory/setUpdateInOutListFlag', true);
         } else if (formData.historyType == 'revenue') {
           store.commit('investHistory/setUpdateRevenueListFlag', true);

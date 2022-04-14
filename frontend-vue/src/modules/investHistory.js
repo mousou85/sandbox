@@ -197,7 +197,7 @@ export const addHistory = async (requestBody) => {
   const itemIdx = requestBody.item_idx;
   
   delete requestBody.item_idx;
-  if (['in', 'out'].includes(requestBody.history_type)) {
+  if (requestBody.history_type == 'inout') {
     delete requestBody.revenue_type;
   } else if (requestBody.history_type == 'revenue') {
     delete requestBody.inout_type;

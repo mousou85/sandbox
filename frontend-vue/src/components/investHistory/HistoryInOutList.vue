@@ -41,7 +41,7 @@
         <template v-else>
           <td class="center"><input type="date" name="history_date" v-model="history.history_date"></td>
           <td class="center">
-            {{history.history_type_text}} - {{history.inout_type_text}}
+            {{history.inout_type_text}}
           </td>
           <td>
             <input type="text" name="val" style="text-align: right;width: 80px;" v-model="history.valText">{{history.unit}}
@@ -209,7 +209,6 @@ export default {
      */
     const printVal = (history) => {
       let val = history.val;
-      if (history.history_type == 'out') val = val * -1;
       if (history.unitType == 'int') {
         val = parseInt(val);
       }
