@@ -50,7 +50,11 @@ module.exports = (db) => {
   const upsertSummary = async (itemIdx, date, unitIdx, trx) => {
     try {
       await upsertMonthSummary(itemIdx, date, unitIdx, trx);
+      await updateBeforeMonthSummary(itemIdx, date, unitIdx, trx);
+      
       await upsertYearSummary(itemIdx, date, unitIdx, trx);
+      await updateBeforeYearSummary(itemIdx, date, unitIdx, trx);
+      
       await upsertTotalSummary(itemIdx, unitIdx, trx);
     } catch (err) {
       throw err;

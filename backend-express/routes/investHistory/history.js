@@ -46,11 +46,7 @@ module.exports = (db) => {
         ]);
       
       if (historyType) {
-        if (historyType == 'inout') {
-          query.whereIn('h.history_type', ['in', 'out'])
-        } else if (historyType == 'revenue') {
-          query.where('h.history_type', 'revenue');
-        }
+        query.where('h.history_type', historyType);
       }
       if (unit) {
         query.where('u.unit', unit);
@@ -100,7 +96,7 @@ module.exports = (db) => {
       if (!historyDate) throw new ResponseError('history_date는 필수입력임');
       if (!historyType) throw new ResponseError('history_type은 필수입력임');
       if (!val) throw new ResponseError('val은 필수입력임');
-      if (['in','out'].includes(historyType)) {
+      if (historyType == 'inout') {
         inoutType = req.body.inout_type;
         if (!inoutType) throw new ResponseError('inout_type은 필수입력임');
       } else {
