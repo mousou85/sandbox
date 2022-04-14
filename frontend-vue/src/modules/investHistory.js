@@ -95,8 +95,8 @@ export const getHistoryList = async (itemIdx, historyType, unit, date) => {
  * @param {number} itemIdx
  * @return {Promise<Object>}
  */
-export const getItemSummary = async (itemIdx) => {
-  const res = await http.get(`${baseURL}/invest-history/summary/${itemIdx}`);
+export const getItemSummaryTotal = async (itemIdx) => {
+  const res = await http.get(`${baseURL}/invest-history/summary/${itemIdx}/total`);
   if (!res.result) throw new Error(res.resultMessage);
   return res.data;
 }

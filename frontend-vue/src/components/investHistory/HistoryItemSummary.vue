@@ -1,39 +1,33 @@
 <template>
   <table width="100%" class="summaryTable" v-if="currentItemIdx > 0">
     <tr>
-      <th colspan="6">잔고</th>
+      <th colspan="3">원금</th>
       <th colspan="3">현재평가</th>
       <th colspan="4">수익율</th>
     </tr>
     <tr>
-      <th>잔고</th>
-      <th>유입</th>
-      <th>유출</th>
-      <th>잔고(수익금제외)</th>
-      <th>유입(수익금제외)</th>
-      <th>유출(수익금제외)</th>
-      <th>이자</th>
+      <th>원금</th>
+      <th>재투자금</th>
+      <th>합계</th>
+      <th>누적이자</th>
       <th>평가금액</th>
       <th>합계</th>
-      <th>수익(수익금제외)</th>
-      <th>수익율(수익금제외)</th>
       <th>수익</th>
       <th>수익율</th>
+      <th>수익(재투자금 포함)</th>
+      <th>수익율(재투자금 포함)</th>
     </tr>
     <tr>
-      <td class="right bold" v-html="printVal(summaryData.deposit, 'plain')"></td>
-      <td class="right" v-html="printVal(summaryData.in.total, 'plain')"></td>
-      <td class="right" v-html="printVal(summaryData.out.total * -1, 'plain')"></td>
-      <td class="right bold" v-html="printVal(summaryData.excludeProceedsDeposit, 'plain')"></td>
-      <td class="right" v-html="printVal(summaryData.in.principal, 'plain')"></td>
-      <td class="right" v-html="printVal(summaryData.out.principal * -1, 'plain')"></td>
+      <td class="right" v-html="printVal(summaryData.inout.principal, 'plain')"></td>
+      <td class="right" v-html="printVal(summaryData.inout.proceeds, 'plain')"></td>
+      <td class="right bold" v-html="printVal(summaryData.inout.total, 'plain')"></td>
       <td class="right" v-html="printVal(summaryData.revenue.interest)"></td>
       <td class="right" v-html="printVal(summaryData.revenue.eval)"></td>
       <td class="right bold" v-html="printVal(summaryData.revenue.total)"></td>
-      <td class="right bold" v-html="printVal(summaryData.revenueRate.excludeProceedsDiff)"></td>
-      <td class="right" v-html="printVal(summaryData.revenueRate.excludeProceedsRate, 'percent')"></td>
-      <td class="right bold" v-html="printVal(summaryData.revenueRate.diff)"></td>
-      <td class="right" v-html="printVal(summaryData.revenueRate.rate, 'percent')"></td>
+      <td class="right bold" v-html="printVal(summaryData.earn.earn)"></td>
+      <td class="right" v-html="printVal(summaryData.earn.ratePercent, 'percent')"></td>
+      <td class="right bold" v-html="printVal(summaryData.earn.earnIncProceeds)"></td>
+      <td class="right" v-html="printVal(summaryData.earn.rateIncProceedsPercent, 'percent')"></td>
     </tr>
   </table>
 </template>
@@ -42,7 +36,7 @@
 import {computed, reactive, watch} from "vue";
 import {useStore} from 'vuex';
 import {numberComma} from "@/libs/helper";
-import {getItemSummary} from "@/modules/investHistory";
+import {getItemSummaryTotal} from "@/modules/investHistory";
 
 export default {
   setup() {
@@ -55,28 +49,37 @@ export default {
     const summaryData = reactive({
       unit: '',
       unitType: '',
-      deposit: 0,
-      excludeProceedsDeposit: 0,
-      in: {
+      inout: {
         total: 0,
         principal: 0,
-        proceeds: 0,
-      },
-      out: {
-        total: 0,
-        principal: 0,
-        proceeds: 0,
+        proceeds: 0
       },
       revenue: {
-        total: 0,
+        total: computed(() => {
+          if (summaryData.revenue.eval == 0) {
+            return summaryData.inout.total + summaryData.revenue.interest;
+          } else {
+            return summaryData.revenue.eval + summaryData.revenue.interest;
+          }
+        }),
         interest: 0,
         eval: 0,
       },
-      revenueRate: {
-        diff: 0,
+      earn: {
+        earn: 0,
         rate: 0,
-        excludeProceedsDiff: 0,
-        excludeProceedsRate: 0
+        ratePercent: computed(() => {
+          return summaryData.earn.rate != 0
+            ? Math.floor(summaryData.earn.rate * 10000) / 100
+            : 0;
+        }),
+        earnIncProceeds: 0,
+        rateIncProceeds: 0,
+        rateIncProceedsPercent: computed(() => {
+          return summaryData.earn.rateIncProceeds != 0
+              ? Math.floor(summaryData.earn.rateIncProceeds * 10000) / 100
+              : 0;
+        })
       }
     });
 
@@ -96,25 +99,19 @@ export default {
     const getSummary = async () => {
       try {
         if (currentItemIdx.value > 0) {
-          const data = await getItemSummary(currentItemIdx.value);
+          const data = await getItemSummaryTotal(currentItemIdx.value);
 
-          for (const key1 of Object.keys(data)) {
-            const val1 = data[key1];
-
-            if (summaryData.hasOwnProperty(key1)) {
-              if (typeof val1 == 'object') {
-                for (const key2 of Object.keys(val1)) {
-                  const val2 = val1[key2];
-
-                  if (summaryData[key1].hasOwnProperty(key2)) {
-                    summaryData[key1][key2] = val2;
-                  }
-                }
-              } else {
-                summaryData[key1] = val1;
-              }
-            }
-          }
+          summaryData.unit = data.unit;
+          summaryData.unitType = data.unitType;
+          summaryData.inout.total = data.inout.total;
+          summaryData.inout.principal = data.inout.principal;
+          summaryData.inout.proceeds = data.inout.proceeds;
+          summaryData.revenue.interest = data.revenue.interest;
+          summaryData.revenue.eval = data.revenue.eval;
+          summaryData.earn.earn = data.earn.earn;
+          summaryData.earn.rate = data.earn.rate;
+          summaryData.earn.earnIncProceeds = data.earn.earnIncProceeds;
+          summaryData.earn.rateIncProceeds = data.earn.rateIncProceeds;
         }
       } catch (err) {
 
