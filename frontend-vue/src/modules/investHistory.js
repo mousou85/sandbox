@@ -102,6 +102,18 @@ export const getItemSummaryTotal = async (itemIdx) => {
 }
 
 /**
+ * get item month summary
+ * @param {number} itemIdx
+ * @param {string} date
+ * @return {Promise<Object>}
+ */
+export const getItemSummaryMonth = async (itemIdx, date) => {
+  const res = await http.get(`${baseURL}/invest-history/summary/${itemIdx}/month`, {date: date});
+  if (!res.result) throw new Error(res.resultMessage);
+  return res.data;
+}
+
+/**
  * get company list
  * @returns {Promise<Object[]>}
  */

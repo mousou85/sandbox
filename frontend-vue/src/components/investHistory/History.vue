@@ -15,7 +15,9 @@
     ></HistoryAddForm>
 
     <div style="overflow: hidden;">
-      <HistoryItemSummary></HistoryItemSummary>
+      <HistoryItemSummary
+          :this-month="thisMonth"
+      ></HistoryItemSummary>
 
       <h4 style="text-align: center;">
         <button type="button" @click="changeHistoryListMonth('prev')">◀</button>&nbsp;&nbsp;
