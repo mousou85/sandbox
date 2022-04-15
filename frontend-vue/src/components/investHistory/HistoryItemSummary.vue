@@ -59,8 +59,8 @@
         <td class="right" v-html="printVal(summaryData, 'inout.proceedsTotal', 'plain+diff')"></td>
         <td class="right bold" v-html="printVal(summaryData, 'inout.total', 'plain')"></td>
         <td class="right" v-html="printVal(summaryData, 'revenue.interestTotal', 'diff')"></td>
-        <td class="right" v-html="printVal(summaryData, 'revenue.eval')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'revenue.total')"></td>
+        <td class="right" v-html="printVal(summaryData, 'revenue.eval', 'diff')"></td>
+        <td class="right bold" v-html="printVal(summaryData, 'revenue.total', 'diff')"></td>
         <td class="right bold" v-html="printVal(summaryData, 'earn.earn', 'diff')"></td>
         <td class="right" v-html="printVal(summaryData, 'earn.ratePercent', 'percent+diff')"></td>
         <td class="right bold" v-html="printVal(summaryData, 'earn.earnIncProceeds', 'diff')"></td>
@@ -110,10 +110,14 @@ export default {
             return summaryData.revenue.eval + summaryData.revenue.interestTotal;
           }
         }),
+        totalPrev: computed(() => {
+          return summaryData.revenue.total - (summaryData.revenue.interestPrev + summaryData.revenue.evalPrev);
+        }),
         interestTotal: 0,
         interestPrev: 0,
         interestCurrent: 0,
         eval: 0,
+        evalPrev: 0,
       },
       earn: {
         earn: 0,
@@ -201,6 +205,7 @@ export default {
             summaryData.revenue.interestTotal = data.revenue.interest;
             summaryData.revenue.interestPrev = 0;
             summaryData.revenue.interestCurrent = 0;
+            summaryData.revenue.evalPrev = 0;
             summaryData.earnPrevDiff.earn = 0;
             summaryData.earnPrevDiff.rate = 0;
             summaryData.earnPrevDiff.earnIncProceeds = 0;
@@ -217,6 +222,7 @@ export default {
             summaryData.revenue.interestTotal = data.revenue.interestTotal;
             summaryData.revenue.interestPrev = data.revenue.interestPrev;
             summaryData.revenue.interestCurrent = data.revenue.interestCurrent;
+            summaryData.revenue.evalPrev = data.revenue.evalPrev;
             summaryData.earnPrevDiff.earn = data.earnPrevDiff.earn;
             summaryData.earnPrevDiff.rate = data.earnPrevDiff.rate;
             summaryData.earnPrevDiff.earnIncProceeds = data.earnPrevDiff.earnIncProceeds;
@@ -271,18 +277,34 @@ export default {
       let diffStr = '';
       if (printTypeArr.includes('diff')) {
         let diffVal;
-        if (/principalTotal$/.test(valKey)) {
-          diffVal = data.inout.principalCurrent;
-        } else if (/interestTotal$/.test(valKey)) {
-          diffVal = data.revenue.interestCurrent;
-        } else if (/earn\.earn$/.test(valKey)) {
-          diffVal = data.earnPrevDiff.earn;
-        } else if (/earn\.ratePercent$/.test(valKey)) {
-          diffVal = data.earnPrevDiff.ratePercent;
-        } else if (/earn\.earnIncProceeds$/.test(valKey)) {
-          diffVal = data.earnPrevDiff.earnIncProceeds;
-        } else if (/earn\.rateIncProceedsPercent$/.test(valKey)) {
-          diffVal = data.earnPrevDiff.rateIncProceedsPercent;
+        switch (valKey) {
+          case 'inout.principalTotal':
+            diffVal = data.inout.principalCurrent;
+            break;
+          case 'inout.proceedsTotal':
+            diffVal = data.inout.proceedsCurrent;
+            break;
+          case 'revenue.interestTotal':
+            diffVal = data.revenue.interestCurrent;
+            break;
+          case 'revenue.eval':
+            diffVal = data.revenue.eval - data.revenue.evalPrev;
+            break;
+          case 'revenue.total':
+            diffVal = data.revenue.totalPrev;
+            break;
+          case 'earn.earn':
+            diffVal = data.earnPrevDiff.earn;
+            break;
+          case 'earn.ratePercent':
+            diffVal = data.earnPrevDiff.ratePercent;
+            break;
+          case 'earn.earnIncProceeds':
+            diffVal = data.earnPrevDiff.earnIncProceeds;
+            break;
+          case 'earn.rateIncProceedsPercent':
+            diffVal = data.earnPrevDiff.rateIncProceedsPercent;
+            break;
         }
 
         if (diffVal) {
@@ -374,7 +396,7 @@ export default {
 .summaryTable .right {
   text-align: right;
 }
-.summaryTable .diff {
-  font-size: 0.5em;
+.summaryTable >>> .diff {
+  font-size: 0.7em;
 }
 </style>
