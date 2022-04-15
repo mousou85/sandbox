@@ -131,9 +131,13 @@ module.exports = (db) => {
       //생성할 요약 데이터에 이전달 요약 데이터 저장
       let prevEarn = 0;
       let prevEarnIncProceeds = 0;
+      let prevEarnRate = 0;
+      let prevEarnRateIncProceeds = 0;
       if (rsPrevSummary) {
         prevEarn = rsPrevSummary.earn;
         prevEarnIncProceeds = rsPrevSummary.earn_inc_proceeds;
+        prevEarnRate = rsPrevSummary.earn_rate;
+        prevEarnRateIncProceeds = rsPrevSummary.earn_rate_inc_proceeds;
         
         upsertData.inout_principal_prev = rsPrevSummary.inout_principal_total;
         upsertData.inout_principal_total += rsPrevSummary.inout_principal_total;
@@ -219,17 +223,17 @@ module.exports = (db) => {
       // 이전달 대비 수익율/수익금 계산
       upsertData.earn_prev_diff = upsertData.earn;
       upsertData.earn_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds;
-      if (prevEarn > 0) {
+      if (prevEarn != 0) {
         upsertData.earn_prev_diff -= prevEarn;
       }
-      if (prevEarnIncProceeds > 0) {
+      if (prevEarnIncProceeds != 0) {
         upsertData.earn_inc_proceeds_prev_diff -= prevEarnIncProceeds;
       }
-      if (upsertData.earn_prev_diff > 0 && upsertData.earn > 0) {
-        upsertData.earn_rate_prev_diff = upsertData.earn_prev_diff / upsertData.earn;
+      if (prevEarnRate != 0) {
+        upsertData.earn_rate_prev_diff = upsertData.earn_rate - prevEarnRate;
       }
-      if (upsertData.earn_inc_proceeds_prev_diff > 0 && upsertData.earn_inc_proceeds > 0) {
-        upsertData.earn_rate_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds_prev_diff / upsertData.earn_inc_proceeds;
+      if (prevEarnRateIncProceeds != 0) {
+        upsertData.earn_rate_inc_proceeds_prev_diff = upsertData.earn_rate_inc_proceeds - prevEarnRateIncProceeds;
       }
       
       //set vars: 요약 데이터 존재 유무
@@ -332,9 +336,13 @@ module.exports = (db) => {
       //생성할 요약 데이터에 이전달 요약 데이터 저장
       let prevEarn = 0;
       let prevEarnIncProceeds = 0;
+      let prevEarnRate = 0;
+      let prevEarnRateIncProceeds = 0;
       if (rsPrevSummary) {
         prevEarn = rsPrevSummary.earn;
         prevEarnIncProceeds = rsPrevSummary.earn_inc_proceeds;
+        prevEarnRate = rsPrevSummary.earn_rate;
+        prevEarnRateIncProceeds = rsPrevSummary.earn_rate_inc_proceeds;
     
         upsertData.inout_principal_prev = rsPrevSummary.inout_principal_total;
         upsertData.inout_principal_total += rsPrevSummary.inout_principal_total;
@@ -393,7 +401,7 @@ module.exports = (db) => {
       //수익율/수익금 계산
       upsertData.earn = upsertData.revenue_interest_total;
       upsertData.earn_inc_proceeds = upsertData.revenue_interest_total;
-      if (upsertData.revenue_eval > 0) {
+      if (upsertData.revenue_eval != 0) {
         upsertData.earn += upsertData.revenue_eval - upsertData.inout_principal_total;
         upsertData.earn_inc_proceeds += upsertData.revenue_eval - upsertData.inout_total;
       }
@@ -407,17 +415,17 @@ module.exports = (db) => {
       // 이전년도 대비 수익율/수익금 계산
       upsertData.earn_prev_diff = upsertData.earn;
       upsertData.earn_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds;
-      if (prevEarn > 0) {
+      if (prevEarn != 0) {
         upsertData.earn_prev_diff -= prevEarn;
       }
-      if (prevEarnIncProceeds > 0) {
+      if (prevEarnIncProceeds != 0) {
         upsertData.earn_inc_proceeds_prev_diff -= prevEarnIncProceeds;
       }
-      if (upsertData.earn_prev_diff > 0 && upsertData.earn > 0) {
-        upsertData.earn_rate_prev_diff = upsertData.earn_prev_diff / upsertData.earn;
+      if (prevEarnRate != 0) {
+        upsertData.earn_rate_prev_diff = upsertData.earn_rate - prevEarnRate;
       }
-      if (upsertData.earn_inc_proceeds_prev_diff > 0 && upsertData.earn_inc_proceeds > 0) {
-        upsertData.earn_rate_inc_proceeds_prev_diff = upsertData.earn_inc_proceeds_prev_diff / upsertData.earn_inc_proceeds;
+      if (prevEarnRateIncProceeds != 0) {
+        upsertData.earn_rate_inc_proceeds_prev_diff = upsertData.earn_rate_inc_proceeds - prevEarnRateIncProceeds;
       }
   
       //set vars: 요약 데이터 존재 유무
