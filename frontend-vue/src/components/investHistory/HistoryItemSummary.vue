@@ -396,7 +396,7 @@ export default {
 .summaryTable .right {
   text-align: right;
 }
-.summaryTable >>> .diff {
+.summaryTable :deep(.diff) {
   font-size: 0.7em;
 }
 </style>
