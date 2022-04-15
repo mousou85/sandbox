@@ -107,6 +107,7 @@ module.exports = (db) => {
         'revenue_interest_current': 0,
         'revenue_interest_total': 0,
         'revenue_eval': 0,
+        'revenue_eval_prev': 0,
         'earn': 0,
         'earn_prev_diff': 0,
         'earn_rate': 0,
@@ -147,6 +148,7 @@ module.exports = (db) => {
   
         upsertData.revenue_interest_prev = rsPrevSummary.revenue_interest_total;
         upsertData.revenue_interest_total += rsPrevSummary.revenue_interest_total;
+        upsertData.revenue_eval_prev = rsPrevSummary.revenue_eval;
       }
       
       //set vars: 유입/유출/평가(이자) 요약 데이터
@@ -312,6 +314,7 @@ module.exports = (db) => {
         'revenue_interest_current': 0,
         'revenue_interest_total': 0,
         'revenue_eval': 0,
+        'revenue_eval_prev': 0,
         'earn': 0,
         'earn_prev_diff': 0,
         'earn_rate': 0,
@@ -352,6 +355,7 @@ module.exports = (db) => {
     
         upsertData.revenue_interest_prev = rsPrevSummary.revenue_interest_total;
         upsertData.revenue_interest_total += rsPrevSummary.revenue_interest_total;
+        upsertData.revenue_eval_prev = rsPrevSummary.revenue_eval;
       }
       
       //set vars: 이번 년도 요약 데이터(유입/유출, 평가-이자)

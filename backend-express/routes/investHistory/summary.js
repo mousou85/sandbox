@@ -137,7 +137,8 @@ module.exports = (db) => {
           'interestTotal': 0,
           'interestPrev': 0,
           'interestCurrent': 0,
-          'eval': 0
+          'eval': 0,
+          'evalPrev': 0,
         },
         'earn': {
           'earn': 0,
@@ -170,6 +171,7 @@ module.exports = (db) => {
         summaryData.revenue.interestPrev = rsSummary.revenue_interest_prev;
         summaryData.revenue.interestCurrent = rsSummary.revenue_interest_current;
         summaryData.revenue.eval = rsSummary.revenue_eval;
+        summaryData.revenue.evalPrev = rsSummary.revenue_eval_prev;
         
         summaryData.earn.earn = rsSummary.earn;
         summaryData.earn.rate = rsSummary.earn_rate;
