@@ -264,7 +264,6 @@ export default {
   flex-wrap: wrap;
   justify-content: flex-start;
   border-collapse: collapse;
-  border-bottom: 1px solid;
   font-size: 0.8em;
 }
 .unitTab li {
@@ -283,7 +282,7 @@ export default {
 .list {
   border: 1px solid;
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 0;
   font-size: 0.8em;
 }
 .list th, .list td {
