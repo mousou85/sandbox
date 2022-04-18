@@ -36,7 +36,7 @@
         <td class="right" v-html="printVal(summaryData, 'earn.rateIncProceedsPercent', 'percent')"></td>
       </tr>
     </template>
-    <template v-else-if="selectedTab == 'month'">
+    <template v-else>
       <tr>
         <th colspan="3">원금</th>
         <th colspan="3">현재평가</th>
@@ -74,7 +74,7 @@
 import {computed, reactive, ref, watch} from "vue";
 import {useStore} from 'vuex';
 import {numberComma} from "@/libs/helper";
-import {getItemSummaryTotal, getItemSummaryMonth} from "@/modules/investHistory";
+import {getItemSummaryTotal, getItemSummaryMonth, getItemSummaryYear} from "@/modules/investHistory";
 
 export default {
   props: [
@@ -182,6 +182,8 @@ export default {
             data = await getItemSummaryTotal(currentItemIdx.value);
           } else if (selectedTab.value == 'month') {
             data = await getItemSummaryMonth(currentItemIdx.value, props.thisMonth.value.format('YYYY-MM-DD'));
+          } else if (selectedTab.value == 'year') {
+            data = await getItemSummaryYear(currentItemIdx.value, props.thisMonth.value.format('YYYY'));
           }
 
           summaryData.unit = data.unit;
@@ -210,7 +212,7 @@ export default {
             summaryData.earnPrevDiff.rate = 0;
             summaryData.earnPrevDiff.earnIncProceeds = 0;
             summaryData.earnPrevDiff.rateIncProceeds = 0;
-          } else if (selectedTab.value == 'month') {
+          } else {
             summaryData.year = data.year;
             summaryData.month = data.month;
             summaryData.inout.principalTotal = data.inout.principalTotal;
