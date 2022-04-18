@@ -5,6 +5,11 @@
     "dev": "SET NODE_ENV=development & nodemon main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "imports": {
+    "#helper/*": "./helper/*.js",
+    "#routes/*": "./routes/*.js",
+    "#database/*": "./database/*.js"
+  },
   "dependencies": {
     "body-parser": "^1.19.1",
     "cors": "^2.8.5",

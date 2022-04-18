@@ -1,6 +1,6 @@
 const express = require('express');
-const asyncHandler = require('../../helper/express-async-wrap');
-const {ResponseError, createResult} = require('../../helper/express-response');
+const asyncHandler = require('#helper/express-async-wrap');
+const {ResponseError, createResult} = require('#helper/express-response');
 
 /**
  * @param {Mysql} db
@@ -9,7 +9,7 @@ const {ResponseError, createResult} = require('../../helper/express-response');
 module.exports = (db) => {
   const router = express.Router();
   
-  const {itemTypeList} = require('../../helper/db/investHistory')(db);
+  const {itemTypeList} = require('#helper/db/investHistory')(db);
   
   /**
    * item type 리스트

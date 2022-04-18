@@ -1,6 +1,6 @@
 const express = require('express');
-const asyncHandler = require('../../helper/express-async-wrap');
-const {ResponseError, createResult} = require('../../helper/express-response');
+const asyncHandler = require('#helper/express-async-wrap');
+const {ResponseError, createResult} = require('#helper/express-response');
 const dayjs = require("dayjs");
 
 /**
@@ -13,7 +13,7 @@ module.exports = (db) => {
     upsertMonthSummary,
     upsertYearSummary,
     upsertTotalSummary,
-  } = require('../../helper/db/investHistory')(db);
+  } = require('#helper/db/investHistory')(db);
   
   /**
    * summary total

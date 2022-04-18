@@ -1,6 +1,6 @@
 const express = require('express');
-const asyncHandler = require('../../helper/express-async-wrap');
-const {ResponseError, createResult} = require('../../helper/express-response');
+const asyncHandler = require('#helper/express-async-wrap');
+const {ResponseError, createResult} = require('#helper/express-response');
 
 /**
  * @param {Mysql} db

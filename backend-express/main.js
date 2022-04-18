@@ -2,8 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const {Mysql} = require('./database/Mysql');
-const expressResponse = require('./helper/express-response');
+const {Mysql} = require('#database/Mysql');
+const expressResponse = require('#helper/express-response');
 
 //set vars: express
 const app = express();
@@ -25,12 +25,12 @@ const db = new Mysql(
  * 라우터 설정
  */
 const investHistoryRouter = {
-  unit: require('./routes/investHistory/unit')(db),
-  unitSet: require('./routes/investHistory/unitSet')(db),
-  company: require('./routes/investHistory/company')(db),
-  item: require('./routes/investHistory/item')(db),
-  history: require('./routes/investHistory/history')(db),
-  summary: require('./routes/investHistory/summary')(db),
+  unit: require('#routes/investHistory/unit')(db),
+  unitSet: require('#routes/investHistory/unitSet')(db),
+  company: require('#routes/investHistory/company')(db),
+  item: require('#routes/investHistory/item')(db),
+  history: require('#routes/investHistory/history')(db),
+  summary: require('#routes/investHistory/summary')(db),
 }
 // const asyncHandler = require("./helper/express-async-wrap");
 // app.get('/', asyncHandler(async (req, res) => {
