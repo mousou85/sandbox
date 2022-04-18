@@ -1,13 +1,16 @@
 <template>
   <div>
     <div>
-      <label for="itemList">상품선택</label>
-      <select id="itemList" @change="selectItem">
-        <option value="">상품선택</option>
-        <option v-for="item in itemList" :key="item.item_idx" :value="item.item_idx">
-          {{item.company_name}} - {{item.item_name}}
-        </option>
-      </select>
+      <TreeSelect
+          v-model="selectedItemIdx"
+          :options="itemTreeSelect"
+          selectionMode="single"
+          placeholder="상품선택"
+      >
+        <template #value="value">
+          {{value.value[0]?.data.label ?? value.placeholder}}
+        </template>
+      </TreeSelect>
     </div>
 
     <HistoryAddForm
@@ -43,7 +46,7 @@
 </template>
 
 <script>
-import {onBeforeMount, reactive, ref} from "vue";
+import {onBeforeMount, reactive, ref, watch} from "vue";
 import {useStore} from 'vuex';
 import {investHistory} from "@/store/modules/investHistory";
 
@@ -55,21 +58,26 @@ import HistoryItemSummary from '@/components/investHistory/HistoryItemSummary.vu
 import HistoryInOutList from '@/components/investHistory/HistoryInOutList.vue';
 import HistoryRevenueList from '@/components/investHistory/HistoryRevenueList.vue';
 
+import TreeSelect from 'primevue/treeselect';
+
 export default {
   components: {
     HistoryAddForm,
     HistoryItemSummary,
     HistoryInOutList,
     HistoryRevenueList,
+    TreeSelect,
   },
   setup() {
     //set vars: vuex
     const store = useStore();
 
     //set vars: 필요 변수
+    const selectedItemIdx = ref();
     const itemUsableUnitList = ref([]);
     const thisMonth = reactive({value: dayjs()});
     const itemList = ref([]);
+    const itemTreeSelect = ref([]);
 
     /*
     lifecycle hook
@@ -82,26 +90,89 @@ export default {
         }
 
         itemList.value = await requestItemList();
+        setItemTreeSelect();
       } catch (err) {
+        console.log(err);
         itemList.value = [];
       }
     });
 
-    /**
-     * 상품 선택 이벤트
-     * @param $event
-     * @returns {Promise<void>}
+    /*
+    watch variables
      */
-    const selectItem = async ($event) => {
-      const selectedVal = $event.target.value;
+    watch(selectedItemIdx, (newSelectedIdx, oldSelectedIdx) => {
+      newSelectedIdx = Object.keys(newSelectedIdx);
+      newSelectedIdx = newSelectedIdx.length > 0 ? newSelectedIdx[0] : 0;
 
+      // console.log(itemList);
       for (const item of itemList.value) {
-        if (item.item_idx == selectedVal) {
+        if (item.item_idx == newSelectedIdx) {
           itemUsableUnitList.value = item.unit_set;
         }
       }
 
-      store.commit('investHistory/setCurrentItemIdx', selectedVal);
+      store.commit('investHistory/setCurrentItemIdx', newSelectedIdx);
+      store.commit('investHistory/setUpdateSummaryFlag', true);
+      store.commit('investHistory/setUpdateInOutListFlag', true);
+      store.commit('investHistory/setUpdateRevenueListFlag', true);
+      store.commit('investHistory/setSelectedUnit', '');
+    });
+
+    /**
+     * set item tree select list
+     */
+    const setItemTreeSelect = () => {
+      const list = [];
+
+      for (const _item of itemList.value) {
+        let arrKey = null;
+        for (const k in list) {
+          if (list[k].key == _item.company_idx) {
+            arrKey = k;
+          }
+        }
+
+        if (arrKey === null) {
+          list.push({
+            key: _item.company_idx,
+            label: _item.company_name,
+            selectable: false,
+            children: [
+              {
+                key: _item.item_idx,
+                label: _item.item_name,
+                data: Object.assign(_item, {label: `${_item.company_name} - ${_item.item_name}`}),
+              }
+            ]
+          })
+        } else {
+          list[arrKey].children.push({
+            key: _item.item_idx,
+            label: _item.item_name,
+            data: Object.assign(_item, {label: `${_item.company_name} - ${_item.item_name}`}),
+          })
+        }
+      }
+
+      itemTreeSelect.value = list;
+    }
+
+    /**
+     * 상품 선택 이벤트
+     * @param {Object} selected
+     * @returns {Promise<void>}
+     */
+    const selectItem = async (selected) => {
+      const selectedKeys = Object.keys(selected);
+      const selectedValue = selectedKeys.length ? parseInt(selectedKeys[0]) : 0;
+
+      for (const item of itemList.value) {
+        if (item.item_idx == selectedValue) {
+          itemUsableUnitList.value = item.unit_set;
+        }
+      }
+
+      store.commit('investHistory/setCurrentItemIdx', selectedValue);
       store.commit('investHistory/setUpdateSummaryFlag', true);
       store.commit('investHistory/setUpdateInOutListFlag', true);
       store.commit('investHistory/setUpdateRevenueListFlag', true);
@@ -127,7 +198,8 @@ export default {
     return {
       itemUsableUnitList,
       thisMonth,
-      itemList,
+      selectedItemIdx,
+      itemTreeSelect,
       selectItem,
       changeHistoryListMonth,
     }
