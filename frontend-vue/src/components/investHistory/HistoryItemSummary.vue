@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import {computed, reactive, ref, watch} from "vue";
+import {computed, onBeforeMount, reactive, ref, watch} from "vue";
 import {useStore} from 'vuex';
 import {numberComma} from "@/libs/helper";
 import {getItemSummaryTotal, getItemSummaryMonth, getItemSummaryYear} from "@/modules/investHistory";
@@ -168,6 +168,13 @@ export default {
         if (newSummaryFlag) {
           await getSummary();
         }
+    });
+
+    /*
+    lifecycle hook
+     */
+    onBeforeMount(async () => {
+      await getSummary();
     });
 
     /**
