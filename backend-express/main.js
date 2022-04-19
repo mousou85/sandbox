@@ -1,4 +1,5 @@
 require('dotenv').config();
+const NODE_ENV = process.env.NODE_ENV || 'production';
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -7,7 +8,7 @@ const expressResponse = require('#helper/express-response');
 
 //set vars: express
 const app = express();
-const port = 5000;
+const port = process.env.PORT;
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
