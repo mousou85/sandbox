@@ -110,10 +110,11 @@ module.exports = (db) => {
       //set vars: 요약 데이터
       let query = db.queryBuilder()
         .select()
-        .from('invest_summary_month AS s')
+        .from('invest_summary_date AS s')
         .join('invest_unit AS u', 's.unit_idx', 'u.unit_idx')
-        .where('s.item_idx', itemIdx)
+        .where('s.summary_type', 'month')
         .andWhere('s.summary_date', summaryDate)
+        .andWhere('s.item_idx', itemIdx)
         .andWhere('u.unit', unit);
       const rsSummary = await db.queryRow(query);
       
@@ -208,14 +209,18 @@ module.exports = (db) => {
         .where('item_idx', itemIdx)
       );
       if (!hasItem) throw new ResponseError('item이 존재하지 않음');
+  
+      //set vars: summary date
+      const summaryDate = `${year}-01-01`;
       
       //set vars: 요약 데이터
       let query = db.queryBuilder()
         .select()
-        .from('invest_summary_year AS s')
+        .from('invest_summary_date AS s')
         .join('invest_unit AS u', 's.unit_idx', 'u.unit_idx')
-        .where('s.item_idx', itemIdx)
-        .andWhere('s.summary_year', year)
+        .where('s.summary_type', 'year')
+        .andWhere('s.summary_date', summaryDate)
+        .andWhere('s.item_idx', itemIdx)
         .andWhere('u.unit', unit);
       const rsSummary = await db.queryRow(query);
       
