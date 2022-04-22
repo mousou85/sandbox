@@ -1,16 +1,21 @@
 <template>
   <div>
     <div>
-      <TreeSelect
-          v-model="selectedItemIdx"
-          :options="itemTreeSelect"
-          selectionMode="single"
-          placeholder="상품선택"
+      <CascadeSelect
+          v-model="selectedItem"
+          :options="itemList"
+          :optionGroupChildren="['item_list']"
+          optionLabel="option_label"
+          optionGroupLabel="company_name"
+          placeholder="상품 선택"
       >
-        <template #value="value">
-          {{value.value[0]?.data.label ?? value.placeholder}}
+        <template #option="item">
+          <span v-if="item.option.company_idx">{{item.option.company_name}}</span>
+          <span v-else :style="item.option.is_close ? 'text-decoration:line-through' : ''">
+            {{item.option.item_name}}{{ item.option.is_close ? '(투자종료)' : '' }}
+          </span>
         </template>
-      </TreeSelect>
+      </CascadeSelect>
     </div>
 
     <HistoryAddForm
@@ -58,7 +63,7 @@ import HistoryItemSummary from '@/components/investHistory/HistoryItemSummary.vu
 import HistoryInOutList from '@/components/investHistory/HistoryInOutList.vue';
 import HistoryRevenueList from '@/components/investHistory/HistoryRevenueList.vue';
 
-import TreeSelect from 'primevue/treeselect';
+import CascadeSelect from 'primevue/cascadeselect';
 
 export default {
   components: {
@@ -66,18 +71,17 @@ export default {
     HistoryItemSummary,
     HistoryInOutList,
     HistoryRevenueList,
-    TreeSelect,
+    CascadeSelect,
   },
   setup() {
     //set vars: vuex
     const store = useStore();
 
     //set vars: 필요 변수
-    const selectedItemIdx = ref();
+    const selectedItem = ref();
     const itemUsableUnitList = ref([]);
     const thisMonth = reactive({value: dayjs()});
     const itemList = ref([]);
-    const itemTreeSelect = ref([]);
 
     /*
     lifecycle hook
@@ -90,9 +94,14 @@ export default {
         }
 
         itemList.value = await requestItemList();
-        setItemTreeSelect();
+        for (const company of itemList.value) {
+          const companyName = company.company_name;
+
+          for (const item of company.item_list) {
+            item.option_label = `${companyName} - ${item.item_name}`;
+          }
+        }
       } catch (err) {
-        console.log(err);
         itemList.value = [];
       }
     });
@@ -100,84 +109,26 @@ export default {
     /*
     watch variables
      */
-    watch(selectedItemIdx, (newSelectedIdx, oldSelectedIdx) => {
-      newSelectedIdx = Object.keys(newSelectedIdx);
-      newSelectedIdx = newSelectedIdx.length > 0 ? newSelectedIdx[0] : 0;
+    watch(selectedItem, (newSelectedItem, oldSelectedItem) => {
+      itemUsableUnitList.value = newSelectedItem.unit_set;
 
-      // console.log(itemList);
-      for (const item of itemList.value) {
-        if (item.item_idx == newSelectedIdx) {
-          itemUsableUnitList.value = item.unit_set;
+      let storeUpdateFlag = false;
+      if (oldSelectedItem) {
+        if (newSelectedItem.item_idx != oldSelectedItem.item_idx) {
+          storeUpdateFlag = true;
         }
+      } else {
+        storeUpdateFlag = true;
       }
 
-      store.commit('investHistory/setCurrentItemIdx', newSelectedIdx);
-      store.commit('investHistory/setUpdateSummaryFlag', true);
-      store.commit('investHistory/setUpdateInOutListFlag', true);
-      store.commit('investHistory/setUpdateRevenueListFlag', true);
-      store.commit('investHistory/setSelectedUnit', '');
+      if (storeUpdateFlag) {
+        store.commit('investHistory/setCurrentItemIdx', newSelectedItem.item_idx);
+        store.commit('investHistory/setUpdateSummaryFlag', true);
+        store.commit('investHistory/setUpdateInOutListFlag', true);
+        store.commit('investHistory/setUpdateRevenueListFlag', true);
+        store.commit('investHistory/setSelectedUnit', '');
+      }
     });
-
-    /**
-     * set item tree select list
-     */
-    const setItemTreeSelect = () => {
-      const list = [];
-
-      for (const _item of itemList.value) {
-        let arrKey = null;
-        for (const k in list) {
-          if (list[k].key == _item.company_idx) {
-            arrKey = k;
-          }
-        }
-
-        if (arrKey === null) {
-          list.push({
-            key: _item.company_idx,
-            label: _item.company_name,
-            selectable: false,
-            children: [
-              {
-                key: _item.item_idx,
-                label: _item.item_name,
-                data: Object.assign(_item, {label: `${_item.company_name} - ${_item.item_name}`}),
-              }
-            ]
-          })
-        } else {
-          list[arrKey].children.push({
-            key: _item.item_idx,
-            label: _item.item_name,
-            data: Object.assign(_item, {label: `${_item.company_name} - ${_item.item_name}`}),
-          })
-        }
-      }
-
-      itemTreeSelect.value = list;
-    }
-
-    /**
-     * 상품 선택 이벤트
-     * @param {Object} selected
-     * @returns {Promise<void>}
-     */
-    const selectItem = async (selected) => {
-      const selectedKeys = Object.keys(selected);
-      const selectedValue = selectedKeys.length ? parseInt(selectedKeys[0]) : 0;
-
-      for (const item of itemList.value) {
-        if (item.item_idx == selectedValue) {
-          itemUsableUnitList.value = item.unit_set;
-        }
-      }
-
-      store.commit('investHistory/setCurrentItemIdx', selectedValue);
-      store.commit('investHistory/setUpdateSummaryFlag', true);
-      store.commit('investHistory/setUpdateInOutListFlag', true);
-      store.commit('investHistory/setUpdateRevenueListFlag', true);
-      store.commit('investHistory/setSelectedUnit', '');
-    }
 
     /**
      * 히스토리 리스트 날짜 변경
@@ -198,9 +149,8 @@ export default {
     return {
       itemUsableUnitList,
       thisMonth,
-      selectedItemIdx,
-      itemTreeSelect,
-      selectItem,
+      selectedItem,
+      itemList,
       changeHistoryListMonth,
     }
   }

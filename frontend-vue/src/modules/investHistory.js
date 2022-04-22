@@ -19,7 +19,7 @@ export const setAPIBaseUrl = (url) => {
  * @return {Promise<Object[]>}
  */
 export const getItemList = async () => {
-  const res = await http.get(`${baseURL}/invest-history/item/`);
+  const res = await http.get(`${baseURL}/invest-history/item/`, {type: 'group'});
   if (!res.result) throw new Error(res.resultMessage);
   
   return res.data.list;
