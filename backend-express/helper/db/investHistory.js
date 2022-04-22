@@ -654,8 +654,8 @@ module.exports = (db) => {
     //set vars: 요약 데이터 만들 기간 범위
     query = `
       SELECT
-        MIN(summary_year) AS minYear,
-        MAX(summary_year) AS maxYear
+        MIN(DATE_FORMAT(summary_date, '%Y')) AS minYear,
+        MAX(DATE_FORMAT(summary_date, '%Y')) AS maxYear
       FROM invest_summary_date
       WHERE
         summary_type = 'year'
