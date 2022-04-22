@@ -121,10 +121,11 @@ module.exports = (db) => {
       //set vars: 이전달 요약 데이터
       query = db.queryBuilder()
         .select()
-        .from('invest_summary_month')
-        .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unitIdx)
+        .from('invest_summary_date')
+        .where('summary_type', 'month')
         .andWhere('summary_date', '<', summaryDate)
+        .andWhere('item_idx', itemIdx)
+        .andWhere('unit_idx', unitIdx)
         .orderBy('summary_date', 'desc')
         .limit(1);
       const rsPrevSummary = await db.queryRow(query, trx ?? null);
@@ -240,26 +241,27 @@ module.exports = (db) => {
       
       //set vars: 요약 데이터 존재 유무
       query = db.queryBuilder()
-        .from('invest_summary_month')
-        .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unitIdx)
-        .andWhere('summary_date', summaryDate);
-      const hasSummary = await db.exists(query, trx ?? null);
+        .select('summary_idx')
+        .from('invest_summary_date')
+        .where('summary_type', 'month')
+        .andWhere('summary_date', summaryDate)
+        .andWhere('item_idx', itemIdx)
+        .andWhere('unit_idx', unitIdx);
+      const summaryIdx = await db.queryScalar(query, trx ?? null);
       
       // 요약 데이터 존재 유무에 따라 insert/update 처리
-      if (!hasSummary) {
+      if (!summaryIdx) {
+        upsertData['summary_type'] = 'month';
         upsertData['summary_date'] = summaryDate;
         upsertData['item_idx'] = itemIdx;
         upsertData['unit_idx'] = unitIdx;
         
-        query = db.queryBuilder().insert(upsertData).into('invest_summary_month');
+        query = db.queryBuilder().insert(upsertData).into('invest_summary_date');
       } else {
         query = db.queryBuilder()
           .update(upsertData)
-          .from('invest_summary_month')
-          .where('item_idx', itemIdx)
-          .andWhere('unit_idx', unitIdx)
-          .andWhere('summary_date', summaryDate);
+          .from('invest_summary_date')
+          .where('summary_idx', summaryIdx);
       }
   
       await db.execute(query, trx ?? null);
@@ -281,7 +283,7 @@ module.exports = (db) => {
     const targetDate = date ? dayjs(date) : dayjs();
     const startDate = targetDate.format('YYYY-01-01');
     const endDate = targetDate.month(11).endOf('month').format('YYYY-MM-DD');
-    const summaryYear = targetDate.format('YYYY');
+    const summaryDate = startDate;
   
     //check data
     const hasItem = await db.exists(db.queryBuilder()
@@ -328,11 +330,12 @@ module.exports = (db) => {
       //set vars: 이전년도 요약 데이터
       query = db.queryBuilder()
         .select()
-        .from('invest_summary_year')
-        .where('item_idx', itemIdx)
+        .from('invest_summary_date')
+        .where('summary_type', 'year')
+        .andWhere('summary_date', '<', summaryDate)
+        .andWhere('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
-        .andWhere('summary_year', '<', summaryYear)
-        .orderBy('summary_year', 'desc')
+        .orderBy('summary_date', 'desc')
         .limit(1);
       const rsPrevSummary = await db.queryRow(query, trx ?? null);
   
@@ -364,8 +367,12 @@ module.exports = (db) => {
           SUM(inout_principal_current) AS inout_principal_current,
           SUM(inout_proceeds_current) AS inout_proceeds_current,
           SUM(revenue_interest_current) AS revenue_interest_current
-        FROM invest_summary_month
-        WHERE item_idx = :itemIdx AND unit_idx = :unitIdx AND summary_date BETWEEN :startDate AND :endDate
+        FROM invest_summary_date
+        WHERE
+          summary_type = 'month'
+          AND summary_date BETWEEN :startDate AND :endDate
+          AND item_idx = :itemIdx
+          AND unit_idx = :unitIdx
       `;
       let rsSummary1 = await db.executeRaw(query, {itemIdx, unitIdx, startDate, endDate}, trx ?? null);
       rsSummary1 = rsSummary1.length > 0 ? rsSummary1[0] : null;
@@ -385,10 +392,11 @@ module.exports = (db) => {
       //set vars: 이번 년도 요약 데이터(평가-평가금액)
       query = db.queryBuilder()
         .select('revenue_eval')
-        .from('invest_summary_month')
-        .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unitIdx)
+        .from('invest_summary_date')
+        .where('summary_type', 'month')
         .andWhereBetween('summary_date', [startDate, endDate])
+        .andWhere('item_idx', itemIdx)
+        .andWhere('unit_idx', unitIdx)
         .orderBy('summary_date', 'desc')
         .limit(1);
       const rsSummary2 = await db.queryRow(query, trx ?? null);
@@ -434,26 +442,27 @@ module.exports = (db) => {
   
       //set vars: 요약 데이터 존재 유무
       query = db.queryBuilder()
-        .from('invest_summary_year')
-        .where('item_idx', itemIdx)
-        .andWhere('unit_idx', unitIdx)
-        .andWhere('summary_year', summaryYear);
-      const hasSummary = await db.exists(query, trx ?? null);
+        .select('summary_idx')
+        .from('invest_summary_date')
+        .where('summary_type', 'year')
+        .where('summary_date', summaryDate)
+        .andWhere('item_idx', itemIdx)
+        .andWhere('unit_idx', unitIdx);
+      const summaryIdx = await db.queryScalar(query, trx ?? null);
   
       // 요약 데이터 존재 유무에 따라 insert/update 처리
-      if (!hasSummary) {
-        upsertData['summary_year'] = summaryYear;
+      if (!summaryIdx) {
+        upsertData['summary_type'] = 'year';
+        upsertData['summary_date'] = summaryDate;
         upsertData['item_idx'] = itemIdx;
         upsertData['unit_idx'] = unitIdx;
         
-        query = db.queryBuilder().insert(upsertData).into('invest_summary_year');
+        query = db.queryBuilder().insert(upsertData).into('invest_summary_date');
       } else {
         query = db.queryBuilder()
           .update(upsertData)
-          .from('invest_summary_year')
-          .where('item_idx', itemIdx)
-          .andWhere('unit_idx', unitIdx)
-          .andWhere('summary_year', summaryYear);
+          .from('invest_summary_date')
+          .where('summary_idx', summaryIdx);
       }
 
       await db.execute(query, trx ?? null);
@@ -504,10 +513,11 @@ module.exports = (db) => {
       //set vars: 마지막 연간 데이터
       query = db.queryBuilder()
         .select()
-        .from('invest_summary_year')
-        .where('item_idx', itemIdx)
+        .from('invest_summary_date')
+        .where('summary_type', 'year')
+        .andWhere('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
-        .orderBy('summary_year', 'desc');
+        .orderBy('summary_date', 'desc');
       const rsSummary = await db.queryRow(query, trx ?? null);
   
       //생성할 요약 데이터에 가져온 데이터 저장
@@ -587,8 +597,12 @@ module.exports = (db) => {
       SELECT
         MIN(summary_date) AS minDate,
         MAX(summary_date) AS maxDate
-      FROM invest_summary_month
-      WHERE item_idx = :itemIdx AND unit_idx = :unitIdx AND summary_date > :summaryDate
+      FROM invest_summary_date
+      WHERE
+        summary_type = 'month'
+        AND summary_date > :summaryDate
+        AND item_idx = :itemIdx
+        AND unit_idx = :unitIdx
     `;
     let rsDateRange = await db.executeRaw(query, {itemIdx, unitIdx, summaryDate}, trx ?? null);
     if (rsDateRange.length == 0) return;
@@ -619,7 +633,7 @@ module.exports = (db) => {
   const updateBeforeYearSummary = async (itemIdx, date, unitIdx, trx) => {
     //set vars: 날짜 관련
     const targetDate = date ? dayjs(date) : dayjs();
-    const summaryYear = targetDate.format('YYYY');
+    const summaryDate = targetDate.format('YYYY-01-01');
     
     //check data
     const hasItem = await db.exists(db.queryBuilder()
@@ -640,12 +654,16 @@ module.exports = (db) => {
     //set vars: 요약 데이터 만들 기간 범위
     query = `
       SELECT
-        MIN(summary_year) AS minYear,
-        MAX(summary_year) AS maxYear
-      FROM invest_summary_year
-      WHERE item_idx = :itemIdx AND unit_idx = :unitIdx AND summary_year > :summaryYear
+        MIN(DATE_FORMAT(summary_date, '%Y')) AS minYear,
+        MAX(DATE_FORMAT(summary_date, '%Y')) AS maxYear
+      FROM invest_summary_date
+      WHERE
+        summary_type = 'year'
+        AND summary_date > :summaryDate
+        AND item_idx = :itemIdx
+        AND unit_idx = :unitIdx
     `;
-    let rsYearRange = await db.executeRaw(query, {itemIdx, unitIdx, summaryYear}, trx ?? null);
+    let rsYearRange = await db.executeRaw(query, {itemIdx, unitIdx, summaryDate}, trx ?? null);
     if (rsYearRange.length == 0) return;
   
     rsYearRange = rsYearRange[0];

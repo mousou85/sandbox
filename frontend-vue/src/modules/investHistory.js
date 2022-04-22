@@ -1,6 +1,18 @@
-import http from "../libs/http";
+import http from "@/libs/http";
 
+/**
+ * api base url
+ * @type {string}
+ */
 let baseURL = 'http://localhost:5000';
+
+/**
+ * set api base url
+ * @param url
+ */
+export const setAPIBaseUrl = (url) => {
+  baseURL = url;
+}
 
 /**
  * get item list
