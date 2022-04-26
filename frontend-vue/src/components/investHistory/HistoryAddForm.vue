@@ -5,12 +5,17 @@
     <fieldset>
       <legend>기록 추가</legend>
 
-      <div class="row">
-        <label>단위</label>
-        <label class="short" v-for="unit in usableUnitList" :key="unit.unit_idx">
-          <input type="radio" name="unit_idx" v-model="formData.unitIdx" :value="unit.unit_idx" @change="setInputValUnitText(unit.unit)">
-          {{ unit.unit }}
-        </label>
+      <div class="formgroup-inline">
+        <div class="field-radiobutton" v-for="unit in usableUnitList" :key="unit.unit_idx">
+          <RadioButton
+              v-bind:id="'unitIdx' + unit.unit_idx"
+              name="unit_idx"
+              :value="unit.unit_idx"
+              v-model="formData.unitIdx"
+              @change="setInputValUnitText(unit.unit)"
+          ></RadioButton>
+          <label :for="'unitIdx' + unit.unit_idx">{{ unit.unit }}</label>
+        </div>
       </div>
 
       <div class="row">
@@ -53,10 +58,16 @@
 <script>
 import {reactive, computed} from "vue";
 import {useStore} from 'vuex';
+
+import RadioButton from 'primevue/radiobutton';
+
 import {addHistory} from '@/modules/investHistory';
 import {numberComma, numberUncomma} from "@/libs/helper";
 
 export default  {
+  components: {
+    RadioButton,
+  },
   props: [
       'usableUnitList'
   ],
@@ -175,32 +186,4 @@ export default  {
 </script>
 
 <style scoped>
-#addForm {
-  width: fit-content;
-}
-#addForm fieldset {
-  width: available;
-  border: none;
-  border-top: 1px solid;
-  margin-top: 10px;
-
-}
-#addForm .row {
-  padding: 5px 0;
-}
-#addForm label {
-  display: inline-block;
-  width: 150px;
-  vertical-align: top;
-}
-#addForm label.short {
-  width: 100px;
-}
-#addForm select {
-  width: 200px;
-}
-#addForm input.val {
-  text-align: right;
-  width: 10em;
-}
 </style>

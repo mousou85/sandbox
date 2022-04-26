@@ -1,6 +1,7 @@
 <template>
   <Menubar
       :model="menus"
+      class="text-base md:text-sm"
   ></Menubar>
 </template>
 

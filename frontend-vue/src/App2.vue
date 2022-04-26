@@ -3,24 +3,13 @@ import Menu from './components/Menu.vue';
 </script>
 
 <template>
-  <header>
+  <header class="block">
     <Menu></Menu>
   </header>
-  <main>
+  <main class="block">
     <router-view></router-view>
   </main>
 </template>
 
-<style>
-body {
-  margin: 0;
-}
-
-header {
-  display: block;
-}
-main {
-  display: block;
-  padding: 20px;
-}
+<style scoped>
 </style>

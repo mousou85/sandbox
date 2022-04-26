@@ -1,52 +1,49 @@
 <template>
-  <div>
-    <div>
-      <CascadeSelect
-          v-model="selectedItem"
-          :options="itemList"
-          :optionGroupChildren="['item_list']"
-          optionLabel="option_label"
-          optionGroupLabel="company_name"
-          placeholder="상품 선택"
-          style="min-width: 20rem"
-      >
-        <template #option="item">
-          <span v-if="item.option.company_idx">{{item.option.company_name}}</span>
-          <span v-else :style="item.option.is_close ? 'text-decoration:line-through' : ''">
-            {{item.option.item_name}}{{ item.option.is_close ? '(투자종료)' : '' }}
-          </span>
-        </template>
-      </CascadeSelect>
-    </div>
+  <CascadeSelect
+      v-model="selectedItem"
+      :options="itemList"
+      :optionGroupChildren="['item_list']"
+      optionLabel="option_label"
+      optionGroupLabel="company_name"
+      placeholder="상품 선택"
+      class="mt-3 text-base md:text-xs min-w-full md:min-w-min"
+      panelClass="text-base md:text-xs"
+    >
+    <template #option="item">
+      <span v-if="item.option.company_idx">{{item.option.company_name}}</span>
+      <span v-else :style="item.option.is_close ? 'text-decoration:line-through' : ''">
+          {{item.option.item_name}}{{ item.option.is_close ? '(투자종료)' : '' }}
+        </span>
+    </template>
+  </CascadeSelect>
 
-    <HistoryAddForm
-        :usable-unit-list="itemUsableUnitList"
-    ></HistoryAddForm>
+  <HistoryAddForm
+      :usable-unit-list="itemUsableUnitList"
+  ></HistoryAddForm>
 
-    <div style="overflow: hidden;">
-      <HistoryItemSummary
-          :this-month="thisMonth"
-      ></HistoryItemSummary>
+  <div style="overflow: hidden;">
+    <HistoryItemSummary
+        :this-month="thisMonth"
+    ></HistoryItemSummary>
 
-      <h4 style="text-align: center;">
-        <button type="button" @click="changeHistoryListMonth('prev')">◀</button>&nbsp;&nbsp;
-        <span>{{thisMonth.value.format('YYYY-MM')}}</span>
-        &nbsp;&nbsp;<button type="button" @click="changeHistoryListMonth('next')">▶</button>
-      </h4>
+    <h4 style="text-align: center;">
+      <button type="button" @click="changeHistoryListMonth('prev')">◀</button>&nbsp;&nbsp;
+      <span>{{thisMonth.value.format('YYYY-MM')}}</span>
+      &nbsp;&nbsp;<button type="button" @click="changeHistoryListMonth('next')">▶</button>
+    </h4>
 
-      <div style="float: left;width: 45%;">
-        <HistoryInOutList
+    <div style="float: left;width: 45%;">
+      <HistoryInOutList
           :this-month="thisMonth"
           :usable-unit-list="itemUsableUnitList"
-        ></HistoryInOutList>
-      </div>
+      ></HistoryInOutList>
+    </div>
 
-      <div style="float: left;width: 45%;margin-left: 20px;">
-        <HistoryRevenueList
-            :this-month="thisMonth"
-            :usable-unit-list="itemUsableUnitList"
-        ></HistoryRevenueList>
-      </div>
+    <div style="float: left;width: 45%;margin-left: 20px;">
+      <HistoryRevenueList
+          :this-month="thisMonth"
+          :usable-unit-list="itemUsableUnitList"
+      ></HistoryRevenueList>
     </div>
   </div>
 </template>
