@@ -2,64 +2,111 @@
   <form id="addForm" @submit.prevent="submitAddHistory">
     <input type="hidden" name="item_idx" :value="currentItemIdx">
 
-    <fieldset>
-      <legend>기록 추가</legend>
+    <h3>기록 추가</h3>
 
-      <div class="formgroup-inline">
-        <div class="field-radiobutton" v-for="unit in usableUnitList" :key="unit.unit_idx">
-          <RadioButton
-              v-bind:id="'unitIdx' + unit.unit_idx"
-              name="unit_idx"
-              :value="unit.unit_idx"
-              v-model="formData.unitIdx"
-              @change="setInputValUnitText(unit.unit)"
-          ></RadioButton>
-          <label :for="'unitIdx' + unit.unit_idx">{{ unit.unit }}</label>
-        </div>
+    <div class="formgroup-inline mt-5">
+      <div class="field-radiobutton" v-for="unit in usableUnitList" :key="unit.unit_idx">
+        <RadioButton
+            v-bind:id="'unitIdx' + unit.unit_idx"
+            name="unit_idx"
+            :value="unit.unit_idx"
+            v-model="formData.unitIdx"
+            @change="setInputValUnitText(unit.unit)"
+        ></RadioButton>
+        <label :for="'unitIdx' + unit.unit_idx">{{ unit.unit }}</label>
       </div>
+    </div>
 
-      <div class="row">
+    <div class="field mt-3">
+      <div class="p-float-label">
+        <!--<input type="date" id="addFormHistoryDate" name="history_date" v-model="formData.historyDate">-->
+        <Calendar
+            v-model="formData.historyDate"
+            selectionMode="single"
+            dateFormat="yy-mm-dd"
+            :showIcon="true"
+            class="min-w-full md:min-w-min"
+        ></Calendar>
         <label for="addFormHistoryDate">일자</label>
-        <input type="date" id="addFormHistoryDate" name="history_date" v-model="formData.historyDate">
       </div>
+    </div>
 
-      <div class="row">
-        <label>기록 타입</label>
-        <label class="short"><input type="radio" name="history_type" value="inout" v-model="formData.historyType">유입/유출</label>
-        <label class="short"><input type="radio" name="history_type" value="revenue" v-model="formData.historyType">평가</label>
-      </div>
+    <div class="field mt-3">
+      <SelectButton
+          v-model="selectedHistoryType"
+          :options="historyTypes"
+          optionLabel="name"
+      >
+        <template #option="item">
+          <i v-if="item.option.icon" :class="item.option.icon"></i>
+          <span class="p-button-label">{{item.option.name}}</span>
+        </template>
+      </SelectButton>
+    </div>
 
-      <div class="row" v-if="formData.historyType == 'inout'">
-        <label>유입/유출 타입</label>
-        <label class="short"><input type="radio" name="inout_type" value="principal" v-model="formData.inoutType">원금</label>
-        <label class="short"><input type="radio" name="inout_type" value="proceeds" v-model="formData.inoutType">수익금</label>
+    <div class="formgroup-inline mt-3" v-if="formData.historyType == 'inout'">
+      <div class="field-radiobutton">
+        <RadioButton
+            id="inoutTypePrincipal"
+            name="inout_type"
+            value="principal"
+            v-model="formData.inoutType"
+        ></RadioButton>
+        <label for="inoutTypePrincipal">원금</label>
       </div>
-      <div class="row" v-else-if="formData.historyType == 'revenue'">
-        <label>평가 타입</label>
-        <label class="short"><input type="radio" name="revenue_type" value="interest" v-model="formData.revenueType">이자</label>
-        <label class="short"><input type="radio" name="revenue_type" value="eval" v-model="formData.revenueType">평가금액</label>
+      <div class="field-radiobutton">
+        <RadioButton
+            id="inoutTypeProceeds"
+            name="inout_type"
+            value="proceeds"
+            v-model="formData.inoutType"
+        ></RadioButton>
+        <label for="inoutTypeProceeds">수익금재투자</label>
       </div>
+    </div>
 
-      <div class="row">
-        <label for="addFormVal">금액</label>
-        <input type="text" id="addFormVal" name="val" class="val" v-model="formData.valText"><span id="valUnitText"></span>
+    <div class="formgroup-inline mt-3" v-if="formData.historyType == 'revenue'">
+      <div class="field-radiobutton">
+        <RadioButton
+            id="revenueTypeInterest"
+            name="revenue_type"
+            value="interest"
+            v-model="formData.revenueType"
+        ></RadioButton>
+        <label for="revenueTypeInterest">이자</label>
       </div>
+      <div class="field-radiobutton">
+        <RadioButton
+            id="revenueTypeEval"
+            name="revenue_type"
+            value="eval"
+            v-model="formData.revenueType"
+        ></RadioButton>
+        <label for="revenueTypeEval">평가금액</label>
+      </div>
+    </div>
 
-      <div class="row">
-        <label for="addFormMemo">메모</label>
-        <textarea id="addFormMemo" name="memo" cols="50" rows="5" v-model="formData.memo"></textarea>
-      </div>
-    </fieldset>
+    <div class="row">
+      <label for="addFormVal">금액</label>
+      <input type="text" id="addFormVal" name="val" class="val" v-model="formData.valText"><span id="valUnitText"></span>
+    </div>
+
+    <div class="row">
+      <label for="addFormMemo">메모</label>
+      <textarea id="addFormMemo" name="memo" cols="50" rows="5" v-model="formData.memo"></textarea>
+    </div>
 
     <button type="submit">추가</button>
   </form>
 </template>
 
 <script>
-import {reactive, computed} from "vue";
+import {reactive, ref, computed, watch} from "vue";
 import {useStore} from 'vuex';
 
 import RadioButton from 'primevue/radiobutton';
+import Calendar from 'primevue/calendar';
+import SelectButton from 'primevue/selectbutton';
 
 import {addHistory} from '@/modules/investHistory';
 import {numberComma, numberUncomma} from "@/libs/helper";
@@ -67,6 +114,8 @@ import {numberComma, numberUncomma} from "@/libs/helper";
 export default  {
   components: {
     RadioButton,
+    Calendar,
+    SelectButton,
   },
   props: [
       'usableUnitList'
@@ -77,6 +126,12 @@ export default  {
 
     //set vars: 필요 변수
     const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
+    const selectedHistoryType = ref();
+
+    const historyTypes = [
+      {name: '유입/유출', icon: 'pi pi-sort-alt', value: 'inout'},
+      {name: '평가', icon: 'pi pi-percentage', value: 'revenue'},
+    ];
 
     //set vars: form data
     const formData = reactive({
@@ -96,6 +151,13 @@ export default  {
           formData.val = val;
         }
       })
+    });
+
+    /*
+    watch variables
+     */
+    watch(selectedHistoryType, (newSelectedHistoryType) => {
+      formData.historyType = newSelectedHistoryType.value;
     });
 
     /**
@@ -177,13 +239,19 @@ export default  {
 
     return {
       currentItemIdx,
+      selectedHistoryType,
+      historyTypes,
       formData,
       submitAddHistory,
-      setInputValUnitText
+      setInputValUnitText,
     }
   }
 }
 </script>
 
 <style scoped>
+.p-selectbutton :deep(.p-button) {
+  width: 10rem;
+  margin:auto;
+}
 </style>

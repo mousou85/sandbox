@@ -1,7 +1,7 @@
 <template>
   <TabMenu
       :model="subMenus"
-      class="block text-base md:text-sm"
+      class="block"
   ></TabMenu>
 </template>
 

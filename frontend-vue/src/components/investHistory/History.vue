@@ -6,8 +6,7 @@
       optionLabel="option_label"
       optionGroupLabel="company_name"
       placeholder="상품 선택"
-      class="mt-3 text-base md:text-xs min-w-full md:min-w-min"
-      panelClass="text-base md:text-xs"
+      class="mt-3 min-w-full md:min-w-min"
     >
     <template #option="item">
       <span v-if="item.option.company_idx">{{item.option.company_name}}</span>
