@@ -8,6 +8,7 @@
           optionLabel="option_label"
           optionGroupLabel="company_name"
           placeholder="상품 선택"
+          style="min-width: 20rem"
       >
         <template #option="item">
           <span v-if="item.option.company_idx">{{item.option.company_name}}</span>

@@ -18,11 +18,9 @@ body {
 
 header {
   display: block;
-  border-bottom:1px solid;
 }
 main {
   display: block;
-  border-bottom: 1px solid;
   padding: 20px;
 }
 </style>

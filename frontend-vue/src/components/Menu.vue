@@ -1,34 +1,37 @@
 <template>
-  <div id="menuWrap">
-    <router-link to="/" class="item" active-class="active">Home</router-link>
-    <router-link to="/invest-history" class="item" active-class="active">History</router-link>
-  </div>
+  <Menubar
+      :model="menus"
+  ></Menubar>
 </template>
 
-<style>
+<script>
+import {ref} from "vue";
 
-#menuWrap {
-  display: block;
-  margin: 0;
-  padding: 0;
+import Menubar from 'primevue/menubar';
+
+export default {
+  components: {
+    Menubar
+  },
+  setup() {
+    const menus = ref([
+      {label: 'Home', icon: 'pi pi-home', to: '/'},
+      {
+        label: 'Invest',
+        icon: 'pi pi-dollar',
+        to: '/invest-history'
+      },
+    ]);
+
+    return {
+      menus,
+    }
+  }
 }
+</script>
 
-#menuWrap .item {
-  display: inline-block;
-  border-right: 1px solid;
-  padding: 10px;
-}
-
-#menuWrap a.item {
-  text-decoration: none;
-  color: black;
-}
-
-#menuWrap a.item:hover {
-  text-decoration: underline;
-}
-
-#menuWrap a.item.active {
-  color: green;
+<style scoped>
+.p-menubar :deep(.p-menubar-root-list .p-menuitem .router-link-active) {
+  border: 1px solid #c0c0c0;
 }
 </style>
