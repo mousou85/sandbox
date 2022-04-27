@@ -4,23 +4,24 @@
 
     <h3>기록 추가</h3>
 
-    <div class="formgroup-inline mt-5">
+    <div class="formgroup-inline mt-5" v-if="usableUnitList.length > 0">
       <div class="field-radiobutton" v-for="unit in usableUnitList" :key="unit.unit_idx">
         <RadioButton
             v-bind:id="'unitIdx' + unit.unit_idx"
             name="unit_idx"
             :value="unit.unit_idx"
             v-model="formData.unitIdx"
-            @change="setInputValUnitText(unit.unit)"
+            @change="changeUnit(unit)"
         ></RadioButton>
         <label :for="'unitIdx' + unit.unit_idx">{{ unit.unit }}</label>
       </div>
     </div>
 
-    <div class="field mt-3">
+    <div class="field mt-5">
       <div class="p-float-label">
         <!--<input type="date" id="addFormHistoryDate" name="history_date" v-model="formData.historyDate">-->
         <Calendar
+            name="history_date"
             v-model="formData.historyDate"
             selectionMode="single"
             dateFormat="yy-mm-dd"
@@ -31,7 +32,7 @@
       </div>
     </div>
 
-    <div class="field mt-3">
+    <div class="field mt-5">
       <SelectButton
           v-model="selectedHistoryType"
           :options="historyTypes"
@@ -44,7 +45,7 @@
       </SelectButton>
     </div>
 
-    <div class="formgroup-inline mt-3" v-if="formData.historyType == 'inout'">
+    <div class="formgroup-inline mt-5" v-if="formData.historyType == 'inout'">
       <div class="field-radiobutton">
         <RadioButton
             id="inoutTypePrincipal"
@@ -65,7 +66,7 @@
       </div>
     </div>
 
-    <div class="formgroup-inline mt-3" v-if="formData.historyType == 'revenue'">
+    <div class="formgroup-inline mt-5" v-if="formData.historyType == 'revenue'">
       <div class="field-radiobutton">
         <RadioButton
             id="revenueTypeInterest"
@@ -86,17 +87,42 @@
       </div>
     </div>
 
-    <div class="row">
-      <label for="addFormVal">금액</label>
-      <input type="text" id="addFormVal" name="val" class="val" v-model="formData.valText"><span id="valUnitText"></span>
+    <div class="field mt-5">
+      <InputNumber
+          id="addFormInputVal"
+          name="val"
+          v-model="formData.val"
+          mode="decimal"
+          :format="true"
+          :suffix="` ${selectedUnit.unit != '' ? selectedUnit.unit : 'KRW'}`"
+          :minFractionDigits="selectedUnit.minPrecision"
+          :maxFractionDigits="selectedUnit.maxPrecision"
+          class="text-right"
+      ></InputNumber>
     </div>
 
-    <div class="row">
-      <label for="addFormMemo">메모</label>
-      <textarea id="addFormMemo" name="memo" cols="50" rows="5" v-model="formData.memo"></textarea>
+    <div class="field mt-5">
+      <div class="p-float-label">
+        <Textarea
+            id="addFormMemo"
+            name="memo"
+            v-model="formData.memo"
+            :autoResize="true"
+            rows="4"
+            cols="40"
+        ></Textarea>
+        <label for="addFormMemo">메모</label>
+      </div>
     </div>
 
-    <button type="submit">추가</button>
+    <div class="field mt-5">
+      <Button
+          type="submit"
+          label="추가"
+          icon="pi pi-check"
+          class="p-button-raised min-w-full md:min-w-min"
+      ></Button>
+    </div>
   </form>
 </template>
 
@@ -107,31 +133,48 @@ import {useStore} from 'vuex';
 import RadioButton from 'primevue/radiobutton';
 import Calendar from 'primevue/calendar';
 import SelectButton from 'primevue/selectbutton';
+import InputNumber from 'primevue/inputnumber';
+import Textarea from 'primevue/textarea';
+import Button from 'primevue/button';
 
 import {addHistory} from '@/modules/investHistory';
-import {numberComma, numberUncomma} from "@/libs/helper";
 
 export default  {
   components: {
     RadioButton,
     Calendar,
     SelectButton,
+    InputNumber,
+    Textarea,
+    Button,
   },
   props: [
       'usableUnitList'
   ],
-  setup() {
+  setup(props) {
     //set vars: vuex
     const store = useStore();
 
-    //set vars: 필요 변수
+    //set vars: 현재 상품 IDX, 기록 타입 목록
     const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
-    const selectedHistoryType = ref();
-
     const historyTypes = [
       {name: '유입/유출', icon: 'pi pi-sort-alt', value: 'inout'},
       {name: '평가', icon: 'pi pi-percentage', value: 'revenue'},
     ];
+
+    //set vars: 현재 선택한 기록 타입, 현재 선택한 단위 정보
+    const selectedHistoryType = ref();
+    const selectedUnit = reactive({
+      unit_idx: 0,
+      unit: '',
+      unit_type: '',
+      minPrecision: computed(() => {
+        return selectedUnit.unit_type == 'float' ? 1 : 0;
+      }),
+      maxPrecision: computed(() => {
+        return selectedUnit.unit_type == 'float' ? 8 : 0;
+      })
+    });
 
     //set vars: form data
     const formData = reactive({
@@ -141,16 +184,7 @@ export default  {
       inoutType: '',
       revenueType: '',
       val: 0.0,
-      memo: '',
-      valText: computed({
-        get: () => {
-          return numberComma(formData.val);
-        },
-        set: (val) => {
-          val = numberUncomma(val);
-          formData.val = val;
-        }
-      })
+      memo: ''
     });
 
     /*
@@ -214,7 +248,6 @@ export default  {
           memo: formData.memo
         });
 
-        formData.valText = '';
         formData.memo = '';
 
         store.commit('investHistory/setUpdateSummaryFlag', true);
@@ -230,20 +263,23 @@ export default  {
     }
 
     /**
-     * @param {string} unitText
+     * 단위 선택 이벤트
+     * @param unit
      */
-    const setInputValUnitText = (unitText) => {
-      document.getElementById('valUnitText').innerText = unitText;
-      store.commit('investHistory/setSelectedUnit', unitText);
+    const changeUnit = (unit) => {
+      selectedUnit.unit_idx = unit.unit_idx;
+      selectedUnit.unit = unit.unit;
+      selectedUnit.unit_type = unit.unit_type;
     }
 
     return {
       currentItemIdx,
       selectedHistoryType,
       historyTypes,
+      selectedUnit,
       formData,
       submitAddHistory,
-      setInputValUnitText,
+      changeUnit,
     }
   }
 }
@@ -253,5 +289,8 @@ export default  {
 .p-selectbutton :deep(.p-button) {
   width: 10rem;
   margin:auto;
+}
+.p-inputnumber :deep(#addFormInputVal.p-inputnumber-input) {
+  text-align: right;
 }
 </style>
