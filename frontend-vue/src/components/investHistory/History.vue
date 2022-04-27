@@ -1,20 +1,15 @@
 <template>
-  <CascadeSelect
-      v-model="selectedItem"
-      :options="itemList"
-      :optionGroupChildren="['item_list']"
-      optionLabel="option_label"
-      optionGroupLabel="company_name"
-      placeholder="상품 선택"
-      class="mt-3 min-w-full md:min-w-min"
-    >
-    <template #option="item">
-      <span v-if="item.option.company_idx">{{item.option.company_name}}</span>
-      <span v-else :style="item.option.is_close ? 'text-decoration:line-through' : ''">
-          {{item.option.item_name}}{{ item.option.is_close ? '(투자종료)' : '' }}
-        </span>
+  <TreeSelect
+      v-model="treeSelectedVal"
+      :options="treeItemList"
+      selectionMode="single"
+      placeholder="상품선택"
+      class="mt-3 max-w-full md:max-w-min"
+  >
+    <template #value="{value: item, placeholder}">
+      {{item.length ? item[0].selected_label : placeholder}}
     </template>
-  </CascadeSelect>
+  </TreeSelect>
 
   <HistoryAddForm
       :usable-unit-list="itemUsableUnitList"
@@ -60,7 +55,7 @@ import HistoryItemSummary from '@/components/investHistory/HistoryItemSummary.vu
 import HistoryInOutList from '@/components/investHistory/HistoryInOutList.vue';
 import HistoryRevenueList from '@/components/investHistory/HistoryRevenueList.vue';
 
-import CascadeSelect from 'primevue/cascadeselect';
+import TreeSelect from 'primevue/treeselect';
 
 export default {
   components: {
@@ -68,17 +63,18 @@ export default {
     HistoryItemSummary,
     HistoryInOutList,
     HistoryRevenueList,
-    CascadeSelect,
+    TreeSelect,
   },
   setup() {
     //set vars: vuex
     const store = useStore();
 
     //set vars: 필요 변수
-    const selectedItem = ref();
     const itemUsableUnitList = ref([]);
     const thisMonth = reactive({value: dayjs()});
     const itemList = ref([]);
+    const treeItemList = ref([]);
+    const treeSelectedVal = ref();
 
     /*
     lifecycle hook
@@ -92,11 +88,22 @@ export default {
 
         itemList.value = await requestItemList();
         for (const company of itemList.value) {
-          const companyName = company.company_name;
+          const _tmp = {
+            key: company.company_idx,
+            label: company.company_name,
+            selectable: false,
+            children: []
+          };
 
           for (const item of company.item_list) {
-            item.option_label = `${companyName} - ${item.item_name}`;
+            _tmp.children.push({
+              key: `${company.company_idx}-${item.item_idx}`,
+              label: item.item_name,
+              selected_label: `${company.company_name} - ${item.item_name}`
+            })
           }
+
+          treeItemList.value.push(_tmp);
         }
       } catch (err) {
         itemList.value = [];
@@ -106,24 +113,39 @@ export default {
     /*
     watch variables
      */
-    watch(selectedItem, (newSelectedItem, oldSelectedItem) => {
-      itemUsableUnitList.value = newSelectedItem.unit_set;
+    watch(treeSelectedVal, (newSelectedItem, oldSelectedItem) => {
+      newSelectedItem = Object.keys(newSelectedItem)[0];
+      oldSelectedItem = oldSelectedItem ? Object.keys(oldSelectedItem)[0] : '';
 
-      let storeUpdateFlag = false;
-      if (oldSelectedItem) {
-        if (newSelectedItem.item_idx != oldSelectedItem.item_idx) {
-          storeUpdateFlag = true;
+      let selectedItem = null;
+      if (newSelectedItem != oldSelectedItem) {
+        newSelectedItem = newSelectedItem.split('-');
+
+        if (newSelectedItem.length == 2) {
+          for (const company of itemList.value) {
+            if (company.company_idx != parseInt(newSelectedItem[0])) {
+              continue;
+            }
+
+            for (const item of company.item_list) {
+              if (item.item_idx != parseInt(newSelectedItem[1])) {
+                continue;
+              }
+
+              selectedItem = item;
+              break;
+            }
+          }
         }
-      } else {
-        storeUpdateFlag = true;
       }
 
-      if (storeUpdateFlag) {
-        store.commit('investHistory/setCurrentItemIdx', newSelectedItem.item_idx);
+      if (selectedItem) {
+        store.commit('investHistory/setCurrentItemIdx', selectedItem.item_idx);
         store.commit('investHistory/setUpdateSummaryFlag', true);
         store.commit('investHistory/setUpdateInOutListFlag', true);
         store.commit('investHistory/setUpdateRevenueListFlag', true);
         store.commit('investHistory/setSelectedUnit', '');
+        itemUsableUnitList.value = selectedItem.unit_set;
       }
     });
 
@@ -146,8 +168,8 @@ export default {
     return {
       itemUsableUnitList,
       thisMonth,
-      selectedItem,
-      itemList,
+      treeItemList,
+      treeSelectedVal,
       changeHistoryListMonth,
     }
   }
