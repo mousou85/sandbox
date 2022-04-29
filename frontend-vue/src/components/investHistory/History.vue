@@ -4,7 +4,7 @@
       :options="treeItemList"
       selectionMode="single"
       placeholder="상품선택"
-      class="mt-3 max-w-full md:max-w-min"
+      class="mt-3 min-w-full md:min-w-min"
   >
     <template #value="{value: item, placeholder}">
       {{item.length ? item[0].selected_label : placeholder}}
