@@ -1,11 +1,16 @@
 <template>
   <div>
-    <h5>유입/유출</h5>
-    <ul class="unitTab">
-      <li v-for="unit in usableUnitList" :key="unit.unit_idx" :class="unit.unit == selectedTab ? 'on' : ''" @click="switchTab(unit.unit)">
-        {{unit.unit}}
-      </li>
-    </ul>
+    <h4><i class="pi pi-sort-alt"></i>유입/유출</h4>
+
+    <TabMenu
+        :model="usableUnitList"
+        :activeIndex="selectedTab.activeIndex"
+    >
+      <template #item="{item}">
+        <a class="p-menuitem-link" role="presentation" @click="switchTab(item.unit)">{{item.unit}}</a>
+      </template>
+    </TabMenu>
+
     <table id="inoutList" class="list" style="width:100%;">
       <colgroup>
         <col style="width: 90px;">
@@ -60,7 +65,10 @@
 
 <script>
 import {useStore} from "vuex";
-import {computed, onBeforeMount, ref, watch} from "vue";
+import {computed, onBeforeMount, reactive, ref, watch} from "vue";
+
+import TabMenu from "primevue/tabmenu";
+
 import {
   getHistoryList as requestHistoryList,
   editHistory as requestEditHistory,
@@ -69,6 +77,9 @@ import {
 import {numberComma, numberUncomma} from "@/libs/helper";
 
 export default {
+  components: {
+    TabMenu,
+  },
   props: [
       'thisMonth',
       'usableUnitList',
@@ -80,7 +91,10 @@ export default {
     //set vars: 필요 변수
     const itemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
     const updateListFlag = computed(() => store.getters['investHistory/getUpdateInOutListFlag']);
-    const selectedTab = ref('KRW');
+    const selectedTab = reactive({
+      value: 'KRW',
+      activeIndex: 0,
+    });
     const historyList = ref([]);
 
     /*
@@ -93,11 +107,25 @@ export default {
     /*
     watch variables
      */
-    watch(updateListFlag, async (newUpdateListFlag) => {
-      if (newUpdateListFlag) {
-        await getHistoryList();
+    watch(
+      [updateListFlag, itemIdx],
+      async ([newUpdateListFlag, newItemIdx], [oldUpdateListFlag, oldItemIdx]) => {
+        //히스토리 리스트 업데이트
+        if (newUpdateListFlag) {
+          await getHistoryList();
+        }
+
+        //unit 탭 설정
+        if (newItemIdx != oldItemIdx && props.usableUnitList.length > 0) {
+          for (const arrKey in props.usableUnitList) {
+            if (selectedTab.value == props.usableUnitList[arrKey].unit) {
+              selectedTab.activeIndex = parseInt(arrKey);
+              break;
+            }
+          }
+        }
       }
-    });
+    );
 
     /**
      * 히스토리 목록 반환
@@ -198,6 +226,13 @@ export default {
      */
     const switchTab =  (unit) => {
       selectedTab.value = unit;
+      for (const arrKey in props.usableUnitList) {
+        const _unit = props.usableUnitList[arrKey];
+        if (_unit.unit == unit) {
+          selectedTab.activeIndex = parseInt(arrKey);
+          break;
+        }
+      }
 
       store.commit('investHistory/setUpdateInOutListFlag', true);
     }

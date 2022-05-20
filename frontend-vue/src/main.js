@@ -13,5 +13,5 @@ setAPIBaseUrl(API_BASE_URL);
 const app = createApp(App);
 app.use(router);
 app.use(store);
-app.use(PrimeVue);
+app.use(PrimeVue, {ripple: true});
 app.mount('#app');

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h5>평가</h5>
+    <h4><i class="pi pi-percentage"></i>평가</h4>
     <ul class="unitTab">
       <li v-for="unit in usableUnitList" :key="unit.unit_idx" :class="unit.unit == selectedTab ? 'on' : ''" @click="switchTab(unit.unit)">
         {{unit.unit}}

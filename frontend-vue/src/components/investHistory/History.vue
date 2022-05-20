@@ -15,29 +15,30 @@
       :usable-unit-list="itemUsableUnitList"
   ></HistoryAddForm>
 
-  <div style="overflow: hidden;">
+  <div>
     <HistoryItemSummary
         :this-month="thisMonth"
     ></HistoryItemSummary>
 
-    <h4 style="text-align: center;">
-      <button type="button" @click="changeHistoryListMonth('prev')">◀</button>&nbsp;&nbsp;
-      <span>{{thisMonth.value.format('YYYY-MM')}}</span>
-      &nbsp;&nbsp;<button type="button" @click="changeHistoryListMonth('next')">▶</button>
-    </h4>
-
-    <div style="float: left;width: 45%;">
-      <HistoryInOutList
-          :this-month="thisMonth"
-          :usable-unit-list="itemUsableUnitList"
-      ></HistoryInOutList>
+    <div class="p-buttonset text-center mt-4">
+      <Button icon="pi pi-chevron-left" @click="changeHistoryListMonth('prev')"></Button>
+      <span class="label">{{thisMonth.value.format('YYYY-MM')}}</span>
+      <Button icon="pi pi-chevron-right" @click="changeHistoryListMonth('next')"></Button>
     </div>
 
-    <div style="float: left;width: 45%;margin-left: 20px;">
-      <HistoryRevenueList
-          :this-month="thisMonth"
-          :usable-unit-list="itemUsableUnitList"
-      ></HistoryRevenueList>
+    <div class="flex flex-row justify-content-between mt-4">
+      <div class="flex w-6 justify-content-between mr-6">
+        <HistoryInOutList
+            :this-month="thisMonth"
+            :usable-unit-list="itemUsableUnitList"
+        ></HistoryInOutList>
+      </div>
+      <div class="flex w-6 justify-content-between">
+        <HistoryRevenueList
+            :this-month="thisMonth"
+            :usable-unit-list="itemUsableUnitList"
+        ></HistoryRevenueList>
+      </div>
     </div>
   </div>
 </template>
@@ -56,6 +57,7 @@ import HistoryInOutList from '@/components/investHistory/HistoryInOutList.vue';
 import HistoryRevenueList from '@/components/investHistory/HistoryRevenueList.vue';
 
 import TreeSelect from 'primevue/treeselect';
+import Button from 'primevue/button';
 
 export default {
   components: {
@@ -64,6 +66,7 @@ export default {
     HistoryInOutList,
     HistoryRevenueList,
     TreeSelect,
+    Button,
   },
   setup() {
     //set vars: vuex
@@ -177,4 +180,10 @@ export default {
 </script>
 
 <style scoped>
+.p-buttonset .label {
+  display: inline-flex;
+  padding: 0.75rem 1rem;
+  font-weight: bold;
+  margin-bottom: 1px;
+}
 </style>
