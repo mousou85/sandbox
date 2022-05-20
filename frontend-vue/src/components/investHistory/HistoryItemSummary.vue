@@ -475,8 +475,7 @@ export default {
 
 <style scoped>
 .p-datatable :deep(th[role="cell"]),
-.p-datatable :deep(td[role="cell"])
-{
+.p-datatable :deep(td[role="cell"]) {
   border-width: 1px;
   padding: 0.75rem;
 }

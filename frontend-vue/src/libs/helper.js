@@ -24,7 +24,7 @@ function numberUncomma(val) {
   }
   
   let parts = val.split('.');
-  parts[0] = parts[0].replace(/[^0-9]/g, '');
+  parts[0] = parts[0].replace(/[^0-9\-]/g, '');
   return parts.join('.');
 }
 

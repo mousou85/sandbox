@@ -11,6 +11,39 @@
       </template>
     </TabMenu>
 
+    <DataTable :value="historyList" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory2">
+      <ColumnGroup type="header">
+        <Row>
+          <Column header="날짜" class="text-center"></Column>
+          <Column header="기록타입" class="text-center"></Column>
+          <Column header="금액" class="text-center"></Column>
+          <Column header="메모" class="text-center"></Column>
+          <Column header="수정" class="text-center"></Column>
+          <Column header="삭제" class="text-center"></Column>
+        </Row>
+      </ColumnGroup>
+
+      <Column field="history_date" class="text-center"></Column>
+      <Column field="inout_type_text" class="text-center"></Column>
+      <Column field="val" class="text-right">
+        <template #editor="{data, field}">
+          <InputNumber v-model="data[field]"></InputNumber>
+        </template>
+        <template #body="{data}">
+          <span v-html="printVal(data)"></span>
+        </template>
+      </Column>
+      <Column field="memo"></Column>
+      <Column :rowEditor="true" class="text-center"></Column>
+      <Column class="text-center">
+        <template #body="{data}">
+          <button type="button" class="p-row-editor-init p-link" @click="delHistory(data.history_idx)">
+            <i class="pi pi-times"></i>
+          </button>
+        </template>
+      </Column>
+    </DataTable>
+
     <table id="inoutList" class="list" style="width:100%;">
       <colgroup>
         <col style="width: 90px;">
@@ -68,6 +101,11 @@ import {useStore} from "vuex";
 import {computed, onBeforeMount, reactive, ref, watch} from "vue";
 
 import TabMenu from "primevue/tabmenu";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import ColumnGroup from "primevue/columngroup";
+import Row from "primevue/row";
+import InputNumber from "primevue/inputnumber";
 
 import {
   getHistoryList as requestHistoryList,
@@ -79,6 +117,11 @@ import {numberComma, numberUncomma} from "@/libs/helper";
 export default {
   components: {
     TabMenu,
+    DataTable,
+    Column,
+    ColumnGroup,
+    Row,
+    InputNumber,
   },
   props: [
       'thisMonth',
@@ -95,6 +138,7 @@ export default {
       value: 'KRW',
       activeIndex: 0,
     });
+    const editHistoryRow = ref([]);
     const historyList = ref([]);
 
     /*
@@ -146,16 +190,6 @@ export default {
             history.original_history_date = history.history_date;
             history.original_memo = history.memo;
             history.original_val = history.val;
-
-            history.valText = computed({
-              get: () => {
-                return numberComma(history.val);
-              },
-              set: (val) => {
-                val = numberUncomma(val);
-                history.val = val;
-              }
-            })
           }
         } else {
           historyList.value = [];
@@ -193,6 +227,32 @@ export default {
     }
 
     /**
+     * 히스토리 수정
+     * @param {Object} event
+     * @returns {Promise<boolean>}
+     */
+    const editHistory2 = async(event) => {
+      const {newData: history} = event;
+
+      try {
+        const reqData = {
+          history_idx: history.history_idx,
+          history_date: history.history_date,
+          val: history.val,
+          memo: history.memo
+        };
+
+        await requestEditHistory(reqData);
+
+        store.commit('investHistory/setUpdateSummaryFlag', true);
+        store.commit('investHistory/setUpdateInOutListFlag', true);
+      } catch (err) {
+        alert(err);
+        return false;
+      }
+    }
+
+    /**
      * 히스토리 수정 취소
      * @param history
      */
@@ -209,6 +269,8 @@ export default {
      * @returns {Promise<void>}
      */
     const delHistory = async (historyIdx) => {
+      if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+
       try {
         await requestDelHistory(historyIdx);
 
@@ -258,10 +320,12 @@ export default {
 
     return {
       selectedTab,
+      editHistoryRow,
       historyList,
       switchTab,
       printVal,
       editHistory,
+      editHistory2,
       cancelEditHistory,
       delHistory
     }
@@ -270,32 +334,17 @@ export default {
 </script>
 
 <style scoped>
-
-.unitTab {
-  list-style: none;
-  padding: 0;
-  overflow: hidden;
-  margin: 0;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  border-collapse: collapse;
-  font-size: 0.8em;
+.p-datatable :deep(th[role="cell"]),
+.p-datatable :deep(td[role="cell"]) {
+  border-width: 1px;
+  padding: 0.75rem;
 }
-.unitTab li {
-  flex-basis: 20%;
-  padding: 0.2em 0.5em;
+.p-datatable :deep(th .p-column-title) {
+  display: block;
+  width: 100%;
   text-align: center;
-  border-top: 1px solid;
-  border-left: 1px solid;
-  border-right: 1px solid;
-  cursor: pointer;
 }
-.unitTab li.on {
-  background: lightyellow;
-  font-weight: bold;
-}
+
 .list {
   border: 1px solid;
   border-collapse: collapse;
