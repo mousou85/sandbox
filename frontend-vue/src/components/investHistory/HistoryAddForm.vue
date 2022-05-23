@@ -19,7 +19,6 @@
 
     <div class="field mt-5">
       <div class="p-float-label">
-        <!--<input type="date" id="addFormHistoryDate" name="history_date" v-model="formData.historyDate">-->
         <Calendar
             name="history_date"
             v-model="formData.historyDate"
@@ -27,6 +26,7 @@
             dateFormat="yy-mm-dd"
             :showIcon="true"
             class="min-w-full md:min-w-min"
+            @date-select="selectCalendar"
         ></Calendar>
         <label for="addFormHistoryDate">일자</label>
       </div>
@@ -97,7 +97,7 @@
           :suffix="` ${selectedUnit.unit != '' ? selectedUnit.unit : 'KRW'}`"
           :minFractionDigits="selectedUnit.minPrecision"
           :maxFractionDigits="selectedUnit.maxPrecision"
-          class="text-right"
+          inputClass="text-right"
       ></InputNumber>
     </div>
 
@@ -138,6 +138,7 @@ import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
 
 import {addHistory} from '@/modules/investHistory';
+import dayjs from "dayjs";
 
 export default  {
   components: {
@@ -263,6 +264,15 @@ export default  {
     }
 
     /**
+     * 일자 선택 이벤트
+     * @param {Date} value
+     */
+    const selectCalendar = (value) => {
+      const date = dayjs(value);
+      formData.historyDate = date.format('YYYY-MM-DD');
+    }
+
+    /**
      * 단위 선택 이벤트
      * @param unit
      */
@@ -279,6 +289,7 @@ export default  {
       selectedUnit,
       formData,
       submitAddHistory,
+      selectCalendar,
       changeUnit,
     }
   }

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="w-full">
     <h4><i class="pi pi-sort-alt"></i>유입/유출</h4>
 
     <TabMenu
@@ -11,7 +11,7 @@
       </template>
     </TabMenu>
 
-    <DataTable :value="historyList" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory2">
+    <DataTable :value="historyList" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory">
       <ColumnGroup type="header">
         <Row>
           <Column header="날짜" class="text-center"></Column>
@@ -23,17 +23,45 @@
         </Row>
       </ColumnGroup>
 
-      <Column field="history_date" class="text-center"></Column>
+      <Column field="history_date" class="text-center">
+        <template #editor="{data, field}">
+          <Calendar
+              v-model="data[field]"
+              selectionMode="single"
+              dateFormat="yy-mm-dd"
+              modelValue="2022-05-01"
+              :showIcon="false"
+              inputClass="text-center"
+          ></Calendar>
+        </template>
+      </Column>
       <Column field="inout_type_text" class="text-center"></Column>
       <Column field="val" class="text-right">
         <template #editor="{data, field}">
-          <InputNumber v-model="data[field]"></InputNumber>
+          <InputNumber
+              v-model="data[field]"
+              mode="decimal"
+              :format="true"
+              :suffix="` ${selectedTab.value != '' ? selectedTab.value : 'KRW'}`"
+              :minFractionDigits="selectedTab.minPrecision"
+              :maxFractionDigits="selectedTab.maxPrecision"
+              inputClass="text-right"
+          ></InputNumber>
         </template>
         <template #body="{data}">
           <span v-html="printVal(data)"></span>
         </template>
       </Column>
-      <Column field="memo"></Column>
+      <Column field="memo">
+        <template #editor="{data, field}">
+          <Textarea
+              v-model="data[field]"
+              :autoResize="true"
+              rows="3"
+              cols="10"
+          ></Textarea>
+        </template>
+      </Column>
       <Column :rowEditor="true" class="text-center"></Column>
       <Column class="text-center">
         <template #body="{data}">
@@ -43,56 +71,6 @@
         </template>
       </Column>
     </DataTable>
-
-    <table id="inoutList" class="list" style="width:100%;">
-      <colgroup>
-        <col style="width: 90px;">
-        <col style="width: 90px;">
-        <col style="width: 130px;">
-        <col>
-        <col style="width: 80px;">
-      </colgroup>
-      <thead>
-      <tr>
-        <th>날짜</th>
-        <th>기록타입</th>
-        <th>금액</th>
-        <th>메모</th>
-        <th></th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="history in historyList" :key="history.history_idx">
-        <template v-if="!history.edit_flag">
-          <td class="center">{{history.history_date}}</td>
-          <td class="center">
-            {{history.inout_type_text}}
-          </td>
-          <td class="right" v-html="printVal(history)">
-          </td>
-          <td>{{history.memo}}</td>
-          <td class="center">
-            <button type="button" @click="history.edit_flag = true">수정</button>
-            <button type="button" @click="delHistory(history.history_idx)">삭제</button>
-          </td>
-        </template>
-        <template v-else>
-          <td class="center"><input type="date" name="history_date" v-model="history.history_date"></td>
-          <td class="center">
-            {{history.inout_type_text}}
-          </td>
-          <td>
-            <input type="text" name="val" style="text-align: right;width: 80px;" v-model="history.valText">{{history.unit}}
-          </td>
-          <td><textarea name="memo" v-model="history.memo"></textarea></td>
-          <td class="center">
-            <button type="button" @click="editHistory(history)">수정</button>
-            <button type="button" @click="cancelEditHistory(history)">취소</button>
-          </td>
-        </template>
-      </tr>
-      </tbody>
-    </table>
   </div>
 </template>
 
@@ -106,6 +84,8 @@ import Column from "primevue/column";
 import ColumnGroup from "primevue/columngroup";
 import Row from "primevue/row";
 import InputNumber from "primevue/inputnumber";
+import Textarea from "primevue/textarea";
+import Calendar from "primevue/calendar";
 
 import {
   getHistoryList as requestHistoryList,
@@ -113,6 +93,7 @@ import {
   delHistory as requestDelHistory
 } from "@/modules/investHistory";
 import {numberComma, numberUncomma} from "@/libs/helper";
+import dayjs from "dayjs";
 
 export default {
   components: {
@@ -122,6 +103,8 @@ export default {
     ColumnGroup,
     Row,
     InputNumber,
+    Textarea,
+    Calendar,
   },
   props: [
       'thisMonth',
@@ -137,6 +120,13 @@ export default {
     const selectedTab = reactive({
       value: 'KRW',
       activeIndex: 0,
+      unit_type: '',
+      minPrecision: computed(() => {
+        return selectedTab.unit_type == 'float' ? 1 : 0;
+      }),
+      maxPrecision: computed(() => {
+        return selectedTab.unit_type == 'float' ? 8 : 0;
+      })
     });
     const editHistoryRow = ref([]);
     const historyList = ref([]);
@@ -164,6 +154,7 @@ export default {
           for (const arrKey in props.usableUnitList) {
             if (selectedTab.value == props.usableUnitList[arrKey].unit) {
               selectedTab.activeIndex = parseInt(arrKey);
+              selectedTab.unit_type = props.usableUnitList[arrKey].unit_type;
               break;
             }
           }
@@ -184,13 +175,6 @@ export default {
               selectedTab.value,
               props.thisMonth.value.format('YYYY-MM-DD')
             );
-
-          for (const history of historyList.value) {
-            history.edit_flag = false;
-            history.original_history_date = history.history_date;
-            history.original_memo = history.memo;
-            history.original_val = history.val;
-          }
         } else {
           historyList.value = [];
         }
@@ -204,35 +188,14 @@ export default {
 
     /**
      * 히스토리 수정
-     * @param history
-     * @returns {Promise<boolean>}
-     */
-    const editHistory = async(history) => {
-      try {
-        const reqData = {
-          history_idx: history.history_idx,
-          history_date: history.history_date,
-          val: history.val,
-          memo: history.memo
-        };
-
-        await requestEditHistory(reqData);
-
-        store.commit('investHistory/setUpdateSummaryFlag', true);
-        store.commit('investHistory/setUpdateInOutListFlag', true);
-      } catch (err) {
-        alert(err);
-        return false;
-      }
-    }
-
-    /**
-     * 히스토리 수정
      * @param {Object} event
      * @returns {Promise<boolean>}
      */
-    const editHistory2 = async(event) => {
+    const editHistory = async(event) => {
       const {newData: history} = event;
+
+      const date = dayjs(history.history_date);
+      history.history_date = date.format('YYYY-MM-DD');
 
       try {
         const reqData = {
@@ -250,17 +213,6 @@ export default {
         alert(err);
         return false;
       }
-    }
-
-    /**
-     * 히스토리 수정 취소
-     * @param history
-     */
-    const cancelEditHistory = (history) => {
-      history.val = history.original_val;
-      history.history_date = history.original_history_date;
-      history.memo = history.original_memo;
-      history.edit_flag = false;
     }
 
     /**
@@ -292,6 +244,7 @@ export default {
         const _unit = props.usableUnitList[arrKey];
         if (_unit.unit == unit) {
           selectedTab.activeIndex = parseInt(arrKey);
+          selectedTab.unit_type = props.usableUnitList[arrKey].unit_type;
           break;
         }
       }
@@ -325,8 +278,6 @@ export default {
       switchTab,
       printVal,
       editHistory,
-      editHistory2,
-      cancelEditHistory,
       delHistory
     }
   }
@@ -334,6 +285,9 @@ export default {
 </script>
 
 <style scoped>
+.p-datatable {
+  font-size: 0.9rem;
+}
 .p-datatable :deep(th[role="cell"]),
 .p-datatable :deep(td[role="cell"]) {
   border-width: 1px;
@@ -344,21 +298,11 @@ export default {
   width: 100%;
   text-align: center;
 }
-
-.list {
-  border: 1px solid;
-  border-collapse: collapse;
-  margin-top: 0;
-  font-size: 0.8em;
+.p-datatable :deep(.p-inputtext) {
+  font-size: 0.9rem;
 }
-.list th, .list td {
-  border: 1px solid;
-  padding: 5px;
-}
-.list .center {
-  text-align: center;
-}
-.list .right {
-  text-align: right;
+.p-inputnumber :deep(input),
+.p-inputtextarea {
+  width: 100%;
 }
 </style>
