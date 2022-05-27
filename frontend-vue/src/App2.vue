@@ -2,7 +2,7 @@
   <header class="block">
     <Menu></Menu>
   </header>
-  <main class="block">
+  <main id="contents" class="block">
     <router-view></router-view>
   </main>
 </template>
@@ -17,7 +17,7 @@ export default {
   components: {
     Menu
   },
-  setup() {
+  setup(props) {
     //set vars: vuex
     const store = useStore();
 
@@ -50,4 +50,7 @@ export default {
 
 
 <style scoped>
+#contents {
+  margin: 1rem;
+}
 </style>

@@ -6,6 +6,10 @@ export default createStore({
      * 모바일 여부
      */
     isMobile: false,
+    /**
+     * 사이트명
+     */
+    SITE_NAME: '',
   },
   mutations: {
     /**
@@ -15,6 +19,14 @@ export default createStore({
      */
     setMobile(state, value) {
       state.isMobile = value;
+    },
+    /**
+     * 사이트명 설정
+     * @param state
+     * @param {string} value
+     */
+    setSiteName(state, value) {
+      state.SITE_NAME = value;
     }
   },
   getters: {
@@ -25,6 +37,14 @@ export default createStore({
      */
     isMobile(state) {
       return state.isMobile;
+    },
+    /**
+     * 사이트명 반환
+     * @param state
+     * @returns {string}
+     */
+    getSiteName(state) {
+      return state.SITE_NAME;
     }
   },
   actions: {
