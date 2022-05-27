@@ -26,14 +26,14 @@
       <Button icon="pi pi-chevron-right" @click="changeHistoryListMonth('next')"></Button>
     </div>
 
-    <div class="flex flex-row justify-content-between mt-4">
-      <div class="flex w-6 justify-content-between mr-6">
+    <div class="flex flex-column md:flex-row md:justify-content-between mt-4">
+      <div class="flex w-full md:w-6 md:mr-5">
         <HistoryInOutList
             :this-month="thisMonth"
             :usable-unit-list="itemUsableUnitList"
         ></HistoryInOutList>
       </div>
-      <div class="flex w-6 justify-content-between">
+      <div class="flex w-full mt-3 md:w-6 md:mt-0">
         <HistoryRevenueList
             :this-month="thisMonth"
             :usable-unit-list="itemUsableUnitList"

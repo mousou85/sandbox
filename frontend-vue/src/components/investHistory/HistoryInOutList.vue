@@ -11,7 +11,7 @@
       </template>
     </TabMenu>
 
-    <DataTable :value="historyList" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory">
+    <DataTable :value="historyList" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory" responsiveLayout="stack">
       <ColumnGroup type="header">
         <Row>
           <Column header="날짜" class="text-center"></Column>
@@ -23,7 +23,7 @@
         </Row>
       </ColumnGroup>
 
-      <Column field="history_date" class="text-center">
+      <Column header="날짜" field="history_date" class="text-center">
         <template #editor="{data, field}">
           <Calendar
               v-model="data[field]"
@@ -35,8 +35,8 @@
           ></Calendar>
         </template>
       </Column>
-      <Column field="inout_type_text" class="text-center"></Column>
-      <Column field="val" class="text-right">
+      <Column header="기록타입" field="inout_type_text" class="text-center"></Column>
+      <Column header="금액" field="val" class="text-right">
         <template #editor="{data, field}">
           <InputNumber
               v-model="data[field]"
@@ -52,7 +52,7 @@
           <span v-html="printVal(data)"></span>
         </template>
       </Column>
-      <Column field="memo">
+      <Column header="메모" field="memo">
         <template #editor="{data, field}">
           <Textarea
               v-model="data[field]"
@@ -62,8 +62,8 @@
           ></Textarea>
         </template>
       </Column>
-      <Column :rowEditor="true" class="text-center"></Column>
-      <Column class="text-center">
+      <Column header="수정" :rowEditor="true" class="text-center"></Column>
+      <Column header="삭제" class="text-center">
         <template #body="{data}">
           <button type="button" class="p-row-editor-init p-link" @click="delHistory(data.history_idx)">
             <i class="pi pi-times"></i>
@@ -304,5 +304,21 @@ export default {
 .p-inputnumber :deep(input),
 .p-inputtextarea {
   width: 100%;
+}
+
+@media screen and (max-width: 960px) {
+  .p-datatable :deep(tbody td[role="cell"]:last-child) {
+    border-bottom: 3px solid #dee2e6 !important;
+  }
+  .p-datatable :deep(tbody td[role="cell"]) {
+    border:none;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+  .p-datatable :deep(td .diff) {
+    font-size: 0.8rem;
+  }
+  .p-inputtextarea {
+    width: 18rem;
+  }
 }
 </style>

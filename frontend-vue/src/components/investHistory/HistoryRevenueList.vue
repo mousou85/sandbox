@@ -1,74 +1,111 @@
 <template>
-  <div>
+  <div class="w-full">
     <h4><i class="pi pi-percentage"></i>평가</h4>
-    <ul class="unitTab">
-      <li v-for="unit in usableUnitList" :key="unit.unit_idx" :class="unit.unit == selectedTab ? 'on' : ''" @click="switchTab(unit.unit)">
-        {{unit.unit}}
-      </li>
-    </ul>
-    <table id="revenueList" class="list" style="width:100%;">
-      <colgroup>
-        <col style="width: 90px;">
-        <col style="width: 90px;">
-        <col style="width: 130px;">
-        <col>
-        <col style="width: 80px;">
-      </colgroup>
-      <thead>
-      <tr>
-        <th>날짜</th>
-        <th>기록타입</th>
-        <th>금액</th>
-        <th>메모</th>
-        <th></th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="history in historyList" :key="history.history_idx">
-        <template v-if="!history.edit_flag">
-          <td class="center">{{history.history_date}}</td>
-          <td class="center">
-            {{history.revenue_type_text}}
-          </td>
-          <td class="right" v-html="printVal(history)">
-          </td>
-          <td>{{history.memo}}</td>
-          <td class="center">
-            <button type="button" @click="history.edit_flag = true">수정</button>
-            <button type="button" @click="delHistory(history.history_idx)">삭제</button>
-          </td>
+
+    <TabMenu
+        :model="usableUnitList"
+        :activeIndex="selectedTab.activeIndex"
+    >
+      <template #item="{item}">
+        <a class="p-menuitem-link" role="presentation" @click="switchTab(item.unit)">{{item.unit}}</a>
+      </template>
+    </TabMenu>
+
+    <DataTable :value="historyList" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory" responsiveLayout="stack">
+      <ColumnGroup type="header">
+        <Row>
+          <Column header="날짜" class="text-center"></Column>
+          <Column header="기록타입" class="text-center"></Column>
+          <Column header="금액" class="text-center"></Column>
+          <Column header="메모" class="text-center"></Column>
+          <Column header="수정" class="text-center"></Column>
+          <Column header="삭제" class="text-center"></Column>
+        </Row>
+      </ColumnGroup>
+
+      <Column header="날짜" field="history_date" class="text-center">
+        <template #editor="{data, field}">
+          <Calendar
+              v-model="data[field]"
+              selectionMode="single"
+              dateFormat="yy-mm-dd"
+              modelValue="2022-05-01"
+              :showIcon="false"
+              inputClass="text-center"
+          ></Calendar>
         </template>
-        <template v-else>
-          <td class="center"><input type="date" name="history_date" v-model="history.history_date"></td>
-          <td class="center">
-            {{history.revenue_type_text}}
-          </td>
-          <td>
-            <input type="text" name="val" style="text-align: right;width: 80px;" v-model="history.valText">{{history.unit}}
-          </td>
-          <td><textarea name="memo" v-model="history.memo"></textarea></td>
-          <td class="center">
-            <button type="button" @click="editHistory(history)">수정</button>
-            <button type="button" @click="cancelEditHistory(history)">취소</button>
-          </td>
+      </Column>
+      <Column header="기록타입" field="revenue_type_text" class="text-center"></Column>
+      <Column header="금액" field="val" class="text-right">
+        <template #editor="{data, field}">
+          <InputNumber
+              v-model="data[field]"
+              mode="decimal"
+              :format="true"
+              :suffix="` ${selectedTab.value != '' ? selectedTab.value : 'KRW'}`"
+              :minFractionDigits="selectedTab.minPrecision"
+              :maxFractionDigits="selectedTab.maxPrecision"
+              inputClass="text-right"
+          ></InputNumber>
         </template>
-      </tr>
-      </tbody>
-    </table>
+        <template #body="{data}">
+          <span v-html="printVal(data)"></span>
+        </template>
+      </Column>
+      <Column header="메모" field="memo">
+        <template #editor="{data, field}">
+          <Textarea
+              v-model="data[field]"
+              :autoResize="true"
+              rows="3"
+              cols="10"
+          ></Textarea>
+        </template>
+      </Column>
+      <Column header="수정" :rowEditor="true" class="text-center"></Column>
+      <Column header="삭제" class="text-center">
+        <template #body="{data}">
+          <button type="button" class="p-row-editor-init p-link" @click="delHistory(data.history_idx)">
+            <i class="pi pi-times"></i>
+          </button>
+        </template>
+      </Column>
+    </DataTable>
   </div>
 </template>
 
 <script>
+import TabMenu from "primevue/tabmenu";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import ColumnGroup from "primevue/columngroup";
+import Row from "primevue/row";
+import InputNumber from "primevue/inputnumber";
+import Textarea from "primevue/textarea";
+import Calendar from "primevue/calendar";
+
 import {useStore} from "vuex";
-import {computed, onBeforeMount, ref, watch} from "vue";
+import {computed, onBeforeMount, ref, reactive, watch} from "vue";
+
 import {
   getHistoryList as requestHistoryList,
   editHistory as requestEditHistory,
   delHistory as requestDelHistory
 } from "@/modules/investHistory";
 import {numberComma, numberUncomma} from "@/libs/helper";
+import dayjs from "dayjs";
 
 export default {
+  components: {
+    TabMenu,
+    DataTable,
+    Column,
+    ColumnGroup,
+    Row,
+    InputNumber,
+    Textarea,
+    Calendar,
+  },
   props: [
     'thisMonth',
     'usableUnitList',
@@ -80,8 +117,18 @@ export default {
     //set vars: 필요 변수
     const itemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
     const updateListFlag = computed(() => store.getters['investHistory/getUpdateRevenueListFlag']);
-    const selectedUnit = computed(() => store.getters['investHistory/getSelectedUnit']);
-    const selectedTab = ref('KRW');
+    const selectedTab = reactive({
+      value: 'KRW',
+      activeIndex: 0,
+      unit_type: '',
+      minPrecision: computed(() => {
+        return selectedTab.unit_type == 'float' ? 1 : 0;
+      }),
+      maxPrecision: computed(() => {
+        return selectedTab.unit_type == 'float' ? 8 : 0;
+      })
+    });
+    const editHistoryRow = ref([]);
     const historyList = ref([]);
 
     /*
@@ -94,27 +141,26 @@ export default {
     /*
      watch variables
      */
-    watch([itemIdx, updateListFlag, selectedUnit], async (
-        [newItemIdx, newUpdateListFlag, newSelectedUnit],
-        [oldItemIdx, oldUpdateListFlag, oldSelectedUnit]
-    ) => {
-      //선택한 상품 변경 여부 체크
-      if (newItemIdx != oldItemIdx) {
-        selectedTab.value = 'KRW';
-        newUpdateListFlag = true;
-      }
+    watch(
+        [updateListFlag, itemIdx],
+        async ([newUpdateListFlag, newItemIdx], [oldUpdateListFlag, oldItemIdx]) => {
+          //히스토리 리스트 업데이트
+          if (newUpdateListFlag) {
+            await getHistoryList();
+          }
 
-      //기록 추가 form에서 단위 변경 여부 체크
-      if (newSelectedUnit != '' && newSelectedUnit != oldSelectedUnit) {
-        selectedTab.value = newSelectedUnit;
-        newUpdateListFlag = true;
-      }
-
-      //리스트 업데이트 필요 체크
-      if (newUpdateListFlag === true) {
-        await getHistoryList();
-      }
-    });
+          //unit 탭 설정
+          if (newItemIdx != oldItemIdx && props.usableUnitList.length > 0) {
+            for (const arrKey in props.usableUnitList) {
+              if (selectedTab.value == props.usableUnitList[arrKey].unit) {
+                selectedTab.activeIndex = parseInt(arrKey);
+                selectedTab.unit_type = props.usableUnitList[arrKey].unit_type;
+                break;
+              }
+            }
+          }
+        }
+    );
 
     /**
      * 히스토리 목록 반환
@@ -128,24 +174,7 @@ export default {
               'revenue',
               selectedTab.value,
               props.thisMonth.value.format('YYYY-MM-DD')
-          );
-
-          for (const history of historyList.value) {
-            history.edit_flag = false;
-            history.original_history_date = history.history_date;
-            history.original_memo = history.memo;
-            history.original_val = history.val;
-
-            history.valText = computed({
-              get: () => {
-                return numberComma(history.val);
-              },
-              set: (val) => {
-                val = numberUncomma(val);
-                history.val = val;
-              }
-            })
-          }
+            );
         } else {
           historyList.value = [];
         }
@@ -159,10 +188,15 @@ export default {
 
     /**
      * 히스토리 수정
-     * @param history
+     * @param {Object} event
      * @returns {Promise<boolean>}
      */
-    const editHistory = async(history) => {
+    const editHistory = async(event) => {
+      const {newData: history} = event;
+
+      const date = dayjs(history.history_date);
+      history.history_date = date.format('YYYY-MM-DD');
+
       try {
         const reqData = {
           history_idx: history.history_idx,
@@ -198,6 +232,8 @@ export default {
      * @returns {Promise<void>}
      */
     const delHistory = async (historyIdx) => {
+      if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+
       try {
         await requestDelHistory(historyIdx);
 
@@ -215,6 +251,14 @@ export default {
      */
     const switchTab =  (unit) => {
       selectedTab.value = unit;
+      for (const arrKey in props.usableUnitList) {
+        const _unit = props.usableUnitList[arrKey];
+        if (_unit.unit == unit) {
+          selectedTab.activeIndex = parseInt(arrKey);
+          selectedTab.unit_type = props.usableUnitList[arrKey].unit_type;
+          break;
+        }
+      }
 
       store.commit('investHistory/setUpdateRevenueListFlag', true);
     }
@@ -226,7 +270,6 @@ export default {
      */
     const printVal = (history) => {
       let val = history.val;
-      if (history.history_type == 'out') val = val * -1;
       if (history.unitType == 'int') {
         val = parseInt(val);
       }
@@ -241,6 +284,7 @@ export default {
 
     return {
       selectedTab,
+      editHistoryRow,
       historyList,
       switchTab,
       printVal,
@@ -253,46 +297,40 @@ export default {
 </script>
 
 <style scoped>
+.p-datatable {
+  font-size: 0.9rem;
+}
+.p-datatable :deep(th[role="cell"]),
+.p-datatable :deep(td[role="cell"]) {
+  border-width: 1px;
+  padding: 0.75rem;
+}
+.p-datatable :deep(th .p-column-title) {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.p-datatable :deep(.p-inputtext) {
+  font-size: 0.9rem;
+}
+.p-inputnumber :deep(input),
+.p-inputtextarea {
+  width: 100%;
+}
 
-.unitTab {
-  list-style: none;
-  padding: 0;
-  overflow: hidden;
-  margin: 0;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  border-collapse: collapse;
-  font-size: 0.8em;
-}
-.unitTab li {
-  flex-basis: 20%;
-  padding: 0.2em 0.5em;
-  text-align: center;
-  border-top: 1px solid;
-  border-left: 1px solid;
-  border-right: 1px solid;
-  cursor: pointer;
-}
-.unitTab li.on {
-  background: lightyellow;
-  font-weight: bold;
-}
-.list {
-  border: 1px solid;
-  border-collapse: collapse;
-  margin-top: 0;
-  font-size: 0.8em;
-}
-.list th, .list td {
-  border: 1px solid;
-  padding: 5px;
-}
-.list .center {
-  text-align: center;
-}
-.list .right {
-  text-align: right;
+@media screen and (max-width: 960px) {
+  .p-datatable :deep(tbody td[role="cell"]:last-child) {
+    border-bottom: 3px solid #dee2e6 !important;
+  }
+  .p-datatable :deep(tbody td[role="cell"]) {
+    border:none;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+  .p-datatable :deep(td .diff) {
+    font-size: 0.8rem;
+  }
+  .p-inputtextarea {
+    width: 18rem;
+  }
 }
 </style>
