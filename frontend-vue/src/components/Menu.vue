@@ -18,14 +18,10 @@
         v-model:visible="showSidebar"
         position="left"
     >
-
-      <Tree
-          :value="menus"
+      <PanelMenu
+        :model="menus"
       >
-        <template #default="{node}">
-          <a :href="node.to">{{node.label}}</a>
-        </template>
-      </Tree>
+      </PanelMenu>
     </Sidebar>
   </template>
 </template>
@@ -36,13 +32,13 @@ import {ref, computed} from "vue";
 
 import Menubar from 'primevue/menubar';
 import Sidebar from 'primevue/sidebar';
-import Tree from 'primevue/tree';
+import PanelMenu from 'primevue/panelmenu';
 
 export default {
   components: {
     Menubar,
     Sidebar,
-    Tree,
+    PanelMenu,
   },
   setup(props) {
     //set vars: vuex
@@ -54,26 +50,23 @@ export default {
     const showSidebar = ref(false);
 
     const menus = ref([
-      {label: 'Home', icon: 'pi pi-home', to: '/'},
       {
-        label: 'Invest',
-        icon: 'pi pi-dollar',
-        to: '/invest-history'
-      },
-    ]);
-
-    const test = ref([
-      {
-        key: 0,
+        key: 'home',
         label: 'Home',
         icon: 'pi pi-home',
-        url: '/'
+        to: '/'
       },
       {
-        key: 1,
+        key: 'invest',
         label: 'Invest',
         icon: 'pi pi-dollar',
-        url: '/invest-history'
+        // to: '/invest-history',
+        items: [
+          {key: 'invest-history', label: 'history', to: '/invest-history/history'},
+          {key: 'invest-company', label: 'company', to: '/invest-history/company'},
+          {key: 'invest-item', label: 'item', to: '/invest-history/item'},
+          {key: 'invest-unit', label: 'unit', to: '/invest-history/unit'},
+        ]
       },
     ]);
 
@@ -82,7 +75,6 @@ export default {
       isMobile,
       menus,
       showSidebar,
-      test,
     }
   }
 }
@@ -99,6 +91,7 @@ export default {
 @media screen and (max-width: 960px) {
   .p-menubar {
     border-radius: 0;
+    border-width: 0 0 1px 0;
   }
 }
 </style>
@@ -106,6 +99,9 @@ export default {
 @media screen and (max-width: 960px) {
   .p-sidebar {
     width: 75%;
+  }
+  .p-sidebar .p-sidebar-content {
+    padding-top: 1.25rem !important;
   }
 }
 </style>
