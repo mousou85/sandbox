@@ -1,9 +1,27 @@
 <template>
-  <div>
-    <div>
-      <input type="text" id="addCompanyName" maxlength="20" v-model="addForm.company_name" placeholder="기업명 입력">
-      <button type="button" @click="addCompany">추가</button>
+  <div class="field md:w-3 w-full mt-4">
+    <div class="p-inputgroup">
+      <div class="p-float-label">
+        <InputText
+            id="addCompanyName"
+            type="text"
+            maxlength="20"
+            v-model="addForm.company_name"
+            :class="{'p-invalid': !addForm.validate.company_name}"
+        ></InputText>
+        <label for="addCompanyName" :class="{'p-error': !addForm.validate.company_name}">기업추가</label>
+      </div>
+      <Button type="button" @click="addCompany"><i class="pi pi-plus"></i></Button>
     </div>
+    <small
+      v-if="!addForm.validate.company_name"
+      :class="{'p-error': !addForm.validate.company_name}"
+    >
+      기업명을 입력해주세요.
+    </small>
+  </div>
+
+  <div>
     <table id="companyList">
       <thead>
         <tr>
@@ -27,6 +45,9 @@
 <script>
 import {onBeforeMount, reactive, ref} from "vue";
 
+import InputText from 'primevue/inputtext';
+import Button from "primevue/button";
+
 import {
   getCompanyList as requestCompanyList,
   addCompany as requestAddCompany,
@@ -35,11 +56,18 @@ import {
 } from '@/modules/investHistory';
 
 export default {
+  components: {
+    InputText,
+    Button,
+  },
   setup() {
     //set vars: 필요 변수
     const companyList = ref([]);
     const addForm = reactive({
-      company_name: ''
+      company_name: '',
+      validate: {
+        company_name: true,
+      }
     });
 
     /*
@@ -71,7 +99,7 @@ export default {
      */
     const addCompany = async() => {
       if (!addForm.company_name) {
-        alert('기업명을 입력해주세요.');
+        addForm.validate.company_name = false;
         document.getElementById('addCompanyName').focus();
         return false;
       }
@@ -82,6 +110,7 @@ export default {
         await getCompanyList();
 
         addForm.company_name = '';
+        addForm.validate.company_name = true;
       } catch (err) {
         alert(err);
         return false;
@@ -132,6 +161,10 @@ export default {
 </script>
 
 <style scoped>
+.p-error {
+  color: #e24c4c;
+}
+
 #companyList {
   border: 1px solid;
   border-collapse: collapse;
