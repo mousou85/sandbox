@@ -4,6 +4,8 @@ import App from '@/App2.vue';
 import router from '@/router';
 import store from '@/store/index';
 import PrimeVue from "primevue/config";
+import ConfirmationService from "primevue/confirmationservice";
+import ToastService from "primevue/toastservice";
 import {setAPIBaseUrl} from '@/modules/investHistory';
 
 
@@ -18,4 +20,6 @@ const app = createApp(App);
 app.use(router);
 app.use(store);
 app.use(PrimeVue, {ripple: true});
+app.use(ConfirmationService);
+app.use(ToastService);
 app.mount('#app');
