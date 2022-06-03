@@ -143,7 +143,12 @@ export default {
         addForm.company_name = '';
         addForm.validate.company_name = true;
       } catch (err) {
-        alert(err);
+        toast.add({
+          severity: 'error',
+          summary: '추가 실패',
+          detail: err,
+          life: 3000,
+        });
         return false;
       }
     }

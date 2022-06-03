@@ -1,4 +1,40 @@
 <template>
+  <form>
+    <div class="w-full md:w-3">
+      <div class="field w-full mt-4">
+        <Dropdown
+            v-model="itemFormData.company_idx"
+            :options="companyList"
+            optionLabel="company_name"
+            optionValue="company_idx"
+            class="w-full"
+            placeholder="기업선택"
+        ></Dropdown>
+      </div>
+
+      <div class="field w-full mt-4">
+        <SelectButton
+            v-model="itemFormData.item_type"
+            :options="itemTypeList"
+            optionLabel="text"
+            optionValue="type"
+        ></SelectButton>
+      </div>
+
+      <div class="field w-full mt-4">
+        <div class="p-float-label">
+          <InputText
+              v-model="itemFormData.item_name"
+              id="item_name"
+              class="w-full"
+          ></InputText>
+          <label for="item_name">상품명</label>
+        </div>
+        <small>1</small>
+      </div>
+    </div>
+  </form>
+
   <div>
     <form id="itemAddForm" @submit.prevent="formSubmit">
       <input type="hidden" id="item_idx" name="item_idx" v-model="itemFormData.item_idx">
@@ -65,8 +101,11 @@
 </template>
 
 <script>
-
 import {onBeforeMount, reactive, ref} from "vue";
+
+import InputText from "primevue/inputtext";
+import Dropdown from 'primevue/dropdown';
+import SelectButton from "primevue/selectbutton";
 
 import {
   getItemList as requestItemList,
@@ -79,6 +118,11 @@ import {
 } from '@/modules/investHistory';
 
 export default {
+  components: {
+    InputText,
+    Dropdown,
+    SelectButton,
+  },
   setup() {
     //set vars: 필요 변수
     const companyList = ref([]);
@@ -91,6 +135,14 @@ export default {
       item_type: '',
       item_name: '',
       units: [],
+      validate: {
+        item_type: true,
+        item_name: true,
+      },
+      validate_msg: {
+        item_type: '',
+        item_name: '',
+      }
     });
     const htmlBtnFormSubmit = ref();
 
@@ -105,7 +157,7 @@ export default {
 
         unitList.value = await requestUnitList();
 
-        await getItemList();
+        // await getItemList();
       } catch (err) {
       }
     });
@@ -259,6 +311,21 @@ export default {
 </script>
 
 <style scoped>
+.p-buttonset {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  row-gap:0.4rem;
+  column-gap: 0.4rem;
+}
+.p-buttonset :deep(.p-button) {
+  margin:0;
+  border-radius: 6px !important;
+  border-right: 1px solid #ced4da !important;
+}
+.p-buttonset :deep(.p-button:first-of-type) {
+  margin-left:0;
+}
+
 #itemAddForm .row {
   padding: 5px 0;
 }
