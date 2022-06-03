@@ -89,7 +89,7 @@ export default {
           store.registerModule('investHistory', investHistory);
         }
 
-        itemList.value = await requestItemList();
+        itemList.value = await requestItemList('group');
         for (const company of itemList.value) {
           const _tmp = {
             key: company.company_idx,

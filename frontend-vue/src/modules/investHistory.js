@@ -16,10 +16,15 @@ export const setAPIBaseUrl = (url) => {
 
 /**
  * get item list
+ * @param {string} [type]
  * @return {Promise<Object[]>}
  */
-export const getItemList = async () => {
-  const res = await http.get(`${baseURL}/invest-history/item/`, {type: 'group'});
+export const getItemList = async (type) => {
+  if (typeof type == 'undefined') {
+    type = '';
+  }
+  
+  const res = await http.get(`${baseURL}/invest-history/item/`, {type: type});
   if (!res.result) throw new Error(res.resultMessage);
   
   return res.data.list;
