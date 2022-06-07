@@ -1,4 +1,5 @@
 <template>
+  <!-- item add form -->
   <form id="itemAddForm" @submit.prevent="formSubmit">
     <div class="w-full md:w-3">
       <div class="field w-full mt-5">
@@ -49,6 +50,7 @@
               v-model="itemFormData.itemName"
               class="w-full"
               :class="{'p-invalid': !itemFormData.validate.itemName}"
+              maxlength="50"
           ></InputText>
           <label
               class="normal-label"
@@ -92,6 +94,82 @@
       </div>
     </div>
   </form>
+  <!-- //item add form -->
+
+  <!-- item list -->
+  <DataTable
+      :value="itemList"
+      editMode="cell"
+      dataKey="item_idx"
+  >
+    <!--v-model:editingRows="editHistoryRow"
+    @row-edit-save="editHistory"
+    responsiveLayout="stack"-->
+    <ColumnGroup type="header">
+      <Row>
+        <Column header="IDX" class="text-center"></Column>
+        <Column header="기업명" class="text-center"></Column>
+        <Column header="상품명" class="text-center"></Column>
+        <Column header="상품타입" class="text-center"></Column>
+        <Column header="단위" class="text-center"></Column>
+        <Column header="" class="text-center"></Column>
+      </Row>
+    </ColumnGroup>
+
+    <Column
+        header="IDX"
+        field="item_idx"
+        class="text-center"
+    ></Column>
+    <Column
+        header="기업명"
+        field="company_name"
+        class="text-center"
+        key="company_name"
+    >
+      <template #editor="{data, field}">
+        <Dropdown
+            v-model="data.company_idx"
+            :options="companyList"
+            optionLabel="company_name"
+            optionValue="company_idx"
+        ></Dropdown>
+      </template>
+    </Column>
+    <Column
+        header="상품명"
+        field="item_name"
+    >
+      <template #editor="{data, field}">
+        <InputText
+            v-model="data.item_name"
+            class="w-full"
+            maxlength="50"
+        ></InputText>
+      </template>
+    </Column>
+    <Column
+        header="상품타입"
+        field="item_type_text"
+        class="text-center"
+    >
+      <template #editor="{data, field}">
+        <Dropdown
+            v-model="data.item_type"
+            :options="itemTypeList"
+            optionLabel="text"
+            optionValue="type"
+        ></Dropdown>
+      </template>
+    </Column>
+    <Column
+        header="단위"
+    ></Column>
+    <Column
+        header="수정"
+    ></Column>
+  </DataTable>
+  <!-- //item list -->
 
   <div>
 
@@ -138,8 +216,13 @@ import Dropdown from 'primevue/dropdown';
 import SelectButton from "primevue/selectbutton";
 import Checkbox from 'primevue/checkbox';
 import Button from "primevue/button";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import ColumnGroup from "primevue/columngroup";
+import Row from "primevue/row";
 import ConfirmDialog from 'primevue/confirmdialog';
 import Toast from 'primevue/toast';
+
 import {useConfirm} from 'primevue/useconfirm';
 import {useToast} from 'primevue/usetoast';
 
@@ -160,6 +243,10 @@ export default {
     SelectButton,
     Checkbox,
     Button,
+    DataTable,
+    Column,
+    ColumnGroup,
+    Row,
     ConfirmDialog,
     Toast,
   },
@@ -425,6 +512,13 @@ export default {
 }
 .p-selectbutton.p-invalid > :deep(.p-button) {
   border-color: #e24c4c !important;
+}
+
+
+.p-datatable :deep(th .p-column-title) {
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 
