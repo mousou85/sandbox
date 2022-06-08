@@ -623,9 +623,21 @@ export default {
 }
 
 @media screen and (max-width: 960px) {
+  .p-datatable,
+  .p-datatable :deep(td.p-cell-editing .p-inputtext),
+  .p-datatable :deep(td.p-cell-editing .p-multiselect-label){
+    font-size: 0.9rem !important;
+  }
   .p-datatable :deep(td.p-cell-editing) {
     padding-top: 0.2rem;
     padding-bottom:0.2rem;
+  }
+  .p-datatable :deep(tbody td[role="cell"]) {
+    border:none;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+  .p-datatable :deep(tbody td[role="cell"]:last-child) {
+    border-bottom: 3px solid #dee2e6 !important;
   }
 }
 </style>
