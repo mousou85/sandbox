@@ -101,10 +101,8 @@
       :value="itemList"
       editMode="cell"
       dataKey="item_idx"
+      @cell-edit-complete="editItem"
   >
-    <!--v-model:editingRows="editHistoryRow"
-    @row-edit-save="editHistory"
-    responsiveLayout="stack"-->
     <ColumnGroup type="header">
       <Row>
         <Column header="IDX" class="text-center"></Column>
@@ -125,7 +123,6 @@
         header="기업명"
         field="company_name"
         class="text-center"
-        key="company_name"
     >
       <template #editor="{data, field}">
         <Dropdown
@@ -164,41 +161,35 @@
     </Column>
     <Column
         header="단위"
-    ></Column>
+        field="unit_set"
+    >
+      <template #editor="{data, field}">
+        <MultiSelect
+            v-model="data.unit_idx_list"
+            :options="unitList"
+            optionLabel="unit"
+            optionValue="unit_idx"
+        ></MultiSelect>
+      </template>
+      <template #body="{data}">
+        {{printUnitText(data.unit_set)}}
+      </template>
+    </Column>
     <Column
-        header="수정"
-    ></Column>
+        header="삭제"
+    >
+      <template #body="{data}">
+        <Button
+            type="button"
+            class="p-button-danger"
+            @click="delItem(data.item_idx)"
+        >
+          <i class="pi pi-trash"></i>
+        </Button>
+      </template>
+    </Column>
   </DataTable>
   <!-- //item list -->
-
-  <div>
-
-    <table id="list">
-      <thead>
-        <tr>
-          <th>IDX</th>
-          <th>기업명</th>
-          <th>상품명</th>
-          <th>상품타입</th>
-          <th>단위</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in itemList" :key="item.item_idx">
-          <td class="center">{{item.item_idx}}</td>
-          <td class="center">{{item.company_name}}</td>
-          <td>{{item.item_name}}</td>
-          <td>{{item.item_type_text}}</td>
-          <td>{{printUnitText(item.unit_set)}}</td>
-          <td>
-            <button type="button" @click="setEditForm(item)">수정</button>
-            <button type="button" @click="delItem(item.item_idx)">삭제</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 
   <ConfirmDialog
       :breakpoints="{'960px': '75vw', '640px': '100vw'}"
@@ -220,6 +211,7 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import ColumnGroup from "primevue/columngroup";
 import Row from "primevue/row";
+import MultiSelect from 'primevue/multiselect';
 import ConfirmDialog from 'primevue/confirmdialog';
 import Toast from 'primevue/toast';
 
@@ -247,6 +239,7 @@ export default {
     Column,
     ColumnGroup,
     Row,
+    MultiSelect,
     ConfirmDialog,
     Toast,
   },
@@ -341,6 +334,12 @@ export default {
     const getItemList = async () => {
       try {
         itemList.value = await requestItemList();
+        for (const item of itemList.value) {
+          item.unit_idx_list = [];
+          for (const unit of item.unit_set) {
+            item.unit_idx_list.push(unit.unit_idx);
+          }
+        }
       } catch (err) {
         itemList.value = [];
       }
@@ -392,22 +391,12 @@ export default {
       if (!validateFlag) return false;
 
       try {
-        if (itemFormData.itemIdx > 0) {
-          await requestEditItem({
-              item_idx: itemFormData.itemIdx,
-              company_idx: itemFormData.companyIdx,
-              item_type: itemFormData.itemType,
-              item_name: itemFormData.itemName,
-              units: itemFormData.units
-            });
-        } else {
-          await requestAddItem({
-              company_idx: itemFormData.companyIdx,
-              item_name: itemFormData.itemName,
-              item_type: itemFormData.itemType,
-              units: itemFormData.units
-            });
-        }
+        await requestAddItem({
+          company_idx: itemFormData.companyIdx,
+          item_name: itemFormData.itemName,
+          item_type: itemFormData.itemType,
+          units: itemFormData.units
+        });
 
         toast.add({
           severity: 'success',
@@ -429,22 +418,99 @@ export default {
     }
 
     /**
-     * set edit form
-     * @param item
-     * @returns {Promise<void>}
+     * edit item
+     * @param event
+     * @returns {Promise<boolean>}
      */
-    const setEditForm = (item) => {
-      itemFormData.item_idx = item.item_idx;
-      itemFormData.company_idx = item.company_idx;
-      itemFormData.item_type = item.item_type;
-      itemFormData.item_name = item.item_name;
-      itemFormData.units = [];
-      for (const unit of item.unit_set) {
-        itemFormData.units.push(unit.unit_idx);
-      }
+    const editItem = async (event) => {
+      let {data, newData, field} = event;
 
-      htmlBtnFormSubmit.value.innerText = '수정';
-    }
+      let requestBody = {
+        item_idx: data.item_idx,
+      };
+
+      try {
+        switch (field) {
+          //기업
+          case 'company_name':
+            if (data.company_idx == newData.company_idx) {
+              return false;
+            }
+
+            for (const company of companyList.value) {
+              if (company.company_idx == newData.company_idx) {
+                data.company_idx = company.company_idx;
+                data.company_name = company.company_name;
+              }
+            }
+            requestBody['company_idx'] = newData.company_idx;
+            break;
+          //상품명
+          case 'item_name':
+            if (data.item_name == newData.item_name) {
+              return false;
+            }
+            if (newData.item_name.length == 0) {
+              event.preventDefault();
+              throw "상품명을 입력해주세요";
+            }
+
+            data.item_name = newData.item_name;
+            requestBody['item_name'] = newData.item_name;
+            break;
+          //상품타입
+          case 'item_type_text':
+            if (data.item_type == newData.item_type) {
+              return false;
+            }
+
+            for (const itemType of itemTypeList.value) {
+              if (itemType.type == newData.item_type) {
+                data.item_type = itemType.type;
+                data.item_type_text = itemType.text;
+              }
+            }
+
+            requestBody['item_type'] = newData.item_type;
+            break;
+          //단위
+          case 'unit_set':
+            if (newData.unit_idx_list.length == 0) {
+              event.preventDefault();
+              throw "단위를 선택해주세요";
+            }
+
+            data.unit_idx_list = newData.unit_idx_list;
+            data.unit_set = [];
+            for (const unit of unitList.value) {
+              if (newData.unit_idx_list.includes(unit.unit_idx)) {
+                data.unit_set.push(unit);
+              }
+            }
+
+            requestBody['units'] = newData.unit_idx_list;
+            break;
+        }
+
+        if (Object.keys(requestBody).length > 1) {
+          await requestEditItem(requestBody);
+        }
+
+        toast.add({
+          severity: 'success',
+          summary: '수정 완료',
+          life: 3000,
+        });
+      } catch (err) {
+        toast.add({
+          severity: 'error',
+          summary: '수정 실패',
+          detail: err,
+          life: 3000,
+        });
+        return false;
+      }
+    };
 
     /**
      * delete item
@@ -452,13 +518,38 @@ export default {
      * @returns {Promise<void>}
      */
     const delItem = async (itemIdx) => {
-      try {
-        await requestDelItem(itemIdx);
+      confirm.require({
+        message: '삭제 하시겠습니까?',
+        header: '삭제 확인',
+        icon: 'pi pi-exclamation-triangle',
+        acceptClass: 'p-button-danger',
+        acceptIcon: 'pi pi-check',
+        acceptLabel: '예',
+        rejectClass: 'p-button-text p-button-plain',
+        rejectLabel: '아니오',
+        accept: async () => {
+          try {
+            await requestDelItem(itemIdx);
 
-        await getItemList();
-      } catch (err) {
-        alert(err);
-      }
+            await getItemList();
+
+            toast.add({
+              severity: 'success',
+              summary: '삭제 완료',
+              life: 3000,
+            });
+          } catch (err) {
+            toast.add({
+              severity: 'error',
+              summary: '삭제 실패',
+              detail: err,
+              life: 3000,
+            });
+          }
+        },
+        reject: () => {
+        }
+      });
     }
 
     return {
@@ -469,7 +560,7 @@ export default {
       btnFormSubmitLabel,
       itemFormData,
       formSubmit,
-      setEditForm,
+      editItem,
       delItem,
       printUnitText,
     }

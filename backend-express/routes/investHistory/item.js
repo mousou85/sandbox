@@ -97,7 +97,7 @@ module.exports = (db) => {
     
           list[i].item_type_text = itemTypeList[list[i].item_type];
           list[i].unit_set = await db.queryAll(db.queryBuilder()
-            .select(db.raw('us.*, u.unit, u.unit_type'))
+            .select(['us.unit_idx', 'u.unit', 'u.unit_type'])
             .from('invest_unit_set AS us')
             .join('invest_unit AS u', 'us.unit_idx', 'u.unit_idx')
             .where('us.item_idx', _itemIdx)
@@ -255,11 +255,13 @@ module.exports = (db) => {
       const trx = await db.transaction();
       try {
         //update
-        await db.execute(db.queryBuilder()
-            .update(updateParams)
-            .from('invest_item')
-            .where('item_idx', itemIdx)
-          , trx);
+        if (Object.keys(updateParams).length) {
+          await db.execute(db.queryBuilder()
+              .update(updateParams)
+              .from('invest_item')
+              .where('item_idx', itemIdx)
+            , trx);
+        }
         
         //unit-set update
         if (units && units.length) {
