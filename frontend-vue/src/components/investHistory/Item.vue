@@ -140,7 +140,7 @@
       <template #editor="{data, field}">
         <InputText
             v-model="data.item_name"
-            class="w-full"
+            class="w-auto md:w-full"
             maxlength="50"
         ></InputText>
       </template>
@@ -480,6 +480,12 @@ export default {
               throw "단위를 선택해주세요";
             }
 
+            const unitSetDiff = data.unit_idx_list.filter(v => !newData.unit_idx_list.includes(v))
+                .concat(newData.unit_idx_list.filter(v => !data.unit_idx_list.includes(v)));
+            if (unitSetDiff.length == 0) {
+              return false;
+            }
+
             data.unit_idx_list = newData.unit_idx_list;
             data.unit_set = [];
             for (const unit of unitList.value) {
@@ -611,17 +617,15 @@ export default {
   width: 100%;
   text-align: center;
 }
-
-
-#list {
-  border: 1px solid;
-  border-collapse: collapse;
+.p-datatable :deep(td.p-cell-editing) {
+  padding-top: 0;
+  padding-bottom: 0;
 }
-#list th, #list td {
-  border: 1px solid;
-  padding: 5px;
-}
-#list .center {
-  text-align: center;
+
+@media screen and (max-width: 960px) {
+  .p-datatable :deep(td.p-cell-editing) {
+    padding-top: 0.2rem;
+    padding-bottom:0.2rem;
+  }
 }
 </style>
