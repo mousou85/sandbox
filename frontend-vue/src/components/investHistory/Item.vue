@@ -400,7 +400,7 @@ export default {
 
         toast.add({
           severity: 'success',
-          summary: itemFormData.itemIdx > 0 ? '수정 완료' : '추가 완료',
+          summary: '추가 완료',
           life: 3000,
         });
 
@@ -410,7 +410,7 @@ export default {
       } catch (err) {
         toast.add({
           severity: 'error',
-          summary: itemFormData.itemIdx > 0 ? '수정 실패' : '추가 실패',
+          summary: '추가 실패',
           detail: err,
           life: 3000,
         });

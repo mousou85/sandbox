@@ -1,62 +1,180 @@
 <template>
-  <div>
-    <form id="unitForm" @submit.prevent="addUnit">
-      <div class="row">
-        <label for="unit">단위</label>
-        <input type="text" id="unit" maxlength="10" v-model="addForm.unit">
+  <form @submit.prevent="addUnit">
+    <div class="w-full md:w-3">
+      <div class="field w-full mt-5">
+        <div class="relative">
+          <InputText
+              v-model="addForm.unit"
+              class="w-full"
+              :class="{'p-invalid': !addForm.validate.unit}"
+              maxlength="10"
+          ></InputText>
+          <label
+              class="normal-label"
+              :class="{'p-error': !addForm.validate.unit}"
+          >단위</label>
+        </div>
+        <small
+            v-if="!addForm.validate.unit"
+            :class="{'p-error': !addForm.validate.unit}"
+        >{{addForm.validateMsg.unit}}</small>
       </div>
-      <div class="row">
-        <label>타입</label>
-        <label><input type="radio" name="unit_type" value="int" v-model="addForm.unit_type">INT</label>
-        <label><input type="radio" name="unit_type" value="float" v-model="addForm.unit_type">FLOAT</label>
-      </div>
-      <button type="submit">등록</button>
-    </form>
 
-    <table id="list">
-      <thead>
-        <tr>
-          <th>IDX</th>
-          <th>단위</th>
-          <th>타입</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="unit in unitList" :key="unit.unit_idx">
-          <td class="center">{{unit.unit_idx}}</td>
-          <td><input type="text" maxlength="10" size="10" v-model="unit.unit"></td>
-          <td>
-            <select v-model="unit.unit_type">
-              <option value="int">INT</option>
-              <option value="float">FLOAT</option>
-            </select>
-          </td>
-          <td class="center">
-            <button type="button" @click="editUnit(unit)">수정</button>
-            <button type="button" @click="delUnit(unit.unit_idx)">삭제</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+      <div class="field w-full mt-5">
+        <div class="relative">
+          <SelectButton
+              v-model="addForm.unitType"
+              :options="unitTypeList"
+              :class="{'p-invalid': !addForm.validate.unitType}"
+              optionLabel="label"
+              optionValue="value"
+          ></SelectButton>
+          <label
+              class="normal-label"
+              :class="{'p-error': !addForm.validate.unitType}"
+          >타입</label>
+        </div>
+        <small
+            v-if="!addForm.validate.unitType"
+            :class="{'p-error': !addForm.validate.unitType}"
+        >{{addForm.validateMsg.unitType}}</small>
+      </div>
+
+      <div class="field w-full mt-5">
+        <Button type="submit" label="등록" class="w-full md:w-6"></Button>
+      </div>
+    </div>
+  </form>
+
+  <DataTable
+      :value="unitList"
+      editMode="cell"
+      dataKey="unit_idx"
+      class="w-full md:w-6"
+      @cell-edit-complete="editUnit"
+  >
+    <ColumnGroup type="header">
+      <Row>
+        <Column header="IDX" class="text-center"></Column>
+        <Column header="단위" class="text-center"></Column>
+        <Column header="타입" class="text-center"></Column>
+        <Column header="" class="text-center"></Column>
+      </Row>
+    </ColumnGroup>
+
+    <Column
+        header="IDX"
+        field="unit_idx"
+        class="text-center"
+    ></Column>
+    <Column
+        header="단위"
+        field="unit"
+    >
+      <template #editor="{data, field}">
+        <InputText
+            v-model="data.unit"
+            maxlength="10"
+        ></InputText>
+      </template>
+    </Column>
+    <Column
+        header="타입"
+        field="unit_type"
+        class="text-center"
+    >
+      <template #editor="{data, field}">
+        <Dropdown
+            v-model="data.unit_type"
+            :options="unitTypeList"
+            optionLabel="label"
+            optionValue="value"
+        ></Dropdown>
+      </template>
+    </Column>
+    <Column
+        header="삭제"
+        class="text-center"
+    >
+      <template #body="{data}">
+        <Button
+            type="button"
+            class="p-button-danger"
+            @click="delUnit(data.unit_idx)"
+        >
+          <i class="pi pi-trash"></i>
+        </Button>
+      </template>
+    </Column>
+  </DataTable>
+
+  <ConfirmDialog
+      :breakpoints="{'960px': '75vw', '640px': '100vw'}"
+  ></ConfirmDialog>
+  <Toast
+      :breakpoints="{'960px': {width: '100%', right: '0', left: '0'}}"
+  ></Toast>
 </template>
 
 <script>
 import {onBeforeMount, reactive, ref} from "vue";
 
+import InputText from "primevue/inputtext";
+import SelectButton from "primevue/selectbutton";
+import Button from "primevue/button";
+import Dropdown from 'primevue/dropdown';
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import ColumnGroup from "primevue/columngroup";
+import Row from "primevue/row";
+import ConfirmDialog from 'primevue/confirmdialog';
+import Toast from 'primevue/toast';
+import {useConfirm} from "primevue/useconfirm";
+import {useToast} from "primevue/usetoast";
+
 import {
   getUnitList as requestUnitList,
   addUnit as requestAddUnit,
   editUnit as requestEditUnit,
-  delUnit as requestDelUnit
+  delUnit as requestDelUnit,
 } from '@/modules/investHistory';
 
 export default {
+  components: {
+    InputText,
+    SelectButton,
+    Button,
+    Dropdown,
+    DataTable,
+    Column,
+    ColumnGroup,
+    Row,
+    ConfirmDialog,
+    Toast,
+  },
   setup() {
+    //set vars: confirm dialog
+    const confirm = useConfirm();
+    const toast = useToast();
+
     //set vars: 필요 변수
+    const unitTypeList = ref([
+      {label: 'INT', value: 'int'},
+      {label: 'FLOAT', value: 'float'},
+    ]);
     const unitList = ref([]);
-    const addForm = reactive({unit: '', unit_type: ''});
+    const addForm = reactive({
+      unit: '',
+      unitType: '',
+      validate: {
+        unit: true,
+        unitType: true,
+      },
+      validateMsg: {
+        unit: '',
+        unitType: ''
+      }
+    });
 
     /*
     lifecycle hook
@@ -79,45 +197,92 @@ export default {
 
     /**
      * add unit
-     * @param e
      * @return {Promise<boolean>}
      */
-    const addUnit = async (e) => {
-      const $form = e.target;
+    const addUnit = async () => {
+      let validateFlag = true;
 
       if (!addForm.unit) {
-        alert('단위 입력');
-        $form.elements.unit.focus();
-        return false;
+        setFormValidate('unit', false, '단위를 입력해주세요');
+        validateFlag = false;
+      } else {
+        setFormValidate('unit', true);
       }
-      if (!addForm.unit_type) {
-        alert('타입 선택');
-        return false;
+      if (!addForm.unitType) {
+        setFormValidate('unitType', false, '타입을 선택해주세요');
+        validateFlag = false;
+      } else {
+        setFormValidate('unitType', true);
       }
+
+      if (!validateFlag) return false;
 
       try {
-        await requestAddUnit(addForm.unit, addForm.unit_type);
+        await requestAddUnit(addForm.unit, addForm.unitType);
 
         addForm.unit = '';
-        addForm.unit_type = '';
+        addForm.unitType = '';
+
+        toast.add({
+          severity: 'success',
+          summary: '추가 완료',
+          life: 3000,
+        });
 
         await getUnitList();
       } catch (err) {
-        alert(err);
-        return false;
+        toast.add({
+          severity: 'error',
+          summary: '추가 실패',
+          detail: err,
+          life: 3000,
+        });
       }
     }
 
     /**
      * edit unit
-     * @param {Object} unit
      * @return {Promise<boolean>}
      */
-    const editUnit = async (unit) => {
+    const editUnit = async (event) => {
+      let {data, newData, field} = event;
+
       try {
-        await requestEditUnit(unit.unit_idx, unit.unit, unit.unit_type);
+        switch (field) {
+          case 'unit':
+            if (data.unit == newData.unit) {
+              return false;
+            }
+            if (data.unit.length == 0) {
+              event.preventDefault();
+              throw "단위를 입력해주세요.";
+            }
+
+            data.unit = newData.unit;
+            break;
+          case 'unit_type':
+            if (data.unit_type == newData.unit_type) {
+              return false;
+            }
+
+            data.unit_type = newData.unit_type;
+            break;
+        }
+
+        await requestEditUnit(data.unit_idx, data.unit, data.unit_type);
+
+        toast.add({
+          severity: 'success',
+          summary: '수정 완료',
+          life: 3000,
+        });
       } catch (err) {
-        alert(err);
+        toast.add({
+          severity: 'error',
+          summary: '수정 실패',
+          detail: err,
+          life: 3000,
+        });
         return false;
       }
     }
@@ -128,16 +293,53 @@ export default {
      * @return {Promise<void>}
      */
     const delUnit = async (unitIdx) => {
-      try {
-        await requestDelUnit(unitIdx);
+      confirm.require({
+        message: '삭제 하시겠습니까?',
+        header: '삭제 확인',
+        icon: 'pi pi-exclamation-triangle',
+        acceptClass: 'p-button-danger',
+        acceptIcon: 'pi pi-check',
+        acceptLabel: '예',
+        rejectClass: 'p-button-text p-button-plain',
+        rejectLabel: '아니오',
+        accept: async () => {
+          try {
+            await requestDelUnit(unitIdx);
 
-        await getUnitList();
-      } catch (err) {
-        alert(err);
-      }
+            await getUnitList();
+
+            toast.add({
+              severity: 'success',
+              summary: '삭제 완료',
+              life: 3000,
+            });
+          } catch (err) {
+            toast.add({
+              severity: 'error',
+              summary: '삭제 실패',
+              detail: err,
+              life: 3000,
+            });
+          }
+        },
+        reject: () => {
+        }
+      });
+    }
+
+    /**
+     * form validate 설정
+     * @param {string} key
+     * @param {boolean} value
+     * @param {string} [msg]
+     */
+    const setFormValidate = (key, value, msg = '') => {
+      addForm.validate[key] = value;
+      addForm.validateMsg[key] = msg;
     }
 
     return {
+      unitTypeList,
       unitList,
       addForm,
       addUnit,
@@ -149,24 +351,42 @@ export default {
 </script>
 
 <style scoped>
-#unitForm .row {
-  padding: 5px 0;
+.p-error {
+  color: #e24c4c !important;
 }
-#unitForm label {
-  display: inline-block;
-  width: 100px;
-  vertical-align: top;
+.normal-label {
+  position: absolute;
+  margin-top:-0.7rem;
+  left:0.75rem;
+  top:-0.75rem;
+  font-size: 12px;
+  color: #6c757d;
 }
 
-#list {
-  border: 1px solid;
-  border-collapse: collapse;
-}
-#list th, #list td {
-  border: 1px solid;
-  padding: 5px;
-}
-#list .center {
+.p-datatable :deep(th .p-column-title) {
+  display: block;
+  width: 100%;
   text-align: center;
+}
+.p-datatable :deep(td.p-cell-editing) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+@media screen and (max-width: 960px) {
+  .p-datatable,
+  .p-datatable :deep(td.p-cell-editing .p-inputtext){
+    font-size: 0.9rem !important;
+  }
+  .p-datatable :deep(td.p-cell-editing) {
+    padding-top: 0.2rem;
+    padding-bottom:0.2rem;
+  }
+  .p-datatable :deep(tbody td[role="cell"]) {
+    border:none;
+    border-bottom: 1px solid #dee2e6 !important;
+  }
+  .p-datatable :deep(tbody td[role="cell"]:last-child) {
+    border-bottom: 3px solid #dee2e6 !important;
+  }
 }
 </style>
