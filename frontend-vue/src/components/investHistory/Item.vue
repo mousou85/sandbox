@@ -26,6 +26,7 @@
           <SelectButton
               v-model="itemFormData.itemType"
               :options="itemTypeList"
+              class="grid col-4"
               :class="{'p-invalid': !itemFormData.validate.itemType}"
               optionLabel="text"
               optionValue="type"
@@ -56,7 +57,7 @@
 
       <div class="field w-full mt-5">
         <div class="p-normal-label flex flex-wrap">
-          <div v-for="unit in unitList" class="field-checkbox">
+          <div v-for="unit in unitList" class="field-checkbox inner-label">
             <label
                 :class="{'p-error': !itemFormData.validate.units}"
             >
@@ -561,60 +562,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.field-checkbox {
-  margin-bottom: 0.5rem;
-}
-.field-checkbox label {
-  margin:0 0.5rem;
-  line-height: 1.7;
-}
-.p-selectbutton {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  row-gap:0.4rem;
-  column-gap: 0.4rem;
-}
-.p-selectbutton :deep(.p-button) {
-  margin:0;
-  border-radius: 6px !important;
-  border-right: 1px solid #ced4da !important;
-}
-.p-selectbutton :deep(.p-button:first-of-type) {
-  margin-left:0;
-}
-.p-selectbutton.p-invalid > :deep(.p-button) {
-  border-color: #e24c4c !important;
-}
-
-
-.p-datatable :deep(th .p-column-title) {
-  display: block;
-  width: 100%;
-  text-align: center;
-}
-.p-datatable :deep(td.p-cell-editing) {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-@media screen and (max-width: 960px) {
-  .p-datatable,
-  .p-datatable :deep(td.p-cell-editing .p-inputtext),
-  .p-datatable :deep(td.p-cell-editing .p-multiselect-label){
-    font-size: 0.9rem !important;
-  }
-  .p-datatable :deep(td.p-cell-editing) {
-    padding-top: 0.2rem;
-    padding-bottom:0.2rem;
-  }
-  .p-datatable :deep(tbody td[role="cell"]) {
-    border:none;
-    border-bottom: 1px solid #dee2e6 !important;
-  }
-  .p-datatable :deep(tbody td[role="cell"]:last-child) {
-    border-bottom: 3px solid #dee2e6 !important;
-  }
-}
-</style>

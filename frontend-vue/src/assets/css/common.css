@@ -30,6 +30,64 @@ body {
 	font-size:0.85rem;
 	color: #6c757d;
 }
+.field-checkbox.inner-label {
+	margin-bottom: 0.5rem;
+}
+.field-checkbox.inner-label > label {
+	margin:0 0.5rem;
+	line-height: 1.7;
+}
+.p-selectbutton.grid {
+	display: grid;
+	row-gap:0.4rem;
+	column-gap: 0.4rem;
+	flex-wrap: unset;
+	margin-right: 0;
+	margin-left: 0;
+	margin-top: 0;
+}
+.p-selectbutton.grid.col-2,
+.p-selectbutton.grid.col-3,
+.p-selectbutton.grid.col-4,
+.p-selectbutton.grid.col-5,
+.p-selectbutton.grid.col-6 {
+	flex:none;
+	padding:0;
+	width:auto;
+}
+.p-selectbutton.grid.col-2 {
+	grid-template-columns: repeat(2, 1fr);
+}
+.p-selectbutton.grid.col-3 {
+	grid-template-columns: repeat(3, 1fr);
+}
+.p-selectbutton.grid.col-4 {
+	grid-template-columns: repeat(4, 1fr);
+}
+.p-selectbutton.grid.col-5 {
+	grid-template-columns: repeat(5, 1fr);
+}
+.p-selectbutton.grid.col-6 {
+	grid-template-columns: repeat(6, 1fr);
+}
+.p-selectbutton.grid .p-button {
+	margin:0;
+	border-radius: 6px !important;
+	border:1px solid #ced4da;
+}
+.p-selectbutton.p-invalid > .p-button {
+	border:1px solid #e24c4c;
+}
+.p-datatable th.text-center .p-column-title {
+	display: block;
+	width: 100%;
+	text-align: center;
+}
+
+.p-datatable .p-datatable-tbody > tr > td.p-cell-editing {
+	padding-top: 0;
+	padding-bottom: 0;
+}
 
 @media screen and (max-width: 960px) {
 	html {
@@ -54,5 +112,9 @@ body {
 		top:-0.75rem;
 		font-size:0.75rem;
 		color: #6c757d;
+	}
+	.p-datatable .p-datatable-tbody > tr > td.p-cell-editing {
+		padding-top: 0.2rem !important;
+		padding-bottom:0.2rem !important;
 	}
 }
