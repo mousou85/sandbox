@@ -1,81 +1,56 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
+  <header class="block">
+    <Menu></Menu>
   </header>
-
-  <main>
-    <TheWelcome />
+  <main id="contents" class="block">
+    <router-view></router-view>
   </main>
 </template>
 
-<style>
-@import './assets/base.css';
+<script>
+import {useStore} from "vuex";
+import {onMounted} from 'vue';
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+import Menu from '@/components/Menu.vue';
 
-  font-weight: normal;
-}
+export default {
+  components: {
+    Menu
+  },
+  setup(props) {
+    //set vars: vuex
+    const store = useStore();
 
-header {
-  line-height: 1.5;
-}
+    /**
+     * 모바일 여부 설정
+     */
+    const setMobileFlag = () => {
+      if (window.innerWidth >= 1024) {
+        store.dispatch('setMobile', false);
+      } else {
+        store.dispatch('setMobile', true);
+      }
+    }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+    onMounted(() => {
+      /*
+      load/resize 이벤트에 모바일 여부 설정 메소드 설정
+       */
+      window.addEventListener('load', () => {
+        setMobileFlag();
+      });
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+      window.addEventListener('resize', () => {
+        setMobileFlag();
+      });
+    });
   }
 }
+</script>
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+<style scoped>
+#contents {
+  margin: 1rem;
 }
 </style>

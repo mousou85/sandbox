@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 // import App from './App.vue'
-import App from '@/App2.vue';
+import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store/index';
 import PrimeVue from "primevue/config";
