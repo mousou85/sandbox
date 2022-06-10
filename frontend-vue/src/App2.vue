@@ -1,28 +1,56 @@
-<script setup>
-import Menu from './components/Menu.vue';
-</script>
-
 <template>
-  <header>
+  <header class="block">
     <Menu></Menu>
   </header>
-  <main>
+  <main id="contents" class="block">
     <router-view></router-view>
   </main>
 </template>
 
-<style>
-body {
-  margin: 0;
-}
+<script>
+import {useStore} from "vuex";
+import {onMounted} from 'vue';
 
-header {
-  display: block;
-  border-bottom:1px solid;
+import Menu from '@/components/Menu.vue';
+
+export default {
+  components: {
+    Menu
+  },
+  setup(props) {
+    //set vars: vuex
+    const store = useStore();
+
+    /**
+     * 모바일 여부 설정
+     */
+    const setMobileFlag = () => {
+      if (window.innerWidth >= 1024) {
+        store.dispatch('setMobile', false);
+      } else {
+        store.dispatch('setMobile', true);
+      }
+    }
+
+    onMounted(() => {
+      /*
+      load/resize 이벤트에 모바일 여부 설정 메소드 설정
+       */
+      window.addEventListener('load', () => {
+        setMobileFlag();
+      });
+
+      window.addEventListener('resize', () => {
+        setMobileFlag();
+      });
+    });
+  }
 }
-main {
-  display: block;
-  border-bottom: 1px solid;
-  padding: 20px;
+</script>
+
+
+<style scoped>
+#contents {
+  margin: 1rem;
 }
 </style>

@@ -1,82 +1,170 @@
 <template>
-  <ul class="tabs" v-if="currentItemIdx > 0">
-    <li :class="selectedTab == 'total' ? 'on' : ''" @click="switchTab('total')">종합</li>
-    <li :class="selectedTab == 'month' ? 'on' : ''" @click="switchTab('month')">월간</li>
-    <li :class="selectedTab == 'year' ? 'on' : ''" @click="switchTab('year')">년간</li>
-  </ul>
-  <table width="100%" class="summaryTable" v-if="currentItemIdx > 0">
-    <template v-if="selectedTab == 'total'">
-      <tr>
-        <th colspan="3">원금</th>
-        <th colspan="3">현재평가</th>
-        <th colspan="4">수익율</th>
-      </tr>
-      <tr>
-        <th>원금</th>
-        <th>재투자금</th>
-        <th>합계</th>
-        <th>누적이자</th>
-        <th>평가금액</th>
-        <th>합계</th>
-        <th>수익</th>
-        <th>수익율</th>
-        <th>수익(재투자금 포함)</th>
-        <th>수익율(재투자금 포함)</th>
-      </tr>
-      <tr>
-        <td class="right" v-html="printVal(summaryData, 'inout.principalTotal', 'plain')"></td>
-        <td class="right" v-html="printVal(summaryData, 'inout.proceedsTotal', 'plain')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'inout.total', 'plain')"></td>
-        <td class="right" v-html="printVal(summaryData, 'revenue.interestTotal')"></td>
-        <td class="right" v-html="printVal(summaryData, 'revenue.eval')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'revenue.total')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'earn.earn')"></td>
-        <td class="right" v-html="printVal(summaryData, 'earn.ratePercent', 'percent')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'earn.earnIncProceeds')"></td>
-        <td class="right" v-html="printVal(summaryData, 'earn.rateIncProceedsPercent', 'percent')"></td>
-      </tr>
+  <TabMenu
+      :model="tabMenus"
+      :activeIndex="selectedTab.index"
+      v-if="currentItemIdx > 0"
+  >
+    <template #item="{item}">
+      <a class="p-menuitem-link" role="presentation" @click="switchTab(item.value)">{{item.label}}</a>
     </template>
+  </TabMenu>
+
+  <DataTable :value="summaryData.data" v-if="currentItemIdx > 0" responsiveLayout="stack">
+    <ColumnGroup type="header">
+      <Row>
+        <Column header="투자금" :colspan="3"></Column>
+        <Column header="현재평가" :colspan="3"></Column>
+        <Column header="수익율" :colspan="4"></Column>
+      </Row>
+      <Row>
+        <Column header="원금"></Column>
+        <Column header="재투자금"></Column>
+        <Column header="합계"></Column>
+
+        <Column header="누적이자"></Column>
+        <Column header="평가금액"></Column>
+        <Column header="합계"></Column>
+
+        <Column header="수익"></Column>
+        <Column header="수익율"></Column>
+        <Column header="수익(재투자금 포함)"></Column>
+        <Column header="수익율(재투자금 포함)"></Column>
+      </Row>
+    </ColumnGroup>
+
+    <template v-if="selectedTab.value == 'total'">
+      <Column field="inout.principalTotal" header="투자금-원금" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'inout.principalTotal', 'plain')"></span>
+        </template>
+      </Column>
+      <Column field="inout.proceedsTotal" header="투자금-재투자금" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'inout.proceedsTotal', 'plain')"></span>
+        </template>
+      </Column>
+      <Column field="inout.total" header="투자금-합계" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'inout.total', 'plain')"></span>
+        </template>
+      </Column>
+
+      <Column field="revenue.interestTotal" header="현재평가-누적이자" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'revenue.interestTotal')"></span>
+        </template>
+      </Column>
+      <Column field="revenue.eval" header="현재평가-평가금액" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'revenue.eval')"></span>
+        </template>
+      </Column>
+      <Column field="revenue.total" header="현재평가-합계" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'revenue.total')"></span>
+        </template>
+      </Column>
+
+      <Column field="earn.earn" header="수익율-수익" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.earn')"></span>
+        </template>
+      </Column>
+      <Column field="earn.ratePercent" header="수익율-수익율" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.ratePercent', 'percent')"></span>
+        </template>
+      </Column>
+      <Column field="earn.earnIncProceeds" header="수익율-수익(재투자금 포함)" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.earnIncProceeds')"></span>
+        </template>
+      </Column>
+      <Column field="earn.rateIncProceedsPercent" header="수익율-수익율(재투자금 포함)" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.rateIncProceedsPercent', 'percent')"></span>
+        </template>
+      </Column>
+    </template>
+
     <template v-else>
-      <tr>
-        <th colspan="3">원금</th>
-        <th colspan="3">현재평가</th>
-        <th colspan="4">수익율</th>
-      </tr>
-      <tr>
-        <th>원금</th>
-        <th>재투자금</th>
-        <th>합계</th>
-        <th>누적이자</th>
-        <th>평가금액</th>
-        <th>합계</th>
-        <th>수익</th>
-        <th>수익율</th>
-        <th>수익(재투자금 포함)</th>
-        <th>수익율(재투자금 포함)</th>
-      </tr>
-      <tr>
-        <td class="right" v-html="printVal(summaryData, 'inout.principalTotal', 'plain+diff')"></td>
-        <td class="right" v-html="printVal(summaryData, 'inout.proceedsTotal', 'plain+diff')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'inout.total', 'plain')"></td>
-        <td class="right" v-html="printVal(summaryData, 'revenue.interestTotal', 'diff')"></td>
-        <td class="right" v-html="printVal(summaryData, 'revenue.eval', 'diff')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'revenue.total', 'diff')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'earn.earn', 'diff')"></td>
-        <td class="right" v-html="printVal(summaryData, 'earn.ratePercent', 'percent+diff')"></td>
-        <td class="right bold" v-html="printVal(summaryData, 'earn.earnIncProceeds', 'diff')"></td>
-        <td class="right" v-html="printVal(summaryData, 'earn.rateIncProceedsPercent', 'percent+diff')"></td>
-      </tr>
+      <Column field="inout.principalTotal" header="투자금-원금" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'inout.principalTotal', 'plain+diff')"></span>
+        </template>
+      </Column>
+      <Column field="inout.proceedsTotal" header="투자금-재투자금" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'inout.proceedsTotal', 'plain+diff')"></span>
+        </template>
+      </Column>
+      <Column field="inout.total" header="투자금-합계" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'inout.total', 'plain')"></span>
+        </template>
+      </Column>
+
+      <Column field="revenue.interestTotal" header="현재평가-누적이자" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'revenue.interestTotal', 'diff')"></span>
+        </template>
+      </Column>
+      <Column field="revenue.eval" header="현재평가-평가금액" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'revenue.eval', 'diff')"></span>
+        </template>
+      </Column>
+      <Column field="revenue.total" header="현재평가-합계" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'revenue.total', 'diff')"></span>
+        </template>
+      </Column>
+
+      <Column field="earn.earn" header="수익율-수익" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.earn', 'diff')"></span>
+        </template>
+      </Column>
+      <Column field="earn.ratePercent" header="수익율-수익율" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.ratePercent', 'percent+diff')"></span>
+        </template>
+      </Column>
+      <Column field="earn.earnIncProceeds" header="수익율-수익(재투자금 포함)" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.earnIncProceeds', 'diff')"></span>
+        </template>
+      </Column>
+      <Column field="earn.rateIncProceedsPercent" header="수익율-수익율(재투자금 포함)" class="text-right">
+        <template #body="{data}">
+          <span v-html="printVal(data, 'earn.rateIncProceedsPercent', 'percent+diff')"></span>
+        </template>
+      </Column>
     </template>
-  </table>
+  </DataTable>
 </template>
 
 <script>
 import {computed, onBeforeMount, reactive, ref, watch} from "vue";
 import {useStore} from 'vuex';
+
+import TabMenu from "primevue/tabmenu";
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';
+import Row from 'primevue/row';
+
 import {numberComma} from "@/libs/helper";
 import {getItemSummaryTotal, getItemSummaryMonth, getItemSummaryYear} from "@/modules/investHistory";
 
 export default {
+  components: {
+    TabMenu,
+    DataTable,
+    Column,
+    ColumnGroup,
+    Row,
+  },
   props: [
     'thisMonth'
   ],
@@ -87,70 +175,88 @@ export default {
     //set vars: 필요 변수
     const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
     const updateSummaryFlag = computed(() => store.getters['investHistory/getUpdateSummaryFlag']);
-    const selectedTab = ref('total');
+    const tabMenus = ref([
+      {label: '종합', value: 'total'},
+      {label: '월간', value: 'month'},
+      {label: '년간', value: 'year'},
+    ]);
+    const selectedTab = reactive({
+      value: 'total',
+      index: 0,
+    })
     const summaryData = reactive({
       year: '',
       month: '',
       unit: '',
       unitType: '',
-      inout: {
-        total: 0,
-        principalTotal: 0,
-        principalPrev: 0,
-        principalCurrent: 0,
-        proceedsTotal: 0,
-        proceedsPrev: 0,
-        proceedsCurrent: 0,
-      },
-      revenue: {
-        total: computed(() => {
-          if (summaryData.revenue.eval == 0) {
-            return summaryData.inout.total + summaryData.revenue.interestTotal;
-          } else {
-            return summaryData.revenue.eval + summaryData.revenue.interestTotal;
+      data: [
+        {
+          inout: {
+            total: 0,
+            principalTotal: 0,
+            principalPrev: 0,
+            principalCurrent: 0,
+            proceedsTotal: 0,
+            proceedsPrev: 0,
+            proceedsCurrent: 0,
+          },
+          revenue: {
+            total: computed(() => {
+              const data = summaryData.data[0];
+              if (data.revenue.eval == 0) {
+                return data.inout.total + data.revenue.interestTotal;
+              } else {
+                return data.revenue.eval + data.revenue.interestTotal;
+              }
+            }),
+            totalPrev: computed(() => {
+              const data = summaryData.data[0];
+              return data.revenue.total - (data.revenue.interestPrev + data.revenue.evalPrev);
+            }),
+            interestTotal: 0,
+            interestPrev: 0,
+            interestCurrent: 0,
+            eval: 0,
+            evalPrev: 0,
+          },
+          earn: {
+            earn: 0,
+            rate: 0,
+            ratePercent: computed(() => {
+              const data = summaryData.data[0];
+              return data.earn.rate != 0
+                  ? Math.floor(data.earn.rate * 10000) / 100
+                  : 0;
+            }),
+            earnIncProceeds: 0,
+            rateIncProceeds: 0,
+            rateIncProceedsPercent: computed(() => {
+              const data = summaryData.data[0];
+              return data.earn.rateIncProceeds != 0
+                  ? Math.floor(data.earn.rateIncProceeds * 10000) / 100
+                  : 0;
+            })
+          },
+          earnPrevDiff: {
+            earn: 0,
+            rate: 0,
+            ratePercent: computed(() => {
+              const data = summaryData.data[0];
+              return data.earnPrevDiff.rate != 0
+                  ? Math.floor(data.earnPrevDiff.rate * 10000) / 100
+                  : 0;
+            }),
+            earnIncProceeds: 0,
+            rateIncProceeds: 0,
+            rateIncProceedsPercent: computed(() => {
+              const data = summaryData.data[0];
+              return data.earnPrevDiff.rateIncProceeds != 0
+                  ? Math.floor(data.earnPrevDiff.rateIncProceeds * 10000) / 100
+                  : 0;
+            })
           }
-        }),
-        totalPrev: computed(() => {
-          return summaryData.revenue.total - (summaryData.revenue.interestPrev + summaryData.revenue.evalPrev);
-        }),
-        interestTotal: 0,
-        interestPrev: 0,
-        interestCurrent: 0,
-        eval: 0,
-        evalPrev: 0,
-      },
-      earn: {
-        earn: 0,
-        rate: 0,
-        ratePercent: computed(() => {
-          return summaryData.earn.rate != 0
-            ? Math.floor(summaryData.earn.rate * 10000) / 100
-            : 0;
-        }),
-        earnIncProceeds: 0,
-        rateIncProceeds: 0,
-        rateIncProceedsPercent: computed(() => {
-          return summaryData.earn.rateIncProceeds != 0
-              ? Math.floor(summaryData.earn.rateIncProceeds * 10000) / 100
-              : 0;
-        })
-      },
-      earnPrevDiff: {
-        earn: 0,
-        rate: 0,
-        ratePercent: computed(() => {
-          return summaryData.earnPrevDiff.rate != 0
-              ? Math.floor(summaryData.earnPrevDiff.rate * 10000) / 100
-              : 0;
-        }),
-        earnIncProceeds: 0,
-        rateIncProceeds: 0,
-        rateIncProceedsPercent: computed(() => {
-          return summaryData.earnPrevDiff.rateIncProceeds != 0
-              ? Math.floor(summaryData.earnPrevDiff.rateIncProceeds * 10000) / 100
-              : 0;
-        })
-      }
+        }
+      ]
     });
 
     /*
@@ -195,47 +301,47 @@ export default {
 
           summaryData.unit = data.unit;
           summaryData.unitType = data.unitType;
-          summaryData.inout.total = data.inout.total;
-          summaryData.revenue.eval = data.revenue.eval;
-          summaryData.earn.earn = data.earn.earn;
-          summaryData.earn.rate = data.earn.rate;
-          summaryData.earn.earnIncProceeds = data.earn.earnIncProceeds;
-          summaryData.earn.rateIncProceeds = data.earn.rateIncProceeds;
+          summaryData.data[0].inout.total = data.inout.total;
+          summaryData.data[0].revenue.eval = data.revenue.eval;
+          summaryData.data[0].earn.earn = data.earn.earn;
+          summaryData.data[0].earn.rate = data.earn.rate;
+          summaryData.data[0].earn.earnIncProceeds = data.earn.earnIncProceeds;
+          summaryData.data[0].earn.rateIncProceeds = data.earn.rateIncProceeds;
 
           if (selectedTab.value == 'total') {
             summaryData.year = '';
             summaryData.month = '';
-            summaryData.inout.principalTotal = data.inout.principal;
-            summaryData.inout.principalPrev = 0;
-            summaryData.inout.principalCurrent = 0;
-            summaryData.inout.proceedsTotal = data.inout.proceeds;
-            summaryData.inout.proceedsPrev = 0;
-            summaryData.inout.proceedsCurrent = 0;
-            summaryData.revenue.interestTotal = data.revenue.interest;
-            summaryData.revenue.interestPrev = 0;
-            summaryData.revenue.interestCurrent = 0;
-            summaryData.revenue.evalPrev = 0;
-            summaryData.earnPrevDiff.earn = 0;
-            summaryData.earnPrevDiff.rate = 0;
-            summaryData.earnPrevDiff.earnIncProceeds = 0;
-            summaryData.earnPrevDiff.rateIncProceeds = 0;
+            summaryData.data[0].inout.principalTotal = data.inout.principal;
+            summaryData.data[0].inout.principalPrev = 0;
+            summaryData.data[0].inout.principalCurrent = 0;
+            summaryData.data[0].inout.proceedsTotal = data.inout.proceeds;
+            summaryData.data[0].inout.proceedsPrev = 0;
+            summaryData.data[0].inout.proceedsCurrent = 0;
+            summaryData.data[0].revenue.interestTotal = data.revenue.interest;
+            summaryData.data[0].revenue.interestPrev = 0;
+            summaryData.data[0].revenue.interestCurrent = 0;
+            summaryData.data[0].revenue.evalPrev = 0;
+            summaryData.data[0].earnPrevDiff.earn = 0;
+            summaryData.data[0].earnPrevDiff.rate = 0;
+            summaryData.data[0].earnPrevDiff.earnIncProceeds = 0;
+            summaryData.data[0].earnPrevDiff.rateIncProceeds = 0;
           } else {
             summaryData.year = data.year;
             summaryData.month = data.month;
-            summaryData.inout.principalTotal = data.inout.principalTotal;
-            summaryData.inout.principalPrev = data.inout.principalPrev;
-            summaryData.inout.principalCurrent = data.inout.principalCurrent;
-            summaryData.inout.proceedsTotal = data.inout.proceedsTotal;
-            summaryData.inout.proceedsPrev = data.inout.proceedsPrev;
-            summaryData.inout.proceedsCurrent = data.inout.proceedsCurrent;
-            summaryData.revenue.interestTotal = data.revenue.interestTotal;
-            summaryData.revenue.interestPrev = data.revenue.interestPrev;
-            summaryData.revenue.interestCurrent = data.revenue.interestCurrent;
-            summaryData.revenue.evalPrev = data.revenue.evalPrev;
-            summaryData.earnPrevDiff.earn = data.earnPrevDiff.earn;
-            summaryData.earnPrevDiff.rate = data.earnPrevDiff.rate;
-            summaryData.earnPrevDiff.earnIncProceeds = data.earnPrevDiff.earnIncProceeds;
-            summaryData.earnPrevDiff.rateIncProceeds = data.earnPrevDiff.rateIncProceeds;
+            summaryData.data[0].inout.principalTotal = data.inout.principalTotal;
+            summaryData.data[0].inout.principalPrev = data.inout.principalPrev;
+            summaryData.data[0].inout.principalCurrent = data.inout.principalCurrent;
+            summaryData.data[0].inout.proceedsTotal = data.inout.proceedsTotal;
+            summaryData.data[0].inout.proceedsPrev = data.inout.proceedsPrev;
+            summaryData.data[0].inout.proceedsCurrent = data.inout.proceedsCurrent;
+            summaryData.data[0].revenue.interestTotal = data.revenue.interestTotal;
+            summaryData.data[0].revenue.interestPrev = data.revenue.interestPrev;
+            summaryData.data[0].revenue.interestCurrent = data.revenue.interestCurrent;
+            summaryData.data[0].revenue.evalPrev = data.revenue.evalPrev;
+            summaryData.data[0].earnPrevDiff.earn = data.earnPrevDiff.earn;
+            summaryData.data[0].earnPrevDiff.rate = data.earnPrevDiff.rate;
+            summaryData.data[0].earnPrevDiff.earnIncProceeds = data.earnPrevDiff.earnIncProceeds;
+            summaryData.data[0].earnPrevDiff.rateIncProceeds = data.earnPrevDiff.rateIncProceeds;
           }
         }
       } catch (err) {
@@ -252,6 +358,10 @@ export default {
     const switchTab = (type) => {
       if (selectedTab.value != type) {
         selectedTab.value = type;
+        if (type == 'total') selectedTab.index = 0;
+        else if (type == 'month') selectedTab.index = 1;
+        else if (type == 'year') selectedTab.index = 2;
+
         store.commit('investHistory/setUpdateSummaryFlag', true);
       }
     }
@@ -264,18 +374,18 @@ export default {
      * @return {string}
      */
     const printVal = (data, valKey, printType) => {
-      const unit = data.unit;
-      const unitType = data.unitType;
+      const unit = summaryData.unit;
+      const unitType = summaryData.unitType;
+
+      let printTypeArr = [];
+      if (printType) {
+        printTypeArr = printType.split('+');
+      }
 
       const valKeyArr = valKey.split('.');
       let val = data;
       for (const key of valKeyArr) {
         val = val[key];
-      }
-
-      let printTypeArr = [];
-      if (printType) {
-        printTypeArr = printType.split('+');
       }
 
       if (!printTypeArr.includes('percent') && unitType == 'int') {
@@ -323,7 +433,7 @@ export default {
 
           if (printTypeArr.includes('plain')) {
             if (diffVal > 0) diffStr = `<br><span class="diff">(+${numberComma(diffVal)})</span>`;
-            else if (diffVal < 0) diffStr = `<br><span class="diff">(-${numberComma(diffVal)})</span>`;
+            else if (diffVal < 0) diffStr = `<br><span class="diff">(${numberComma(diffVal)})</span>`;
           } else if (printTypeArr.includes('percent')) {
             if (diffVal > 0) diffStr = `<br><span class="diff" style="color: red;">(+${diffVal} %)</span>`;
             else if (diffVal < 0) diffStr = `<br><span class="diff" style="color: blue;">(${diffVal} %)</span>`;
@@ -353,59 +463,37 @@ export default {
 
     return {
       currentItemIdx,
+      tabMenus,
       selectedTab,
       summaryData,
       switchTab,
-      printVal
+      printVal,
     }
   }
 }
 </script>
 
 <style scoped>
-.tabs {
-  list-style: none;
-  padding: 0;
-  overflow: hidden;
-  margin: 1em 0 0 0;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  border-collapse: collapse;
-  font-size: 0.8em;
+.p-datatable :deep(th[role="cell"]),
+.p-datatable :deep(td[role="cell"]) {
+  border-width: 1px;
+  padding: 0.75rem;
 }
-.tabs li {
-  flex-basis: 10%;
-  padding: 0.2em 0.5em;
+.p-datatable :deep(td .diff) {
+  font-size: 0.6rem;
+}
+.p-datatable :deep(th .p-column-title) {
+  display: block;
+  width: 100%;
   text-align: center;
-  border-top: 1px solid;
-  border-left: 1px solid;
-  border-right: 1px solid;
-  cursor: pointer;
 }
-.tabs li.on {
-  background: lightyellow;
-  font-weight: bold;
-}
-.summaryTable {
-  border: 1px solid;
-  border-collapse: collapse;
-  margin-top: 0;
-  overflow: hidden;
-  font-size: 0.8em;
-}
-.summaryTable th, .summaryTable td {
-  border: 1px solid;
-  padding: 5px;
-}
-.summaryTable .bold {
-  font-weight: bold;
-}
-.summaryTable .right {
-  text-align: right;
-}
-.summaryTable :deep(.diff) {
-  font-size: 0.7em;
+@media screen and (max-width: 960px) {
+  .p-datatable :deep(td[role="cell"]) {
+    border:none;
+    border-bottom:1px solid #dee2e6 !important;
+  }
+  .p-datatable :deep(td .diff) {
+    font-size: 0.8rem;
+  }
 }
 </style>
