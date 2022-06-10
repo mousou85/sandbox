@@ -1,0 +1,58 @@
+html {
+	font-size: 13px;
+}
+body {
+	margin: 0;
+}
+#contents {
+	margin: 1rem;
+}
+
+/*상단 메뉴바*/
+.p-menubar.gnb {
+	border-radius: 0 0 6px 6px;
+}
+.p-menubar.gnb .p-menubar-root-list .p-menuitem .router-link-active {
+	border: 1px solid #c0c0c0;
+}
+
+.p-error {
+	color: #e24c4c !important;
+}
+.p-normal-label {
+	position: relative;
+}
+.p-normal-label > label {
+	position: absolute;
+	margin-top:-0.7rem;
+	left:0.75rem;
+	top:-0.75rem;
+	font-size:0.85rem;
+	color: #6c757d;
+}
+
+@media screen and (max-width: 960px) {
+	html {
+		font-size: 16px;
+	}
+	/*상단 메뉴바/사이드바*/
+	.p-menubar.gnb {
+		border-radius: 0;
+		border-width: 0 0 1px 0;
+	}
+	.p-sidebar {
+		width: 75%;
+	}
+	.p-sidebar .p-sidebar-content {
+		padding-top: 1.25rem !important;
+	}
+
+	.p-normal-label > label {
+		position: absolute;
+		margin-top:-0.7rem;
+		left:0.75rem;
+		top:-0.75rem;
+		font-size:0.75rem;
+		color: #6c757d;
+	}
+}

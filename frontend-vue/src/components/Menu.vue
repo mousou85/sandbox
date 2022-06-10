@@ -2,11 +2,12 @@
   <template v-if="!isMobile">
     <Menubar
         :model="menus"
+        class="gnb"
     >
     </Menubar>
   </template>
   <template v-else>
-    <div class="p-menubar">
+    <div class="p-menubar gnb">
       <a class="p-menubar-button" @click="showSidebar = !showSidebar">
         <i class="pi pi-bars"></i>
       </a>
@@ -79,29 +80,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.p-menubar {
-  border-radius: 0 0 6px 6px;
-}
-.p-menubar :deep(.p-menubar-root-list .p-menuitem .router-link-active) {
-  border: 1px solid #c0c0c0;
-}
-
-@media screen and (max-width: 960px) {
-  .p-menubar {
-    border-radius: 0;
-    border-width: 0 0 1px 0;
-  }
-}
-</style>
-<style>
-@media screen and (max-width: 960px) {
-  .p-sidebar {
-    width: 75%;
-  }
-  .p-sidebar .p-sidebar-content {
-    padding-top: 1.25rem !important;
-  }
-}
-</style>

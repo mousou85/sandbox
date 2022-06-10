@@ -3,7 +3,7 @@
   <form id="itemAddForm" @submit.prevent="formSubmit">
     <div class="w-full md:w-3">
       <div class="field w-full mt-5">
-        <div class="relative">
+        <div class="p-normal-label">
           <Dropdown
               v-model="itemFormData.companyIdx"
               :options="companyList"
@@ -13,10 +13,7 @@
               class="w-full"
               placeholder="기업선택"
           ></Dropdown>
-          <label
-              class="normal-label"
-              :class="{'p-error': !itemFormData.validate.companyIdx}"
-          >기업</label>
+          <label :class="{'p-error': !itemFormData.validate.companyIdx}">기업</label>
         </div>
         <small
             v-if="!itemFormData.validate.companyIdx"
@@ -25,7 +22,7 @@
       </div>
 
       <div class="field w-full mt-5">
-        <div class="relative">
+        <div class="p-normal-label">
           <SelectButton
               v-model="itemFormData.itemType"
               :options="itemTypeList"
@@ -33,10 +30,7 @@
               optionLabel="text"
               optionValue="type"
           ></SelectButton>
-          <label
-              class="normal-label"
-              :class="{'p-error': !itemFormData.validate.itemType}"
-          >상품타입</label>
+          <label :class="{'p-error': !itemFormData.validate.itemType}">상품타입</label>
         </div>
         <small
             v-if="!itemFormData.validate.itemType"
@@ -45,17 +39,14 @@
       </div>
 
       <div class="field w-full mt-5">
-        <div class="relative">
+        <div class="p-normal-label">
           <InputText
               v-model="itemFormData.itemName"
               class="w-full"
               :class="{'p-invalid': !itemFormData.validate.itemName}"
               maxlength="50"
           ></InputText>
-          <label
-              class="normal-label"
-              :class="{'p-error': !itemFormData.validate.itemName}"
-          >상품명</label>
+          <label :class="{'p-error': !itemFormData.validate.itemName}">상품명</label>
         </div>
         <small
             v-if="!itemFormData.validate.itemName"
@@ -64,7 +55,7 @@
       </div>
 
       <div class="field w-full mt-5">
-        <div class="relative flex flex-wrap relative">
+        <div class="p-normal-label flex flex-wrap">
           <div v-for="unit in unitList" class="field-checkbox">
             <label
                 :class="{'p-error': !itemFormData.validate.units}"
@@ -78,10 +69,7 @@
               {{unit.unit}}
             </label>
           </div>
-          <label
-              class="normal-label"
-              :class="{'p-error': !itemFormData.validate.units}"
-          >단위</label>
+          <label :class="{'p-error': !itemFormData.validate.units}">단위</label>
         </div>
         <small
             v-if="!itemFormData.validate.units"
@@ -575,17 +563,6 @@ export default {
 </script>
 
 <style scoped>
-.p-error {
-  color: #e24c4c !important;
-}
-.normal-label {
-  position: absolute;
-  margin-top:-0.7rem;
-  left:0.75rem;
-  top:-0.75rem;
-  font-size: 12px;
-  color: #6c757d;
-}
 .field-checkbox {
   margin-bottom: 0.5rem;
 }

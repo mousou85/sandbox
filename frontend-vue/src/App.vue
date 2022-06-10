@@ -47,10 +47,3 @@ export default {
   }
 }
 </script>
-
-
-<style scoped>
-#contents {
-  margin: 1rem;
-}
-</style>

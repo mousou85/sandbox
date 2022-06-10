@@ -238,9 +238,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.p-error {
-  color: #e24c4c;
-}
-</style>
