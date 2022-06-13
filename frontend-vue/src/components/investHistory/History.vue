@@ -84,11 +84,6 @@ export default {
      */
     onBeforeMount(async () => {
       try {
-        //load vuex module
-        if (!store.hasModule('investHistory')) {
-          store.registerModule('investHistory', investHistory);
-        }
-
         itemList.value = await requestItemList('group');
         for (const company of itemList.value) {
           const _tmp = {

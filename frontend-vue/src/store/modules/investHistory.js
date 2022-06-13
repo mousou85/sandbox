@@ -5,6 +5,7 @@ export const investHistory = {
     updateSummaryFlag: false,
     updateInOutListFlag: false,
     updateRevenueListFlag: false,
+    updateItemListFlag: false,
     selectedUnit: '',
   },
   mutations: {
@@ -39,6 +40,14 @@ export const investHistory = {
      */
     setUpdateRevenueListFlag(state, value) {
       state.updateRevenueListFlag = value;
+    },
+    /**
+     * set update item list flag
+     * @param state
+     * @param {boolean} value
+     */
+    setUpdateItemListFlag(state, value) {
+      state.updateItemListFlag = value;
     },
     /**
      * set selected unit value
@@ -83,15 +92,14 @@ export const investHistory = {
       return state.updateRevenueListFlag;
     },
     /**
-     * get selected unit value
+     * get update item list flag value
      * @param state
-     * @returns {string}
+     * @returns {boolean}
      */
-    getSelectedUnit(state) {
-      return state.selectedUnit;
-    }
+    getUpdateItemListFlag(state) {
+      return state.updateItemListFlag;
+    },
   },
   actions: {
-  
   }
 }

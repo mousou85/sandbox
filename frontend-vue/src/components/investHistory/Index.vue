@@ -3,6 +3,14 @@
   <router-view></router-view>
 </template>
 
-<script setup>
+<script>
 import SubMenu from './SubMenu.vue';
+
+export default {
+  components: {
+    SubMenu,
+  },
+  setup() {
+  }
+}
 </script>

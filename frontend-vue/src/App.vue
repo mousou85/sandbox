@@ -8,9 +8,15 @@
 </template>
 
 <script>
+//vue core
 import {useStore} from "vuex";
-import {onMounted} from 'vue';
+import {computed, onMounted, watch} from 'vue';
+import {useRoute} from "vue-router";
 
+//vuex custom module
+import {investHistory} from "@/store/modules/investHistory";
+
+//custom components
 import Menu from '@/components/Menu.vue';
 
 export default {
@@ -18,20 +24,18 @@ export default {
     Menu
   },
   setup(props) {
-    //set vars: vuex
+    //set vars: vuex, route
     const store = useStore();
+    const route = useRoute();
 
-    /**
-     * 모바일 여부 설정
+    //set vars: route name
+    const routeName = computed(() => {
+      return route.name;
+    });
+
+    /*
+    life cycle hook
      */
-    const setMobileFlag = () => {
-      if (window.innerWidth >= 1024) {
-        store.dispatch('setMobile', false);
-      } else {
-        store.dispatch('setMobile', true);
-      }
-    }
-
     onMounted(() => {
       /*
       load/resize 이벤트에 모바일 여부 설정 메소드 설정
@@ -44,6 +48,37 @@ export default {
         setMobileFlag();
       });
     });
+
+    /*
+    watch variables
+     */
+    watch(routeName, (newRouteName, oldRouteName) => {
+      //load vuex module
+      if (oldRouteName != newRouteName) {
+        //invest history
+        const invest = ['investHistory', 'investCompany', 'investItem', 'investUnit'];
+        if (invest.includes(newRouteName)) {
+          if (!store.hasModule('investHistory')) {
+            store.registerModule('investHistory', investHistory);
+          }
+        } else {
+          if (store.hasModule('investHistory')) {
+            store.unregisterModule('investHistory');
+          }
+        }
+      }
+    });
+
+    /**
+     * 모바일 여부 설정
+     */
+    const setMobileFlag = () => {
+      if (window.innerWidth >= 1024) {
+        store.dispatch('setMobile', false);
+      } else {
+        store.dispatch('setMobile', true);
+      }
+    }
   }
 }
 </script>

@@ -11,18 +11,22 @@ const routes = [
     component: () => import('@/components/investHistory/Index.vue'),
     children: [
       {
+        name: 'investHistory',
         path: 'history',
         component: () => import('@/components/investHistory/History.vue')
       },
       {
+        name: 'investCompany',
         path: 'company',
         component: () => import('@/components/investHistory/Company.vue')
       },
       {
+        name: 'investItem',
         path: 'item',
         component: () => import('@/components/investHistory/Item.vue')
       },
       {
+        name: 'investUnit',
         path: 'unit',
         component: () => import('@/components/investHistory/Unit.vue')
       },

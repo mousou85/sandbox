@@ -1,89 +1,9 @@
 <template>
-  <!-- item add form -->
-  <form id="itemAddForm" @submit.prevent="formSubmit">
-    <div class="w-full md:w-3">
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <Dropdown
-              v-model="itemFormData.companyIdx"
-              :options="companyList"
-              :class="{'p-invalid': !itemFormData.validate.companyIdx}"
-              optionLabel="company_name"
-              optionValue="company_idx"
-              class="w-full"
-              placeholder="기업선택"
-          ></Dropdown>
-          <label :class="{'p-error': !itemFormData.validate.companyIdx}">기업</label>
-        </div>
-        <small
-            v-if="!itemFormData.validate.companyIdx"
-            :class="{'p-error': !itemFormData.validate.companyIdx}"
-        >{{itemFormData.validateMsg.companyIdx}}</small>
-      </div>
-
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <SelectButton
-              v-model="itemFormData.itemType"
-              :options="itemTypeList"
-              class="grid col-4"
-              :class="{'p-invalid': !itemFormData.validate.itemType}"
-              optionLabel="text"
-              optionValue="type"
-          ></SelectButton>
-          <label :class="{'p-error': !itemFormData.validate.itemType}">상품타입</label>
-        </div>
-        <small
-            v-if="!itemFormData.validate.itemType"
-            :class="{'p-error': !itemFormData.validate.itemType}"
-        >{{itemFormData.validateMsg.itemType}}</small>
-      </div>
-
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <InputText
-              v-model="itemFormData.itemName"
-              class="w-full"
-              :class="{'p-invalid': !itemFormData.validate.itemName}"
-              maxlength="50"
-          ></InputText>
-          <label :class="{'p-error': !itemFormData.validate.itemName}">상품명</label>
-        </div>
-        <small
-            v-if="!itemFormData.validate.itemName"
-            :class="{'p-error': !itemFormData.validate.itemName}"
-        >{{itemFormData.validateMsg.itemName}}</small>
-      </div>
-
-      <div class="field w-full mt-5">
-        <div class="p-normal-label flex flex-wrap">
-          <div v-for="unit in unitList" class="field-checkbox inner-label">
-            <label
-                :class="{'p-error': !itemFormData.validate.units}"
-            >
-              <Checkbox
-                  v-model="itemFormData.units"
-                  :value="unit.unit_idx"
-                  name="unit"
-                  :class="{'p-invalid': !itemFormData.validate.units}"
-              ></Checkbox>
-              {{unit.unit}}
-            </label>
-          </div>
-          <label :class="{'p-error': !itemFormData.validate.units}">단위</label>
-        </div>
-        <small
-            v-if="!itemFormData.validate.units"
-            :class="{'p-error': !itemFormData.validate.units}"
-        >{{itemFormData.validateMsg.units}}</small>
-      </div>
-
-      <div class="field w-full mt-5">
-        <Button type="submit" :label="btnFormSubmitLabel" class="w-full md:w-6"></Button>
-      </div>
-    </div>
-  </form>
-  <!-- //item add form -->
+  <ItemAdd
+      :companyList="companyList"
+      :itemTypeList="itemTypeList"
+      :unitList="unitList"
+  ></ItemAdd>
 
   <!-- item list -->
   <DataTable
@@ -189,7 +109,8 @@
 </template>
 
 <script>
-import {onBeforeMount, reactive, ref} from "vue";
+import {onBeforeMount, reactive, ref, computed, watch} from "vue";
+import {useStore} from "vuex";
 
 import InputText from "primevue/inputtext";
 import Dropdown from 'primevue/dropdown';
@@ -203,16 +124,16 @@ import Row from "primevue/row";
 import MultiSelect from 'primevue/multiselect';
 import ConfirmDialog from 'primevue/confirmdialog';
 import Toast from 'primevue/toast';
-
 import {useConfirm} from 'primevue/useconfirm';
 import {useToast} from 'primevue/usetoast';
+
+import ItemAdd from "@/components/investHistory/ItemAdd.vue";
 
 import {
   getItemList as requestItemList,
   getCompanyList as requestCompanyList,
   getUnitList as requestUnitList,
   getItemTypeList as requestItemTypeList,
-  addItem as requestAddItem,
   editItem as requestEditItem,
   delItem as requestDelItem,
 } from '@/modules/investHistory';
@@ -231,13 +152,16 @@ export default {
     MultiSelect,
     ConfirmDialog,
     Toast,
+    ItemAdd,
   },
   setup() {
-    //set vars: confirm dialog
+    //set vars: vuex, dialog, toast
+    const store = useStore();
     const confirm = useConfirm();
     const toast = useToast();
 
     //set vars: 필요 변수
+    const updateListFlag = computed(() => store.getters['investHistory/getUpdateItemListFlag']);
     const companyList = ref([]);
     const itemTypeList = ref([]);
     const unitList = ref([]);
@@ -279,6 +203,15 @@ export default {
       }
     });
 
+    /*
+    watch variables
+     */
+    watch(updateListFlag, async (newUpdateListFlag, oldUpdateListFlag) => {
+      if (newUpdateListFlag) {
+        await getItemList();
+      }
+    });
+
     /**
      * print unit set list
      * @param {Object[]} unitSet
@@ -291,29 +224,6 @@ export default {
       }
 
       return list.join(',');
-    }
-
-    /**
-     * reset form
-     */
-    const resetForm = () => {
-      for (let key of Object.keys(itemFormData)) {
-        if (key == 'units') {
-          itemFormData[key] = [];
-        } else if (['validate', 'validateMsg'].includes(key)) {
-          for (let key2 of Object.keys(itemFormData[key])) {
-            if (key == 'validate') {
-              itemFormData[key][key2] = true;
-            } else {
-              itemFormData[key][key2] = '';
-            }
-          }
-        } else {
-          itemFormData[key] = '';
-        }
-      }
-
-      btnFormSubmitLabel.value = '등록';
     }
 
     /**
@@ -331,80 +241,10 @@ export default {
         }
       } catch (err) {
         itemList.value = [];
+      } finally {
+        store.commit('investHistory/setUpdateItemListFlag', false);
       }
     };
-
-    /**
-     * form validate 설정
-     * @param {string} key
-     * @param {boolean} value
-     * @param {string} [msg]
-     */
-    const setFormValidate = (key, value, msg = '') => {
-      itemFormData.validate[key] = value;
-      itemFormData.validateMsg[key] = msg;
-    }
-
-    /**
-     * add item
-     * @returns {Promise<boolean>}
-     */
-    const formSubmit = async () => {
-      let validateFlag = true;
-
-      if (!itemFormData.companyIdx) {
-        setFormValidate('companyIdx', false, '기업을 선택해주세요.');
-        validateFlag = false;
-      } else {
-        setFormValidate('companyIdx', true);
-      }
-      if (!itemFormData.itemType) {
-        setFormValidate('itemType', false, '상품타입을 선택해주세요.');
-        validateFlag = false;
-      } else {
-        setFormValidate('itemType', true);
-      }
-      if (!itemFormData.itemName) {
-        setFormValidate('itemName', false, '상품명을 입력해주세요.');
-        validateFlag = false;
-      } else {
-        setFormValidate('itemName', true);
-      }
-      if (!itemFormData.units.length) {
-        setFormValidate('units', false, '단위를 선택해주세요.');
-        validateFlag = false;
-      } else {
-        setFormValidate('units', true);
-      }
-
-      if (!validateFlag) return false;
-
-      try {
-        await requestAddItem({
-          company_idx: itemFormData.companyIdx,
-          item_name: itemFormData.itemName,
-          item_type: itemFormData.itemType,
-          units: itemFormData.units
-        });
-
-        toast.add({
-          severity: 'success',
-          summary: '추가 완료',
-          life: 3000,
-        });
-
-        await getItemList();
-
-        resetForm();
-      } catch (err) {
-        toast.add({
-          severity: 'error',
-          summary: '추가 실패',
-          detail: err,
-          life: 3000,
-        });
-      }
-    }
 
     /**
      * edit item
@@ -526,7 +366,7 @@ export default {
           try {
             await requestDelItem(itemIdx);
 
-            await getItemList();
+            store.commit('investHistory/setUpdateItemListFlag', true);
 
             toast.add({
               severity: 'success',
@@ -554,7 +394,6 @@ export default {
       itemList,
       btnFormSubmitLabel,
       itemFormData,
-      formSubmit,
       editItem,
       delItem,
       printUnitText,
