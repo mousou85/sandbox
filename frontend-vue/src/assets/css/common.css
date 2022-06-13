@@ -16,9 +16,12 @@ body {
 	border: 1px solid #c0c0c0;
 }
 
+/*primevue form*/
 .p-error {
 	color: #e24c4c !important;
 }
+
+/*primevue label*/
 .p-normal-label {
 	position: relative;
 }
@@ -30,6 +33,8 @@ body {
 	font-size:0.85rem;
 	color: #6c757d;
 }
+
+/*primevue checkbox*/
 .field-checkbox.inner-label {
 	margin-bottom: 0.5rem;
 }
@@ -37,6 +42,8 @@ body {
 	margin:0 0.5rem;
 	line-height: 1.7;
 }
+
+/*primevue select button*/
 .p-selectbutton.grid {
 	display: grid;
 	row-gap:0.4rem;
@@ -78,15 +85,27 @@ body {
 .p-selectbutton.p-invalid > .p-button {
 	border:1px solid #e24c4c;
 }
+
+/*primevue datatable*/
 .p-datatable th.text-center .p-column-title {
 	display: block;
 	width: 100%;
 	text-align: center;
 }
-
 .p-datatable .p-datatable-tbody > tr > td.p-cell-editing {
 	padding-top: 0;
 	padding-bottom: 0;
+}
+.p-datatable.bordered th,
+.p-datatable.bordered td {
+	border: 1px solid #dee2e6 !important;
+}
+.p-datatable.condensed th,
+.p-datatable.condensed td {
+	padding: 0.75rem !important;
+}
+.p-datatable.font-small {
+	font-size: 0.9rem !important;
 }
 
 @media screen and (max-width: 960px) {
@@ -105,6 +124,7 @@ body {
 		padding-top: 1.25rem !important;
 	}
 
+	/*primevue label*/
 	.p-normal-label > label {
 		position: absolute;
 		margin-top:-0.7rem;
@@ -113,8 +133,19 @@ body {
 		font-size:0.75rem;
 		color: #6c757d;
 	}
+
+	/*primevue datatable*/
 	.p-datatable .p-datatable-tbody > tr > td.p-cell-editing {
 		padding-top: 0.2rem !important;
 		padding-bottom:0.2rem !important;
+	}
+	.p-datatable .p-datatable-tbody .p-column-title {
+		text-align: left !important;
+	}
+	.p-datatable.bordered td:not(:last-child) {
+		border-width: 0 0 1px 0 !important;
+	}
+	.p-datatable.bordered td:last-child {
+		border-width: 0 0 3px 0 !important;
 	}
 }

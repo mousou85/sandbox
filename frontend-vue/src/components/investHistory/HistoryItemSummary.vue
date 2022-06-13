@@ -9,26 +9,26 @@
     </template>
   </TabMenu>
 
-  <DataTable :value="summaryData.data" v-if="currentItemIdx > 0" responsiveLayout="stack">
+  <DataTable :value="summaryData.data" v-if="currentItemIdx > 0" class="bordered condensed font-small" responsiveLayout="stack">
     <ColumnGroup type="header">
       <Row>
-        <Column header="투자금" :colspan="3"></Column>
-        <Column header="현재평가" :colspan="3"></Column>
-        <Column header="수익율" :colspan="4"></Column>
+        <Column header="투자금" :colspan="3" class="text-center"></Column>
+        <Column header="현재평가" :colspan="3" class="text-center"></Column>
+        <Column header="수익율" :colspan="4" class="text-center"></Column>
       </Row>
       <Row>
-        <Column header="원금"></Column>
-        <Column header="재투자금"></Column>
-        <Column header="합계"></Column>
+        <Column header="원금" class="text-center"></Column>
+        <Column header="재투자금" class="text-center"></Column>
+        <Column header="합계" class="text-center"></Column>
 
-        <Column header="누적이자"></Column>
-        <Column header="평가금액"></Column>
-        <Column header="합계"></Column>
+        <Column header="누적이자" class="text-center"></Column>
+        <Column header="평가금액" class="text-center"></Column>
+        <Column header="합계" class="text-center"></Column>
 
-        <Column header="수익"></Column>
-        <Column header="수익율"></Column>
-        <Column header="수익(재투자금 포함)"></Column>
-        <Column header="수익율(재투자금 포함)"></Column>
+        <Column header="수익" class="text-center"></Column>
+        <Column header="수익율" class="text-center"></Column>
+        <Column header="수익(재투자금 포함)" class="text-center"></Column>
+        <Column header="수익율(재투자금 포함)" class="text-center"></Column>
       </Row>
     </ColumnGroup>
 
@@ -474,26 +474,13 @@ export default {
 </script>
 
 <style scoped>
-.p-datatable :deep(th[role="cell"]),
-.p-datatable :deep(td[role="cell"]) {
-  border-width: 1px;
-  padding: 0.75rem;
-}
 .p-datatable :deep(td .diff) {
-  font-size: 0.6rem;
+  font-size: 0.6rem !important;
 }
-.p-datatable :deep(th .p-column-title) {
-  display: block;
-  width: 100%;
-  text-align: center;
-}
+
 @media screen and (max-width: 960px) {
-  .p-datatable :deep(td[role="cell"]) {
-    border:none;
-    border-bottom:1px solid #dee2e6 !important;
-  }
   .p-datatable :deep(td .diff) {
-    font-size: 0.8rem;
+    font-size: 0.75rem !important;
   }
 }
 </style>

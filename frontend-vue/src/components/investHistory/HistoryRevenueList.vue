@@ -11,7 +11,7 @@
       </template>
     </TabMenu>
 
-    <DataTable :value="historyList" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory" responsiveLayout="stack">
+    <DataTable :value="historyList" class="font-small bordered condensed" editMode="row" dataKey="history_idx" v-model:editingRows="editHistoryRow" @row-edit-save="editHistory" responsiveLayout="stack">
       <ColumnGroup type="header">
         <Row>
           <Column header="날짜" class="text-center"></Column>
@@ -297,19 +297,6 @@ export default {
 </script>
 
 <style scoped>
-.p-datatable {
-  font-size: 0.9rem;
-}
-.p-datatable :deep(th[role="cell"]),
-.p-datatable :deep(td[role="cell"]) {
-  border-width: 1px;
-  padding: 0.75rem;
-}
-.p-datatable :deep(th .p-column-title) {
-  display: block;
-  width: 100%;
-  text-align: center;
-}
 .p-datatable :deep(.p-inputtext) {
   font-size: 0.9rem;
 }
@@ -319,13 +306,6 @@ export default {
 }
 
 @media screen and (max-width: 960px) {
-  .p-datatable :deep(tbody td[role="cell"]:last-child) {
-    border-bottom: 3px solid #dee2e6 !important;
-  }
-  .p-datatable :deep(tbody td[role="cell"]) {
-    border:none;
-    border-bottom: 1px solid #dee2e6 !important;
-  }
   .p-datatable :deep(td .diff) {
     font-size: 0.8rem;
   }

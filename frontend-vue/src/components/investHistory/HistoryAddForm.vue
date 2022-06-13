@@ -301,7 +301,4 @@ export default  {
   width: 10rem;
   margin:auto;
 }
-.p-inputnumber :deep(#addFormInputVal.p-inputnumber-input) {
-  text-align: right;
-}
 </style>

@@ -2,17 +2,14 @@
   <form @submit.prevent="addUnit">
     <div class="w-full md:w-3">
       <div class="field w-full mt-5">
-        <div class="relative">
+        <div class="p-normal-label">
           <InputText
               v-model="addForm.unit"
               class="w-full"
               :class="{'p-invalid': !addForm.validate.unit}"
               maxlength="10"
           ></InputText>
-          <label
-              class="normal-label"
-              :class="{'p-error': !addForm.validate.unit}"
-          >단위</label>
+          <label :class="{'p-error': !addForm.validate.unit}">단위</label>
         </div>
         <small
             v-if="!addForm.validate.unit"
@@ -21,7 +18,7 @@
       </div>
 
       <div class="field w-full mt-5">
-        <div class="relative">
+        <div class="p-normal-label">
           <SelectButton
               v-model="addForm.unitType"
               :options="unitTypeList"
@@ -29,10 +26,7 @@
               optionLabel="label"
               optionValue="value"
           ></SelectButton>
-          <label
-              class="normal-label"
-              :class="{'p-error': !addForm.validate.unitType}"
-          >타입</label>
+          <label :class="{'p-error': !addForm.validate.unitType}">타입</label>
         </div>
         <small
             v-if="!addForm.validate.unitType"
@@ -349,44 +343,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.p-error {
-  color: #e24c4c !important;
-}
-.normal-label {
-  position: absolute;
-  margin-top:-0.7rem;
-  left:0.75rem;
-  top:-0.75rem;
-  font-size: 12px;
-  color: #6c757d;
-}
-
-.p-datatable :deep(th .p-column-title) {
-  display: block;
-  width: 100%;
-  text-align: center;
-}
-.p-datatable :deep(td.p-cell-editing) {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-@media screen and (max-width: 960px) {
-  .p-datatable,
-  .p-datatable :deep(td.p-cell-editing .p-inputtext){
-    font-size: 0.9rem !important;
-  }
-  .p-datatable :deep(td.p-cell-editing) {
-    padding-top: 0.2rem;
-    padding-bottom:0.2rem;
-  }
-  .p-datatable :deep(tbody td[role="cell"]) {
-    border:none;
-    border-bottom: 1px solid #dee2e6 !important;
-  }
-  .p-datatable :deep(tbody td[role="cell"]:last-child) {
-    border-bottom: 3px solid #dee2e6 !important;
-  }
-}
-</style>
