@@ -30,10 +30,15 @@ module.exports = {
     /**
      * get raw query(no escape)
      * @param {string} str
+     * @param {Object} [bindParams] bind params
      * @return {Knex.Raw<TResult>}
      */
-    raw(str) {
-      return this.#knex.raw(str);
+    raw(str, bindParams) {
+      if (bindParams != undefined && Object.keys(bindParams).length > 0) {
+        return this.#knex.raw(str, bindParams);
+      } else {
+        return this.#knex.raw(str);
+      }
     }
   
     /**
