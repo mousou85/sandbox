@@ -2,8 +2,14 @@ import {createWebHistory, createRouter} from 'vue-router';
 
 const routes = [
   {
+    name: 'index',
     path: '/',
-    component: () => import('./components/Index.vue')
+    component: () => import('@/components/Index.vue')
+  },
+  {
+    name: 'login',
+    path: '/login',
+    component: () => import('@/components/Login.vue'),
   },
   {
     path: '/invest-history/',

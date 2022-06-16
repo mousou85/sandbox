@@ -1,10 +1,17 @@
 <template>
-  <header class="block">
-    <Menu></Menu>
-  </header>
-  <main id="contents" class="block">
-    <router-view></router-view>
-  </main>
+  <template v-if="routeName == 'login'">
+    <main class="block h-screen">
+      <Login></Login>
+    </main>
+  </template>
+  <template v-else>
+    <header class="block">
+      <Menu></Menu>
+    </header>
+    <main id="contents" class="block">
+      <router-view></router-view>
+    </main>
+  </template>
 </template>
 
 <script>
@@ -18,10 +25,12 @@ import {investHistory} from "@/store/modules/investHistory";
 
 //custom components
 import Menu from '@/components/Menu.vue';
+import Login from '@/components/Login.vue';
 
 export default {
   components: {
-    Menu
+    Menu,
+    Login,
   },
   setup(props) {
     //set vars: vuex, route
@@ -29,9 +38,7 @@ export default {
     const route = useRoute();
 
     //set vars: route name
-    const routeName = computed(() => {
-      return route.name;
-    });
+    const routeName = computed(() => route.name);
 
     /*
     life cycle hook
@@ -78,6 +85,10 @@ export default {
       } else {
         store.dispatch('setMobile', true);
       }
+    }
+
+    return {
+      routeName,
     }
   }
 }

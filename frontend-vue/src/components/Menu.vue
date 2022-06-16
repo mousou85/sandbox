@@ -69,6 +69,11 @@ export default {
           {key: 'invest-unit', label: 'unit', to: '/invest-history/unit'},
         ]
       },
+      {
+        key: 'login',
+        label: 'Login',
+        to: '/login',
+      }
     ]);
 
     return {
