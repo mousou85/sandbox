@@ -33,6 +33,7 @@ const investHistoryRouter = {
   history: require('#routes/investHistory/history')(db),
   summary: require('#routes/investHistory/summary')(db),
 }
+const userRouter = require('#routes/user')(db);
 // const asyncHandler = require("./helper/express-async-wrap");
 // app.get('/', asyncHandler(async (req, res) => {
 //   const {upsertSummary, inoutTypeList} = require('./helper/db/investHistory')(db);
@@ -70,6 +71,7 @@ const investHistoryRouter = {
 //
 //   res.send('1');
 // }));
+app.use('/user', userRouter);
 app.use('/invest-history/unit', investHistoryRouter.unit);
 app.use('/invest-history/unit-set', investHistoryRouter.unitSet);
 app.use('/invest-history/company', investHistoryRouter.company);

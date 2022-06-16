@@ -13,10 +13,13 @@ const db = new Mysql(
   process.env.MYSQL_PORT
 );
 
-//set vars: regexp
-const regexpBlank = /\s/g;
-
 (async () => {
+  //load helper module
+  const userHelper = require('#helper/db/user')(db);
+  
+  //set vars: regexp
+  const regexpBlank = /\s/g;
+  
   /**
    * 사용자 추가 cli
    */
@@ -136,21 +139,26 @@ const regexpBlank = /\s/g;
       //set vars: argument
       const {userId, password} = await inquirer.prompt(promptInfo);
   
-      //update pasword
+      //update password
       try {
         //set vars: user data
-        const rsUser = await db.queryRow(db.queryBuilder()
-          .select()
+        const userIdx = await db.queryScalar(db.queryBuilder()
+          .select('user_idx')
           .from('users')
-          .where('id', userId));
+          .where('id', userId)
+        );
+        
+        //set vars: encrypt password
+        const encryptPassword = userHelper.encryptPassword(password);
         
         //update password
         await db.execute(db.queryBuilder()
           .update({
-            password: db.raw('PASSWORD(:password)', {password: password})
+            password: encryptPassword.hashedPassword,
+            password_salt: encryptPassword.salt
           })
           .from('users')
-          .where('user_idx', rsUser.user_idx));
+          .where('user_idx', userIdx));
     
         console.info('비밀번호 변경 완료');
       } catch (err) {
