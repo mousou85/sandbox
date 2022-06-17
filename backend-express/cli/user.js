@@ -1,7 +1,11 @@
+//set environment
 require('dotenv').config();
+
+//load cli module
 const {program} = require('commander');
 const inquirer = require('inquirer');
 
+//load db module
 const {Mysql} = require('#database/Mysql');
 
 //set database
@@ -13,10 +17,10 @@ const db = new Mysql(
   process.env.MYSQL_PORT
 );
 
+//load helpers module
+const userHelper = require('#helpers/user')(db);
+
 (async () => {
-  //load helper module
-  const userHelper = require('#helper/db/user')(db);
-  
   //set vars: regexp
   const regexpBlank = /\s/g;
   
@@ -80,11 +84,15 @@ const db = new Mysql(
       
       //insert user data
       try {
+        //set vars: encrypt password
+        const encryptPassword = userHelper.encryptPassword(password);
+        
         await db.execute(db.queryBuilder()
           .insert({
             id: userId,
-            password: db.raw('PASSWORD(:password)', {password: password}),
-            name: name
+            password: encryptPassword.hashedPassword,
+            password_slat: encryptPassword.salt,
+            name: name,
           })
           .into('users')
         );

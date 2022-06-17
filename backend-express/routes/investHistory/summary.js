@@ -1,6 +1,8 @@
+//load express module
 const express = require('express');
-const asyncHandler = require('#helper/express-async-wrap');
-const {ResponseError, createResult} = require('#helper/express-response');
+const {asyncHandler, createResult, ResponseError} = require('#helpers/expressHelper');
+
+//load etc module
 const dayjs = require("dayjs");
 
 /**
@@ -8,12 +10,11 @@ const dayjs = require("dayjs");
  * @return {Router}
  */
 module.exports = (db) => {
+  //load invest history helpers
+  const investHistoryHelper = require('#helpers/investHistoryHelper')(db);
+  
+  //set vars: router
   const router = express.Router();
-  const {
-    upsertMonthSummary,
-    upsertYearSummary,
-    upsertTotalSummary,
-  } = require('#helper/db/investHistory')(db);
   
   /**
    * summary total
@@ -343,7 +344,7 @@ module.exports = (db) => {
           let _summaryYear = [_lastYear];
           while (_targetDate <= _maxDate) {
             //월간 요약 데이터 생성
-            await upsertMonthSummary(_itemIdx, _targetDate.format('YYYY-MM-DD'), _unitIdx);
+            await investHistoryHelper.upsertMonthSummary(_itemIdx, _targetDate.format('YYYY-MM-DD'), _unitIdx);
     
             _targetDate = _targetDate.add(1, 'month');
             if (_lastYear != _targetDate.year()) {
@@ -354,11 +355,11 @@ module.exports = (db) => {
   
           //년간 요약 데이터 생성
           for (const year of _summaryYear) {
-            await upsertYearSummary(_itemIdx, `${year}-12-01`, _unitIdx);
+            await investHistoryHelper.upsertYearSummary(_itemIdx, `${year}-12-01`, _unitIdx);
           }
   
           //전체 요약 데이터 생성
-          await upsertTotalSummary(_itemIdx, _unitIdx);
+          await investHistoryHelper.upsertTotalSummary(_itemIdx, _unitIdx);
         }
       }
       
@@ -374,7 +375,7 @@ module.exports = (db) => {
       const unitIdx = 3;
       const historyDate = '2022-01-01';
       
-      await upsertMonthSummary(itemIdx, historyDate, unitIdx);
+      await investHistoryHelper.upsertMonthSummary(itemIdx, historyDate, unitIdx);
       
       res.json(createResult());
     } catch (err) {

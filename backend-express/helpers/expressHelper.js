@@ -1,17 +1,16 @@
 /**
- * 에러 핸들링 미들웨어
- * @param err
- * @param req
- * @param res
- * @param next
+ * express async 핸들러
+ * @param {function} fn
+ * @return {(function(*, *, *): Promise<void>)|*}
  */
-function error(err, req, res, next) {
-  if (!(err instanceof ResponseError)) {
-    err = new ResponseError(err, -1, 500);
+const asyncHandler = (fn) => {
+  return async (req, res, next) => {
+    try {
+      await fn(req, res, next);
+    } catch (err) {
+      next(err);
+    }
   }
-
-  res.status(err.httpCode)
-    .json({result: false, errorCode: err.errorCode, error: err.message});
 }
 
 /**
@@ -25,9 +24,9 @@ function createResult(resultMessage, extraData) {
     result: true,
     resultMessage: resultMessage ? resultMessage : 'success',
   }
-
+  
   if (extraData) jsonData.data = extraData;
-
+  
   return jsonData;
 }
 
@@ -37,14 +36,14 @@ function createResult(resultMessage, extraData) {
 class ResponseError extends Error {
   constructor(errorMessage, errorCode, httpCode) {
     super(errorMessage);
-
+    
     this.errorCode = errorCode ? errorCode : -1;
     this.httpCode = httpCode ? httpCode : 400;
   }
 }
 
 module.exports = {
-  error,
+  asyncHandler,
   createResult,
-  ResponseError
-}
+  ResponseError,
+};

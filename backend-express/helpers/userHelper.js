@@ -1,4 +1,6 @@
+require('dotenv').config();
 const crypto = require('crypto');
+const jwt = require("jsonwebtoken");
 
 /**
  * @param {Mysql} [db]
@@ -32,8 +34,44 @@ module.exports = (db) => {
     return hashedPassword === userPassword;
   }
   
+  /**
+   * create access token
+   * @param {number} userIdx
+   * @param {string} id
+   * @returns {string}
+   */
+  const createAccessToken = (userIdx, id) => {
+    const tokenSecret = process.env.LOGIN_ACCESS_TOKEN_SECRET;
+    console.log(tokenSecret);
+
+    return jwt.sign(
+      {userIdx: userIdx, id: id},
+      tokenSecret,
+      {expiresIn: '10m'}
+    );
+  }
+  
+  /**
+   * create refresh token
+   * @param {number} userIdx
+   * @param {string} id
+   * @returns {string}
+   */
+  const createRefreshToken = (userIdx, id) => {
+    const tokenSecret = process.env.LOGIN_REFRESH_TOKEN_SECRET;
+    console.log(tokenSecret);
+  
+    return jwt.sign(
+      {userIdx: userIdx, id: id},
+      tokenSecret,
+      {expiresIn: '1h'}
+    );
+  }
+  
   return {
     encryptPassword,
     verifyPassword,
+    createAccessToken,
+    createRefreshToken,
   }
 }

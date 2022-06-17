@@ -6,9 +6,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "imports": {
-    "#helper/*": "./helper/*.js",
+    "#helpers/*": "./helpers/*.js",
     "#routes/*": "./routes/*.js",
-    "#database/*": "./database/*.js"
+    "#database/*": "./database/*.js",
+    "#middlewares/*": "./middlewares/*.js"
   },
   "dependencies": {
     "body-parser": "^1.19.1",

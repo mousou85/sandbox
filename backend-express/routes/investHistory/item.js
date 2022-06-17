@@ -1,15 +1,20 @@
+//load express module
 const express = require('express');
-const asyncHandler = require('#helper/express-async-wrap');
-const {ResponseError, createResult} = require('#helper/express-response');
+const {asyncHandler, createResult, ResponseError} = require('#helpers/expressHelper');
 
 /**
  * @param {Mysql} db
  * @return {Router}
  */
 module.exports = (db) => {
+  //load invest history helpers
+  const investHistoryHelper = require('#helpers/investHistoryHelper')(db);
+  
+  //set vars: router
   const router = express.Router();
   
-  const {itemTypeList} = require('#helper/db/investHistory')(db);
+  //set vars: invest history const
+  const itemTypeList = investHistoryHelper.itemTypeList;
   
   /**
    * item type 리스트

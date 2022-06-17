@@ -1,15 +1,25 @@
+//load express module
 const express = require('express');
+const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
+
+//load etc module
 const dayjs = require('dayjs');
-const asyncHandler = require('#helper/express-async-wrap');
-const {ResponseError, createResult} = require('#helper/express-response');
 
 /**
  * @param {Mysql} db
  * @return {Router}
  */
 module.exports = (db) => {
+  //load invest history helpers
+  const investHistoryHelper = require('#helpers/investHistoryHelper')(db);
+  
+  //set vars: router
   const router = express.Router();
-  const {upsertSummary, historyTypeList, inoutTypeList, revenueTypeList} = require('#helper/db/investHistory')(db);
+  
+  //set vars: invest history const
+  const historyTypeList = investHistoryHelper.historyTypeList;
+  const inoutTypeList = investHistoryHelper.inoutTypeList;
+  const revenueTypeList = investHistoryHelper.revenueTypeList;
   
   /**
    * history 리스트
@@ -139,7 +149,7 @@ module.exports = (db) => {
         if (!rsInsert) throw new ResponseError('history 추가 실패함');
         
         //요약 데이터 생성/갱신
-        await upsertSummary(itemIdx, historyDate, unitIdx, trx);
+        await investHistoryHelper.upsertSummary(itemIdx, historyDate, unitIdx, trx);
         
         await trx.commit();
       } catch (err) {
@@ -188,7 +198,7 @@ module.exports = (db) => {
           , trx);
         
         //요약데이터 update
-        await upsertSummary(rsHistory.item_idx, historyDate, rsHistory.unit_idx, trx);
+        await investHistoryHelper.upsertSummary(rsHistory.item_idx, historyDate, rsHistory.unit_idx, trx);
         
         await trx.commit();
       } catch (err) {
@@ -230,7 +240,7 @@ module.exports = (db) => {
         if (!rsDelete) throw new ResponseError('삭제 실패');
   
         //요약 데이터 insert/update
-        await upsertSummary(rsHistory.item_idx, rsHistory.history_date, rsHistory.unit_idx, trx);
+        await investHistoryHelper.upsertSummary(rsHistory.item_idx, rsHistory.history_date, rsHistory.unit_idx, trx);
         
         await trx.commit();
       } catch (err) {

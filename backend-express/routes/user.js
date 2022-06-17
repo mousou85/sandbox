@@ -1,28 +1,32 @@
+//load express module
 const express = require('express');
-const asyncHandler = require('#helper/express-async-wrap');
-const {ResponseError, createResult} = require('#helper/express-response');
+const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
+
+//load jwt module
+const jwt = require('jsonwebtoken');
 
 /**
  * @param {Mysql} db
  * @return {Router}
  */
 module.exports = (db) => {
-  //load helper module
-  const userHelper = require('#helper/db/user')(db);
+  //load user helper
+  const userHelper = require('#helpers/userHelper')(db);
   
   //set vars: express router
   const router = express.Router();
-  
   
   /**
    * 로그인 처리
    */
   router.post('/login', asyncHandler(async (req, res) => {
     try {
+      //set vars: request
       const userId = req.body.id;
       const password = req.body.password;
       if (!userId || !password) throw new ResponseError('필수 파라미터 누락', -100);
       
+      //set vars: user data
       const rsUser = await db.queryRow(db.queryBuilder()
         .select('*')
         .from('users')
@@ -34,7 +38,11 @@ module.exports = (db) => {
         throw new ResponseError('비밀번호가 일치하지 않음', -202);
       }
       
-      res.json(createResult('success', null));
+      //set vars: access token, refresh token
+      const accessToken = userHelper.createAccessToken(rsUser.user_idx, rsUser.id);
+      const refreshToken = userHelper.createRefreshToken(rsUser.user_idx, rsUser.id);
+      
+      res.json(createResult('success', {accessToken, refreshToken}));
     } catch (err) {
       throw err;
     }

@@ -1,10 +1,16 @@
+//set environment
 require('dotenv').config();
 const NODE_ENV = process.env.NODE_ENV || 'production';
+
+//load express module
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const errorResponseMiddleWare = require('#middlewares/errorResponse');
+const {ResponseError} = require('#helpers/expressHelper');
+
+//load db module
 const {Mysql} = require('#database/Mysql');
-const expressResponse = require('#helper/express-response');
 
 //set vars: express
 const app = express();
@@ -34,9 +40,9 @@ const investHistoryRouter = {
   summary: require('#routes/investHistory/summary')(db),
 }
 const userRouter = require('#routes/user')(db);
-// const asyncHandler = require("./helper/express-async-wrap");
+// const asyncHandler = require("./helpers/express-async-wrap");
 // app.get('/', asyncHandler(async (req, res) => {
-//   const {upsertSummary, inoutTypeList} = require('./helper/db/investHistory')(db);
+//   const {upsertSummary, inoutTypeList} = require('./helpers/db/investHistory')(db);
 //
 //   const rsUnitSet = await db.queryAll(db.queryBuilder()
 //       .select()
@@ -83,11 +89,10 @@ app.use('/invest-history/summary', investHistoryRouter.summary);
 /*
  * 에러 핸들러
  */
-const {ResponseError} = require("./helper/express-response");
 app.use('*', (req, res, next) => {
   next(new ResponseError('page not found', -1, 404));
 });
-app.use(expressResponse.error);
+app.use(errorResponseMiddleWare);
 
 app.listen(port, () => {
   console.log(`listening on http://localhost:${port}`);
