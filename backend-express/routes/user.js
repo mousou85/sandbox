@@ -1,9 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
-
-//load jwt module
-const jwt = require('jsonwebtoken');
+const authTokenMiddleware = require('#middlewares/authenticateToken');
 
 /**
  * @param {Mysql} db
@@ -39,12 +37,41 @@ module.exports = (db) => {
       }
       
       //set vars: access token, refresh token
-      const accessToken = userHelper.createAccessToken(rsUser.user_idx, rsUser.id);
-      const refreshToken = userHelper.createRefreshToken(rsUser.user_idx, rsUser.id);
+      const payload = {user_idx: rsUser.user_idx, id: rsUser.id};
+      const accessToken = userHelper.createAccessToken(payload);
+      const refreshToken = userHelper.createRefreshToken(payload);
       
-      res.json(createResult('success', {accessToken, refreshToken}));
+      //set vars: response data
+      const responseData = {
+        user_idx: rsUser.user_idx,
+        id: rsUser.id,
+        name: rsUser.name,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }
+      
+      res.json(createResult('success', responseData));
     } catch (err) {
       throw err;
+    }
+  }));
+  
+  /**
+   * 액세스 토큰 재발급
+   */
+  router.post('/refreshToken', asyncHandler(async (req, res) => {
+    //set vars: request
+    const refreshToken = req.body.refresh_token;
+    if (!refreshToken) throw new ResponseError('필수 파라미터 누락');
+    
+    try {
+      const decodedPayload = userHelper.decodeRefreshToken(refreshToken);
+      
+      const newAccessToken = userHelper.createAccessToken(decodedPayload);
+      
+      res.json(createResult('success', {accessToken: newAccessToken}));
+    } catch (err) {
+      throw new ResponseError('auth fail', -1, 403);
     }
   }));
   

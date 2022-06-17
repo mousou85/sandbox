@@ -6,6 +6,9 @@ const jwt = require("jsonwebtoken");
  * @param {Mysql} [db]
  */
 module.exports = (db) => {
+  const ACCESS_TOKEN_SECRET = process.env.LOGIN_ACCESS_TOKEN_SECRET;
+  const REFRESH_TOKEN_SECRET = process.env.LOGIN_REFRESH_TOKEN_SECRET;
+  
   /**
    * create hashed password
    * @param {string} password
@@ -36,36 +39,52 @@ module.exports = (db) => {
   
   /**
    * create access token
-   * @param {number} userIdx
-   * @param {string} id
+   * @param {Object} payload
    * @returns {string}
    */
-  const createAccessToken = (userIdx, id) => {
-    const tokenSecret = process.env.LOGIN_ACCESS_TOKEN_SECRET;
-    console.log(tokenSecret);
+  const createAccessToken = (payload) => {
+    if (payload.hasOwnProperty('iat')) delete payload.iat;
+    if (payload.hasOwnProperty('exp')) delete payload.exp;
 
-    return jwt.sign(
-      {userIdx: userIdx, id: id},
-      tokenSecret,
-      {expiresIn: '10m'}
-    );
+    return jwt.sign(payload, ACCESS_TOKEN_SECRET, {expiresIn: '10m'});
   }
   
   /**
    * create refresh token
-   * @param {number} userIdx
-   * @param {string} id
+   * @param {Object} payload
    * @returns {string}
    */
-  const createRefreshToken = (userIdx, id) => {
-    const tokenSecret = process.env.LOGIN_REFRESH_TOKEN_SECRET;
-    console.log(tokenSecret);
+  const createRefreshToken = (payload) => {
+    if (payload.hasOwnProperty('iat')) delete payload.iat;
+    if (payload.hasOwnProperty('exp')) delete payload.exp;
+    
+    return jwt.sign(payload, REFRESH_TOKEN_SECRET,{expiresIn: '1h'});
+  }
   
-    return jwt.sign(
-      {userIdx: userIdx, id: id},
-      tokenSecret,
-      {expiresIn: '1h'}
-    );
+  /**
+   * decode access token
+   * @param {string} token
+   * @returns {Object}
+   */
+  const decodeAccessToken = (token) => {
+    try {
+      return jwt.verify(token, ACCESS_TOKEN_SECRET);
+    } catch (err) {
+      throw err;
+    }
+  }
+  
+  /**
+   * decode refresh token
+   * @param {string} token
+   * @returns {Object}
+   */
+  const decodeRefreshToken = (token) => {
+    try {
+      return jwt.verify(token, REFRESH_TOKEN_SECRET);
+    } catch (err) {
+      throw err;
+    }
   }
   
   return {
@@ -73,5 +92,7 @@ module.exports = (db) => {
     verifyPassword,
     createAccessToken,
     createRefreshToken,
+    decodeAccessToken,
+    decodeRefreshToken,
   }
 }
