@@ -136,7 +136,7 @@ import {
   getItemTypeList as requestItemTypeList,
   editItem as requestEditItem,
   delItem as requestDelItem,
-} from '@/modules/investHistory';
+} from '@/apis/investHistory';
 
 export default {
   components: {

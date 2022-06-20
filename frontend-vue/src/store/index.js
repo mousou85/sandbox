@@ -1,6 +1,6 @@
 import {createStore} from 'vuex';
 
-import {user} from '@/store/modules/user';
+import {user} from '@/store/user';
 
 export default createStore({
   state: {

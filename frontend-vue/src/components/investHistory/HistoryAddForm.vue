@@ -137,7 +137,7 @@ import InputNumber from 'primevue/inputnumber';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
 
-import {addHistory} from '@/modules/investHistory';
+import {addHistory} from '@/apis/investHistory';
 import dayjs from "dayjs";
 
 export default  {

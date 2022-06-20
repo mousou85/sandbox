@@ -21,7 +21,7 @@ import {computed, onMounted, watch} from 'vue';
 import {useRoute} from "vue-router";
 
 //vuex custom module
-import {investHistory} from "@/store/modules/investHistory";
+import {investHistory} from "@/store/investHistory";
 
 //custom components
 import Menu from '@/components/Menu.vue';

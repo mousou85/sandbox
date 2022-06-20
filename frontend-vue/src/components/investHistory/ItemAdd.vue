@@ -92,7 +92,7 @@ import SelectButton from "primevue/selectbutton";
 import InputText from "primevue/inputtext";
 import Checkbox from "primevue/checkbox";
 import Button from "primevue/button";
-import {addItem as apiAddItem} from "@/modules/investHistory";
+import {addItem as apiAddItem} from "@/apis/investHistory";
 
 import {useStore} from "vuex";
 import {useToast} from "primevue/usetoast";

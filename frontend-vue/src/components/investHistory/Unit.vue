@@ -131,7 +131,7 @@ import {
   addUnit as requestAddUnit,
   editUnit as requestEditUnit,
   delUnit as requestDelUnit,
-} from '@/modules/investHistory';
+} from '@/apis/investHistory';
 
 export default {
   components: {

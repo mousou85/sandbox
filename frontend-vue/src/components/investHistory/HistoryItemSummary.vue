@@ -155,7 +155,7 @@ import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 
 import {numberComma} from "@/libs/helper";
-import {getItemSummaryTotal, getItemSummaryMonth, getItemSummaryYear} from "@/modules/investHistory";
+import {getItemSummaryTotal, getItemSummaryMonth, getItemSummaryYear} from "@/apis/investHistory";
 
 export default {
   components: {

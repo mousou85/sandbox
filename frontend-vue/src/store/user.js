@@ -1,7 +1,7 @@
 import {
   login as requestLogin,
   getInfo as requestInfo,
-} from '@/modules/user';
+} from '@/apis/user';
 
 export const user = {
   namespaced: true,
@@ -46,6 +46,22 @@ export const user = {
      */
     getUserInfo(state) {
       return state.data;
+    },
+    /**
+     * get access token
+     * @param state
+     * @returns {string}
+     */
+    getAccessToken(state) {
+      return state.accessToken;
+    },
+    /**
+     * get refresh token
+     * @param state
+     * @returns {string}
+     */
+    getRefreshToken(state) {
+      return state.refreshToken;
     }
   },
   actions: {

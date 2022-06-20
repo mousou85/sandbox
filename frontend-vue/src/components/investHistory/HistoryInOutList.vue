@@ -91,7 +91,7 @@ import {
   getHistoryList as requestHistoryList,
   editHistory as requestEditHistory,
   delHistory as requestDelHistory
-} from "@/modules/investHistory";
+} from "@/apis/investHistory";
 import {numberComma, numberUncomma} from "@/libs/helper";
 import dayjs from "dayjs";
 

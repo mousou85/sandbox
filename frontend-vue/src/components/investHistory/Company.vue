@@ -74,7 +74,7 @@ import {
   addCompany as requestAddCompany,
   editCompany as requestEditCompany,
   delCompany as requestDelCompany
-} from '@/modules/investHistory';
+} from '@/apis/investHistory';
 
 export default {
   components: {

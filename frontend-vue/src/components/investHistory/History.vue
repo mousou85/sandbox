@@ -46,10 +46,9 @@
 <script>
 import {onBeforeMount, reactive, ref, watch} from "vue";
 import {useStore} from 'vuex';
-import {investHistory} from "@/store/modules/investHistory";
 
 import dayjs from 'dayjs';
-import {getItemList as requestItemList} from '@/modules/investHistory';
+import {getItemList as requestItemList} from '@/apis/investHistory';
 
 import HistoryAddForm from '@/components/investHistory/HistoryAddForm.vue';
 import HistoryItemSummary from '@/components/investHistory/HistoryItemSummary.vue';
