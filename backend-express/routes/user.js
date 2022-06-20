@@ -1,7 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
-const authTokenMiddleware = require('#middlewares/authenticateToken');
+const authMiddleware = require('#middlewares/authenticateToken');
 
 /**
  * @param {Mysql} db
@@ -43,11 +43,39 @@ module.exports = (db) => {
       
       //set vars: response data
       const responseData = {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }
+      
+      res.json(createResult('success', responseData));
+    } catch (err) {
+      throw err;
+    }
+  }));
+  
+  /**
+   * 사용자 정보 반환
+   */
+  router.get('/info', authMiddleware, asyncHandler(async (req, res) => {
+    try {
+      //set vars: token info
+      const userIdx = req.user.user_idx;
+      const userId = req.user.id;
+  
+      //set vars: user data
+      const rsUser = await db.queryRow(db.queryBuilder()
+        .select('*')
+        .from('users')
+        .where('user_idx', userIdx)
+        .andWhere('id', userId)
+      );
+      if (!rsUser) throw new ResponseError('존재하지 않는 아이디', -201);
+  
+      //set vars: response data
+      const responseData = {
         user_idx: rsUser.user_idx,
         id: rsUser.id,
         name: rsUser.name,
-        access_token: accessToken,
-        refresh_token: refreshToken,
       }
       
       res.json(createResult('success', responseData));
@@ -69,7 +97,7 @@ module.exports = (db) => {
       
       const newAccessToken = userHelper.createAccessToken(decodedPayload);
       
-      res.json(createResult('success', {accessToken: newAccessToken}));
+      res.json(createResult('success', {access_token: newAccessToken}));
     } catch (err) {
       throw new ResponseError('auth fail', -1, 403);
     }

@@ -4,15 +4,7 @@ import http from "@/libs/http";
  * api base url
  * @type {string}
  */
-let baseURL = 'http://localhost:5000';
-
-/**
- * set api base url
- * @param url
- */
-export const setAPIBaseUrl = (url) => {
-  baseURL = url;
-}
+const baseURL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000';
 
 /**
  * get item list

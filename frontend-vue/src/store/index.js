@@ -1,5 +1,7 @@
 import {createStore} from 'vuex';
 
+import {user} from '@/store/modules/user';
+
 export default createStore({
   state: {
     /**
@@ -56,8 +58,8 @@ export default createStore({
     setMobile({commit}, value) {
       commit('setMobile', value);
     }
+  },
+  modules: {
+    user,
   }
-  // modules: {
-  //   investHistory
-  // }
 });

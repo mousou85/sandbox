@@ -43,6 +43,7 @@
 <script>
 import {useStore} from "vuex";
 import {computed, reactive, ref} from "vue";
+import {useRouter} from 'vue-router';
 
 import Card from 'primevue/card';
 import Button from "primevue/button";
@@ -62,6 +63,9 @@ export default {
     //set vars: vuex
     const store = useStore();
     const SITE_NAME = computed(() => store.getters['getSiteName']);
+
+    //set vars: route
+    const router = useRouter();
 
     //set vars: form data
     const formData = reactive({
@@ -85,7 +89,7 @@ export default {
     /**
      * 로그인 submit
      */
-    const doLogin = () => {
+    const doLogin = async () => {
       let isValid = true;
 
       if (!formData.id) {
@@ -107,6 +111,13 @@ export default {
 
       if (!isValid) return;
 
+      try {
+        await store.dispatch('user/login', {id: formData.id, password: formData.password});
+
+        await router.push({name: 'index'});
+      } catch (err) {
+        messageBox.value = err.toString();
+      }
     }
 
     return {
