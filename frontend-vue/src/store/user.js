@@ -83,6 +83,9 @@ export const user = {
       } catch (err) {
         throw err;
       }
+    },
+    logout({commit}) {
+      commit('logout');
     }
   }
 };

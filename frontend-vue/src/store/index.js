@@ -1,6 +1,8 @@
 import {createStore} from 'vuex';
+import createPersistedState from 'vuex-persistedstate';
 
 import {user} from '@/store/user';
+
 
 export default createStore({
   state: {
@@ -59,6 +61,12 @@ export default createStore({
       commit('setMobile', value);
     }
   },
+  plugins: [
+    createPersistedState({
+      paths: ['user'],
+      storage: window.sessionStorage,
+    }),
+  ],
   modules: {
     user,
   }
