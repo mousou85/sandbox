@@ -86,16 +86,16 @@
 
 <script>
 import {reactive} from "vue";
+import {useStore} from "vuex";
 
 import Dropdown from "primevue/dropdown";
 import SelectButton from "primevue/selectbutton";
 import InputText from "primevue/inputtext";
 import Checkbox from "primevue/checkbox";
 import Button from "primevue/button";
-import {addItem as apiAddItem} from "@/apis/investHistory";
-
-import {useStore} from "vuex";
 import {useToast} from "primevue/usetoast";
+
+import {useInvestApi} from '@/apis/investHistory';
 
 export default {
   components: {
@@ -123,6 +123,9 @@ export default {
     //set vars: vuex, toast
     const store = useStore();
     const toast = useToast();
+
+    //set vars: api module
+    const investApi = useInvestApi();
 
     //set vars: form model
     const formData = reactive({
@@ -191,7 +194,7 @@ export default {
       if (!validateFlag) return false;
 
       try {
-        await apiAddItem({
+        await investApi.addItem({
           company_idx: formData.companyIdx,
           item_name: formData.itemName,
           item_type: formData.itemType,

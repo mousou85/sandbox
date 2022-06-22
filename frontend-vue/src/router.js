@@ -6,7 +6,8 @@ export default (store) => {
     {
       name: 'index',
       path: '/',
-      component: () => import('@/components/Index.vue')
+      component: () => import('@/components/Index.vue'),
+      meta: {needLogin: true},
     },
     {
       name: 'login',

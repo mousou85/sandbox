@@ -78,6 +78,8 @@
 import {useStore} from "vuex";
 import {computed, onBeforeMount, reactive, ref, watch} from "vue";
 
+import dayjs from "dayjs";
+
 import TabMenu from "primevue/tabmenu";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
@@ -87,13 +89,8 @@ import InputNumber from "primevue/inputnumber";
 import Textarea from "primevue/textarea";
 import Calendar from "primevue/calendar";
 
-import {
-  getHistoryList as requestHistoryList,
-  editHistory as requestEditHistory,
-  delHistory as requestDelHistory
-} from "@/apis/investHistory";
+import {useInvestApi} from '@/apis/investHistory';
 import {numberComma, numberUncomma} from "@/libs/helper";
-import dayjs from "dayjs";
 
 export default {
   components: {
@@ -113,6 +110,9 @@ export default {
   setup(props) {
     //set vars: vuex
     const store = useStore();
+
+    //set vars: api module
+    const investApi = useInvestApi();
 
     //set vars: 필요 변수
     const itemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
@@ -169,7 +169,7 @@ export default {
     const getHistoryList = async() => {
       try {
         if (itemIdx.value > 0) {
-          historyList.value = await requestHistoryList(
+          historyList.value = await investApi.getHistoryList(
               itemIdx.value,
               'inout',
               selectedTab.value,
@@ -205,7 +205,7 @@ export default {
           memo: history.memo
         };
 
-        await requestEditHistory(reqData);
+        await investApi.editHistory(reqData);
 
         store.commit('investHistory/setUpdateSummaryFlag', true);
         store.commit('investHistory/setUpdateInOutListFlag', true);
@@ -224,7 +224,7 @@ export default {
       if (!confirm('이 기록을 삭제하시겠습니까?')) return;
 
       try {
-        await requestDelHistory(historyIdx);
+        await investApi.delHistory(historyIdx);
 
         store.commit('investHistory/setUpdateSummaryFlag', true);
         store.commit('investHistory/setUpdateInOutListFlag', true);

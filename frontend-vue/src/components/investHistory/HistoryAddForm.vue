@@ -137,8 +137,9 @@ import InputNumber from 'primevue/inputnumber';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
 
-import {addHistory} from '@/apis/investHistory';
 import dayjs from "dayjs";
+
+import {useInvestApi} from '@/apis/investHistory';
 
 export default  {
   components: {
@@ -155,6 +156,9 @@ export default  {
   setup(props) {
     //set vars: vuex
     const store = useStore();
+
+    //set vars: api module
+    const investApi = useInvestApi();
 
     //set vars: 현재 상품 IDX, 기록 타입 목록
     const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
@@ -238,7 +242,7 @@ export default  {
       }
 
       try {
-        await addHistory({
+        await investApi.addHistory({
           item_idx: currentItemIdx.value,
           unit_idx: formData.unitIdx,
           history_type: formData.historyType,

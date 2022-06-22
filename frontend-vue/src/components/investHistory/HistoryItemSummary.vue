@@ -154,8 +154,8 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';
 import Row from 'primevue/row';
 
+import {useInvestApi} from '@/apis/investHistory';
 import {numberComma} from "@/libs/helper";
-import {getItemSummaryTotal, getItemSummaryMonth, getItemSummaryYear} from "@/apis/investHistory";
 
 export default {
   components: {
@@ -171,6 +171,9 @@ export default {
   setup(props) {
     //set vars: vuex
     const store = useStore();
+
+    //set vars: api module
+    const investApi = useInvestApi();
 
     //set vars: 필요 변수
     const currentItemIdx = computed(() => store.getters["investHistory/getCurrentItemIdx"]);
@@ -292,11 +295,11 @@ export default {
         if (currentItemIdx.value > 0) {
           let data;
           if (selectedTab.value == 'total') {
-            data = await getItemSummaryTotal(currentItemIdx.value);
+            data = await investApi.getItemSummaryTotal(currentItemIdx.value);
           } else if (selectedTab.value == 'month') {
-            data = await getItemSummaryMonth(currentItemIdx.value, props.thisMonth.value.format('YYYY-MM-DD'));
+            data = await investApi.getItemSummaryMonth(currentItemIdx.value, props.thisMonth.value.format('YYYY-MM-DD'));
           } else if (selectedTab.value == 'year') {
-            data = await getItemSummaryYear(currentItemIdx.value, props.thisMonth.value.format('YYYY'));
+            data = await investApi.getItemSummaryYear(currentItemIdx.value, props.thisMonth.value.format('YYYY'));
           }
 
           summaryData.unit = data.unit;

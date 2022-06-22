@@ -126,12 +126,7 @@ import Toast from 'primevue/toast';
 import {useConfirm} from "primevue/useconfirm";
 import {useToast} from "primevue/usetoast";
 
-import {
-  getUnitList as requestUnitList,
-  addUnit as requestAddUnit,
-  editUnit as requestEditUnit,
-  delUnit as requestDelUnit,
-} from '@/apis/investHistory';
+import {useInvestApi} from '@/apis/investHistory';
 
 export default {
   components: {
@@ -150,6 +145,9 @@ export default {
     //set vars: confirm dialog
     const confirm = useConfirm();
     const toast = useToast();
+
+    //set vars: api module
+    const investApi = useInvestApi();
 
     //set vars: 필요 변수
     const unitTypeList = ref([
@@ -183,7 +181,7 @@ export default {
      */
     const getUnitList = async () => {
       try {
-        unitList.value = await requestUnitList();
+        unitList.value = await investApi.getUnitList();
       } catch (err) {
         unitList.value = [];
       }
@@ -212,7 +210,7 @@ export default {
       if (!validateFlag) return false;
 
       try {
-        await requestAddUnit(addForm.unit, addForm.unitType);
+        await investApi.addUnit(addForm.unit, addForm.unitType);
 
         addForm.unit = '';
         addForm.unitType = '';
@@ -263,7 +261,7 @@ export default {
             break;
         }
 
-        await requestEditUnit(data.unit_idx, data.unit, data.unit_type);
+        await investApi.editUnit(data.unit_idx, data.unit, data.unit_type);
 
         toast.add({
           severity: 'success',
@@ -298,7 +296,7 @@ export default {
         rejectLabel: '아니오',
         accept: async () => {
           try {
-            await requestDelUnit(unitIdx);
+            await investApi.delUnit(unitIdx);
 
             await getUnitList();
 

@@ -129,14 +129,7 @@ import {useToast} from 'primevue/usetoast';
 
 import ItemAdd from "@/components/investHistory/ItemAdd.vue";
 
-import {
-  getItemList as requestItemList,
-  getCompanyList as requestCompanyList,
-  getUnitList as requestUnitList,
-  getItemTypeList as requestItemTypeList,
-  editItem as requestEditItem,
-  delItem as requestDelItem,
-} from '@/apis/investHistory';
+import {useInvestApi} from '@/apis/investHistory';
 
 export default {
   components: {
@@ -159,6 +152,9 @@ export default {
     const store = useStore();
     const confirm = useConfirm();
     const toast = useToast();
+
+    //set vars: api module
+    const investApi = useInvestApi();
 
     //set vars: 필요 변수
     const updateListFlag = computed(() => store.getters['investHistory/getUpdateItemListFlag']);
@@ -192,11 +188,11 @@ export default {
      */
     onBeforeMount(async () => {
       try {
-        companyList.value = await requestCompanyList();
+        companyList.value = await investApi.getCompanyList();
 
-        itemTypeList.value = await requestItemTypeList();
+        itemTypeList.value = await investApi.getItemTypeList();
 
-        unitList.value = await requestUnitList();
+        unitList.value = await investApi.getUnitList();
 
         await getItemList();
       } catch (err) {
@@ -232,7 +228,7 @@ export default {
      */
     const getItemList = async () => {
       try {
-        itemList.value = await requestItemList();
+        itemList.value = await investApi.getItemList();
         for (const item of itemList.value) {
           item.unit_idx_list = [];
           for (const unit of item.unit_set) {
@@ -328,7 +324,7 @@ export default {
         }
 
         if (Object.keys(requestBody).length > 1) {
-          await requestEditItem(requestBody);
+          await investApi.editItem(requestBody);
         }
 
         toast.add({
@@ -364,7 +360,7 @@ export default {
         rejectLabel: '아니오',
         accept: async () => {
           try {
-            await requestDelItem(itemIdx);
+            await investApi.delItem(itemIdx);
 
             store.commit('investHistory/setUpdateItemListFlag', true);
 

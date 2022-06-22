@@ -1,8 +1,3 @@
-import {
-  login as requestLogin,
-  getInfo as requestInfo,
-} from '@/apis/user';
-
 export const user = {
   namespaced: true,
   state: {
@@ -17,17 +12,33 @@ export const user = {
      * @param state
      * @param {{data: {}, accessToken: string, refreshToken: string}} value
      */
-    login(state, {data, accessToken, refreshToken}) {
+    doLogin(state, value) {
       state.isLoggedIn = true;
-      state.data = data;
-      state.accessToken = accessToken;
-      state.refreshToken = refreshToken;
+      state.data = value.data;
+      state.accessToken = value.accessToken;
+      state.refreshToken = value.refreshToken;
     },
-    logout(state) {
+    /**
+     * logout
+     * @param state
+     */
+    doLogout(state) {
       state.isLoggedIn = false;
       state.data = null;
       state.accessToken = '';
       state.refreshToken = '';
+    },
+    /**
+     * set access token
+     * @param state
+     * @param {string} accessToken
+     */
+    setAccessToken(state, accessToken) {
+      state.accessToken = accessToken;
+    },
+    
+    setRefreshToken(state, refreshToken) {
+      state.refreshToken = refreshToken;
     }
   },
   getters: {
@@ -66,26 +77,32 @@ export const user = {
   },
   actions: {
     /**
-     * 로그인 요청
+     * 로그인 처리
      * @param commit
-     * @param {{id: string, password: string}} value
+     * @param {{data: {}, accessToken: string, refreshToken: string}} value
      * @returns {Promise<void>}
      */
     async login({commit}, value) {
-      const id = value.id;
-      const password = value.password;
-      
       try {
-        const rsToken = await requestLogin(id, password);
-        const rsInfo = await requestInfo(rsToken.access_token);
-        
-        commit('login', {data: rsInfo, accessToken: rsToken.access_token, refreshToken: rsToken.refresh_token});
+        commit('doLogin', {data: value.data, accessToken: value.accessToken, refreshToken: value.refreshToken});
       } catch (err) {
         throw err;
       }
     },
+    /**
+     * 로그아웃 처리
+     * @param commit
+     */
     logout({commit}) {
-      commit('logout');
+      commit('doLogout');
+    },
+    /**
+     * set access token
+     * @param commit
+     * @param {string} accessToken
+     */
+    accessToken({commit}, accessToken) {
+      commit('setAccessToken', accessToken);
     }
   }
 };

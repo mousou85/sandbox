@@ -51,6 +51,8 @@ import InputText from "primevue/inputtext";
 import Password from 'primevue/password';
 import Message from 'primevue/message';
 
+import {useUserApi} from '@/apis/user';
+
 export default {
   components: {
     Card,
@@ -66,6 +68,9 @@ export default {
 
     //set vars: route
     const router = useRouter();
+
+    //set vars: api module
+    const userApi = useUserApi();
 
     //set vars: form data
     const formData = reactive({
@@ -112,7 +117,8 @@ export default {
       if (!isValid) return;
 
       try {
-        await store.dispatch('user/login', {id: formData.id, password: formData.password});
+        const res = await userApi.login(formData.id, formData.password);
+        await store.dispatch('user/login', {data: res.data, accessToken: res.access_token, refreshToken: res.refresh_token});
 
         await router.push({name: 'index'});
       } catch (err) {

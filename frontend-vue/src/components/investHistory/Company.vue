@@ -69,12 +69,7 @@ import Toast from 'primevue/toast';
 import {useConfirm} from 'primevue/useconfirm';
 import {useToast} from 'primevue/usetoast';
 
-import {
-  getCompanyList as requestCompanyList,
-  addCompany as requestAddCompany,
-  editCompany as requestEditCompany,
-  delCompany as requestDelCompany
-} from '@/apis/investHistory';
+import {useInvestApi} from '@/apis/investHistory';
 
 export default {
   components: {
@@ -85,6 +80,9 @@ export default {
     Toast,
   },
   setup() {
+    //set vars: api module
+    const investApi = useInvestApi();
+
     //set vars: 필요 변수
     const companyList = ref([]);
     const addForm = reactive({
@@ -111,7 +109,7 @@ export default {
      */
     const getCompanyList = async () => {
       try {
-        companyList.value = await requestCompanyList();
+        companyList.value = await investApi.getCompanyList();
 
         for (const company of companyList.value) {
           company.original_company_name = company.company_name;
@@ -136,7 +134,7 @@ export default {
       }
 
       try {
-        await requestAddCompany(addForm.company_name);
+        await investApi.addCompany(addForm.company_name);
 
         await getCompanyList();
 
@@ -168,7 +166,7 @@ export default {
         }
 
         if (company.company_name != company.original_company_name) {
-          await requestEditCompany(company.company_idx, company.company_name);
+          await investApi.editCompany(company.company_idx, company.company_name);
 
           company.original_company_name = company.company_name;
 
@@ -205,7 +203,7 @@ export default {
         rejectLabel: '아니오',
         accept: async () => {
           try {
-            await requestDelCompany(companyIdx);
+            await investApi.delCompany(companyIdx);
 
             await getCompanyList();
 

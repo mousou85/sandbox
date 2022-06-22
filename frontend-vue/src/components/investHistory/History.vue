@@ -48,7 +48,6 @@ import {onBeforeMount, reactive, ref, watch} from "vue";
 import {useStore} from 'vuex';
 
 import dayjs from 'dayjs';
-import {getItemList as requestItemList} from '@/apis/investHistory';
 
 import HistoryAddForm from '@/components/investHistory/HistoryAddForm.vue';
 import HistoryItemSummary from '@/components/investHistory/HistoryItemSummary.vue';
@@ -57,6 +56,8 @@ import HistoryRevenueList from '@/components/investHistory/HistoryRevenueList.vu
 
 import TreeSelect from 'primevue/treeselect';
 import Button from 'primevue/button';
+
+import {useInvestApi} from '@/apis/investHistory';
 
 export default {
   components: {
@@ -71,6 +72,9 @@ export default {
     //set vars: vuex
     const store = useStore();
 
+    //set vars: api module
+    const investApi = useInvestApi();
+
     //set vars: 필요 변수
     const itemUsableUnitList = ref([]);
     const thisMonth = reactive({value: dayjs()});
@@ -83,7 +87,7 @@ export default {
      */
     onBeforeMount(async () => {
       try {
-        itemList.value = await requestItemList('group');
+        itemList.value = await investApi.getItemList('group');
         for (const company of itemList.value) {
           const _tmp = {
             key: company.company_idx,

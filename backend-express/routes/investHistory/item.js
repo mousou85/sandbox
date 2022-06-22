@@ -1,6 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, createResult, ResponseError} = require('#helpers/expressHelper');
+const authMiddleware = require('#middlewares/authenticateToken');
 
 /**
  * @param {Mysql} db
@@ -28,7 +29,7 @@ module.exports = (db) => {
     res.json(createResult('success', {'list': list}));
   }));
   
-  router.get('/', asyncHandler(async (req, res) => {
+  router.get('/', authMiddleware, asyncHandler(async (req, res) => {
     try {
       const listType = req.query.type ?? '';
       

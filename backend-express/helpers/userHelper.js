@@ -58,7 +58,7 @@ module.exports = (db) => {
     if (payload.hasOwnProperty('iat')) delete payload.iat;
     if (payload.hasOwnProperty('exp')) delete payload.exp;
     
-    return jwt.sign(payload, REFRESH_TOKEN_SECRET,{expiresIn: '1h'});
+    return jwt.sign(payload, REFRESH_TOKEN_SECRET,{expiresIn: '1d'});
   }
   
   /**
