@@ -5,12 +5,21 @@ import axios from "axios";
 import qs from "qs";
 import * as _ from 'lodash';
 
+/**
+ * api base url
+ * @type {string}
+ */
 const baseURL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export const apiBase = () => {
+  //set vars: vuex, router
   const store = useStore();
   const router = useRouter();
   
+  /**
+   * auth 헤더 불필요한 api url 목록
+   * @type {string[]}
+   */
   const EXCLUDE_AUTH_URL = [
     '/user/login',
     '/user/refreshToken',
@@ -31,6 +40,7 @@ export const apiBase = () => {
   
   /**
    * axios request interceptor
+   * - auth 헤더 필요 없는 api 제외하고 모든 url에는 auth 헤더 추가해서 요청
    */
   axiosInstance.interceptors.request.use(
     (config) => {
@@ -52,6 +62,11 @@ export const apiBase = () => {
    * axios response interceptor
    */
   axiosInstance.interceptors.response.use(
+    /**
+     * 응답 결과는 api 결과값만 반환되도록 가공함
+     * @param response
+     * @returns {{result: boolean, resultMessage: string, [data]: *}}
+     */
     (response) => {
       const jsonData = response.data;
       
@@ -69,6 +84,10 @@ export const apiBase = () => {
         
         /*
         refresh access token
+        - http code 401이면서 최초 요청인 경우만 처리
+        - http code 401이면서 error code -21이면 access token 재발급 시도, 이외에는 로그아웃 처리함
+        - access token 재발급 후 요청하려 했던 api 재요청
+        - access token 재발급 실패한 경우 로그아웃 처리함(refresh token 만료됨)
          */
         if (error.response.status == 401 && !originalConfig._retry) {
           if (error.response.data?.errorCode == -21) {

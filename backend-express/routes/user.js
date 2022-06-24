@@ -1,6 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
+const {TokenExpiredError} = require("jsonwebtoken");
 
 /**
  * @param {Mysql} db
@@ -72,7 +73,13 @@ module.exports = (db) => {
       
       res.json(createResult('success', {access_token: newAccessToken}));
     } catch (err) {
-      throw new ResponseError('access token issue fail', ResponseError.ERROR_CODE.TOKEN_ERROR);
+      let errorCode = ResponseError.ERROR_CODE.TOKEN_ERROR;
+      let errorMessage = 'access token issued fail';
+      if (err instanceof  TokenExpiredError) {
+        errorCode = ResponseError.ERROR_CODE.REFRESH_TOKEN_EXPIRED;
+        errorMessage = 'refresh token expired';
+      }
+      throw new ResponseError(errorMessage, errorCode);
     }
   }));
   

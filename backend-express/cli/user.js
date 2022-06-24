@@ -18,7 +18,7 @@ const db = new Mysql(
 );
 
 //load helpers module
-const userHelper = require('#helpers/user')(db);
+const userHelper = require('#helpers/userHelper')(db);
 
 (async () => {
   //set vars: regexp
@@ -91,7 +91,7 @@ const userHelper = require('#helpers/user')(db);
           .insert({
             id: userId,
             password: encryptPassword.hashedPassword,
-            password_slat: encryptPassword.salt,
+            password_salt: encryptPassword.salt,
             name: name,
           })
           .into('users')
