@@ -1,36 +1,4 @@
 /**
- * express async 핸들러
- * @param {function} fn
- * @return {(function(*, *, *): Promise<void>)|*}
- */
-const asyncHandler = (fn) => {
-  return async (req, res, next) => {
-    try {
-      await fn(req, res, next);
-    } catch (err) {
-      next(err);
-    }
-  }
-}
-
-/**
- * 결과 json data 생성
- * @param {string} [resultMessage='success']
- * @param {*} [extraData]
- * @return {{result: boolean, resultMessage: (*|string)}}
- */
-function createResult(resultMessage, extraData) {
-  let jsonData = {
-    result: true,
-    resultMessage: resultMessage ? resultMessage : 'success',
-  }
-  
-  if (extraData) jsonData.data = extraData;
-  
-  return jsonData;
-}
-
-/**
  * 에러 객체
  * @extends Error
  */
@@ -63,7 +31,51 @@ class ResponseError extends Error {
 }
 
 module.exports = {
-  asyncHandler,
-  createResult,
   ResponseError,
+  /**
+   * express async 핸들러
+   * @param {function} fn
+   * @return {(function(*, *, *): Promise<void>)|*}
+   */
+  asyncHandler: (fn) => {
+    return async (req, res, next) => {
+      try {
+        await fn(req, res, next);
+      } catch (err) {
+        next(err);
+      }
+    }
+  },
+  /**
+   * 결과 json data 생성
+   * @param {string} [resultMessage='success']
+   * @param {*} [extraData]
+   * @return {{result: boolean, resultMessage: (*|string)}}
+   */
+  createResult: (resultMessage, extraData) => {
+    let jsonData = {
+      result: true,
+      resultMessage: resultMessage ? resultMessage : 'success',
+    }
+    
+    if (extraData) jsonData.data = extraData;
+    
+    return jsonData;
+  },
+  /**
+   * get remote address
+   * @param req
+   * @returns {string}
+   */
+  getRemoteAddress: (req) => {
+    return req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress;
+  },
+  /**
+   * get user agent
+   * @param req
+   * @returns {string}
+   */
+  getUserAgent: (req) => {
+    return req.headers['user-agent'];
+  }
 };

@@ -1,6 +1,6 @@
 //load express module
 const express = require('express');
-const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
+const {asyncHandler, ResponseError, createResult, getRemoteAddress, getUserAgent} = require('#helpers/expressHelper');
 const {TokenExpiredError} = require("jsonwebtoken");
 
 /**
@@ -32,6 +32,7 @@ module.exports = (db) => {
       );
       if (!rsUser) throw new ResponseError('존재하지 않는 아이디');
       
+      //check password
       if (!userHelper.verifyPassword(password, rsUser.password_salt, rsUser.password)) {
         throw new ResponseError('비밀번호가 일치하지 않음');
       }
@@ -40,6 +41,9 @@ module.exports = (db) => {
       const payload = {user_idx: rsUser.user_idx, id: rsUser.id};
       const accessToken = userHelper.createAccessToken(payload);
       const refreshToken = userHelper.createRefreshToken(payload);
+      
+      //insert login log
+      await userHelper.insertLoginLog(rsUser.user_idx, getRemoteAddress(req), getUserAgent(req));
       
       //set vars: response data
       const responseData = {

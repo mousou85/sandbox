@@ -58,6 +58,6 @@ app.use('*', (req, res, next) => {
 });
 app.use(errorResponseMiddleWare);
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`listening on http://localhost:${port}`);
 })
