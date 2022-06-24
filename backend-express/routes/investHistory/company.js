@@ -1,6 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, createResult, ResponseError} = require('#helpers/expressHelper');
+const authTokenMiddleWare = require('#middlewares/authenticateToken');
 
 /**
  * @param {Mysql} db
@@ -12,7 +13,7 @@ module.exports = (db) => {
   /**
    * company 리스트
    */
-  router.get('/', asyncHandler(async (req, res) => {
+  router.get('/', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
       //set vars: 리스트
       let list = await db.queryAll(db.queryBuilder()
@@ -30,7 +31,7 @@ module.exports = (db) => {
   /**
    * company 데이터
    */
-  router.get('/:company_idx', asyncHandler(async (req, res) => {
+  router.get('/:company_idx', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let companyIdx = req.params.company_idx;
@@ -52,7 +53,7 @@ module.exports = (db) => {
   /**
    * company 추가
    */
-  router.post('/', asyncHandler(async (req, res) => {
+  router.post('/', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let companyName = req.body.company_name;
@@ -83,7 +84,7 @@ module.exports = (db) => {
   /**
    * company 수정
    */
-  router.put('/:company_idx', asyncHandler(async (req, res) => {
+  router.put('/:company_idx', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let companyIdx = req.params.company_idx;
@@ -116,7 +117,7 @@ module.exports = (db) => {
   /**
    * company 삭제
    */
-  router.delete('/:company_idx', asyncHandler(async (req, res) => {
+  router.delete('/:company_idx', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let companyIdx = req.params.company_idx;

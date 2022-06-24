@@ -1,7 +1,6 @@
 //load express module
 const express = require('express');
 const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
-const authMiddleware = require('#middlewares/authenticateToken');
 
 /**
  * @param {Mysql} db
@@ -22,7 +21,7 @@ module.exports = (db) => {
       //set vars: request
       const userId = req.body.id;
       const password = req.body.password;
-      if (!userId || !password) throw new ResponseError('필수 파라미터 누락', -100);
+      if (!userId || !password) throw new ResponseError('필수 파라미터 누락');
       
       //set vars: user data
       const rsUser = await db.queryRow(db.queryBuilder()
@@ -30,10 +29,10 @@ module.exports = (db) => {
         .from('users')
         .where('id', userId)
       );
-      if (!rsUser) throw new ResponseError('존재하지 않는 아이디', -201);
+      if (!rsUser) throw new ResponseError('존재하지 않는 아이디');
       
       if (!userHelper.verifyPassword(password, rsUser.password_salt, rsUser.password)) {
-        throw new ResponseError('비밀번호가 일치하지 않음', -202);
+        throw new ResponseError('비밀번호가 일치하지 않음');
       }
       
       //set vars: access token, refresh token
@@ -73,7 +72,7 @@ module.exports = (db) => {
       
       res.json(createResult('success', {access_token: newAccessToken}));
     } catch (err) {
-      throw new ResponseError('auth fail', -1, 401);
+      throw new ResponseError('access token issue fail', ResponseError.ERROR_CODE.TOKEN_ERROR);
     }
   }));
   

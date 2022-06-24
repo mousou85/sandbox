@@ -16,13 +16,13 @@ module.exports = (req, res, next) => {
     //set vars: token
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    if (!token) throw new ResponseError('auth fail', -1, 401);
+    if (!token) throw new ResponseError('authorization fail', ResponseError.ERROR_CODE.ACCESS_TOKEN_MISSING, ResponseError.HTTP_UNAUTHORIZED);
   
     //decode token
     try {
       req.user = userHelper.decodeAccessToken(token);
     } catch (err) {
-      throw new ResponseError('auth fail', -1, 403);
+      throw new ResponseError('authorization fail', ResponseError.ERROR_CODE.TOKEN_ERROR, ResponseError.HTTP_UNAUTHORIZED);
     }
     
     next();

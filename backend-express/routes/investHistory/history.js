@@ -1,6 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
+const authTokenMiddleware = require('#middlewares/authenticateToken');
 
 //load etc module
 const dayjs = require('dayjs');
@@ -24,7 +25,7 @@ module.exports = (db) => {
   /**
    * history 리스트
    */
-  router.get('/:item_idx', asyncHandler(async (req, res) => {
+  router.get('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       const itemIdx = req.params.item_idx;
@@ -89,7 +90,7 @@ module.exports = (db) => {
   /**
    * history 등록
    */
-  router.post('/:item_idx', asyncHandler(async (req, res) => {
+  router.post('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let itemIdx = req.params.item_idx;
@@ -166,7 +167,7 @@ module.exports = (db) => {
   /**
    * history 수정
    */
-  router.put('/:history_idx', asyncHandler(async (req, res) => {
+  router.put('/:history_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       const historyIdx = req.params.history_idx;
@@ -215,7 +216,7 @@ module.exports = (db) => {
   /**
    * history 삭제
    */
-  router.delete('/:history_idx', asyncHandler(async (req, res) => {
+  router.delete('/:history_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       const historyIdx=  req.params.history_idx;

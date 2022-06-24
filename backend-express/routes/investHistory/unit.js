@@ -1,6 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, ResponseError, createResult} = require('#helpers/expressHelper');
+const authTokenMiddleware = require('#middlewares/authenticateToken');
 
 /**
  * @param {Mysql} db
@@ -13,7 +14,7 @@ module.exports = (db) => {
   /**
    * unit 목록
    */
-  router.get('/', asyncHandler(async (req, res) => {
+  router.get('/', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: 리스트
       let unitList = await db.queryAll(db.queryBuilder()
@@ -31,7 +32,7 @@ module.exports = (db) => {
   /**
    * unit 데이터
    */
-  router.get('/:unit_idx', asyncHandler(async (req, res) => {
+  router.get('/:unit_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let unitIdx = req.params.unit_idx;
@@ -85,7 +86,7 @@ module.exports = (db) => {
   /**
    * unit 수정
    */
-  router.put('/:unit_idx', asyncHandler(async (req, res) => {
+  router.put('/:unit_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let unitIdx = req.params.unit_idx;
@@ -122,7 +123,7 @@ module.exports = (db) => {
   /**
    * unit 삭제
    */
-  router.delete('/:unit_idx', asyncHandler(async (req, res) => {
+  router.delete('/:unit_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let unitIdx = req.params.unit_idx;

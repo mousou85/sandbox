@@ -1,7 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, createResult, ResponseError} = require('#helpers/expressHelper');
-const authMiddleware = require('#middlewares/authenticateToken');
+const authTokenMiddleware = require('#middlewares/authenticateToken');
 
 /**
  * @param {Mysql} db
@@ -20,7 +20,7 @@ module.exports = (db) => {
   /**
    * item type 리스트
    */
-  router.get('/item-type', asyncHandler(async (req, res) => {
+  router.get('/item-type', authTokenMiddleware, asyncHandler(async (req, res) => {
     let list = [];
     for (let key in itemTypeList) {
       list.push({type: key, text: itemTypeList[key]});
@@ -29,7 +29,7 @@ module.exports = (db) => {
     res.json(createResult('success', {'list': list}));
   }));
   
-  router.get('/', authMiddleware, asyncHandler(async (req, res) => {
+  router.get('/', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       const listType = req.query.type ?? '';
       
@@ -121,7 +121,7 @@ module.exports = (db) => {
   /**
    * item 데이터
    */
-  router.get('/:item_idx', asyncHandler(async (req, res) => {
+  router.get('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let itemIdx = req.params.item_idx;
@@ -153,7 +153,7 @@ module.exports = (db) => {
   /**
    * item 등록
    */
-  router.post('/', asyncHandler(async (req, res) => {
+  router.post('/', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let companyIdx = req.body.company_idx;
@@ -215,7 +215,7 @@ module.exports = (db) => {
   /**
    * item 수정
    */
-  router.put('/:item_idx', asyncHandler(async (req, res) => {
+  router.put('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let itemIdx = req.params.item_idx;
@@ -313,7 +313,7 @@ module.exports = (db) => {
   /**
    * item 삭제
    */
-  router.delete('/:item_idx', asyncHandler(async (req, res) => {
+  router.delete('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       let itemIdx = req.params.item_idx;

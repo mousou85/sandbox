@@ -1,6 +1,7 @@
 //load express module
 const express = require('express');
 const {asyncHandler, createResult, ResponseError} = require('#helpers/expressHelper');
+const authTokenMiddleware = require('#middlewares/authenticateToken');
 
 //load etc module
 const dayjs = require("dayjs");
@@ -19,7 +20,7 @@ module.exports = (db) => {
   /**
    * summary total
    */
-  router.get('/:item_idx([0-9]+)/total', asyncHandler(async (req, res) => {
+  router.get('/:item_idx([0-9]+)/total', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       const itemIdx = req.params.item_idx;
@@ -89,7 +90,7 @@ module.exports = (db) => {
   /**
    * summary month
    */
-  router.get('/:item_idx([0-9]+)/month', asyncHandler(async (req, res) => {
+  router.get('/:item_idx([0-9]+)/month', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       const itemIdx = req.params.item_idx;
@@ -195,7 +196,7 @@ module.exports = (db) => {
   /**
    * summary year
    */
-  router.get('/:item_idx([0-9]+)/year', asyncHandler(async (req, res) => {
+  router.get('/:item_idx([0-9]+)/year', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: request
       const itemIdx = req.params.item_idx;
@@ -300,7 +301,7 @@ module.exports = (db) => {
   /**
    * summary remake
    */
-  router.get('/remake-all', asyncHandler(async (req, res) => {
+  router.get('/remake-all', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: 상품 목록
       const itemList = await db.queryAll(db.queryBuilder()
@@ -369,7 +370,7 @@ module.exports = (db) => {
     }
   }));
   
-  router.get('/test', asyncHandler(async (req, res) => {
+  router.get('/test', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       const itemIdx = 17;
       const unitIdx = 3;

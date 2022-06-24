@@ -1,4 +1,5 @@
 import {useStore} from 'vuex';
+import {useRouter} from 'vue-router';
 
 import axios from "axios";
 import qs from "qs";
@@ -8,6 +9,8 @@ const baseURL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export const apiBase = () => {
   const store = useStore();
+  const router = useRouter();
+  
   const EXCLUDE_AUTH_URL = [
     '/user/login',
     '/user/refreshToken',
@@ -67,19 +70,27 @@ export const apiBase = () => {
         /*
         refresh access token
          */
-        if (error.response.status == 403 && !originalConfig._retry) {
-          originalConfig._retry = true;
-          
-          try {
-            const res = await axiosInstance.post('/user/refreshToken', {
-              refresh_token: store.getters['user/getRefreshToken']
-            });
+        if (error.response.status == 401 && !originalConfig._retry) {
+          if (error.response.data?.errorCode == -21) {
+            originalConfig._retry= true;
             
-            await store.dispatch('user/accessToken', res.data.access_token);
-            
-            return axiosInstance(originalConfig);
-          } catch (refreshTokenError) {
-            return Promise.reject(customError(refreshTokenError));
+            try {
+              const res = await axiosInstance.post('/user/refreshToken', {
+                refresh_token: store.getters['user/getRefreshToken']
+              });
+  
+              await store.dispatch('user/accessToken', res.data.access_token);
+  
+              return axiosInstance(originalConfig);
+            } catch (refreshTokenError) {
+              await store.dispatch('user/logout');
+              await router.push({name: 'login'});
+              return Promise.reject(customError(refreshTokenError));
+            }
+          } else {
+            await store.dispatch('user/logout');
+            await router.push({name: 'login'});
+            return Promise.reject(customError(error));
           }
         }
       }
@@ -94,8 +105,8 @@ export const apiBase = () => {
    * @returns {*}
    */
   const customError = (axiosError) => {
-    if (axiosError.response?.data?.error) {
-      axiosError.message = axiosError.response.data.error;
+    if (axiosError.response?.data?.errorMessage) {
+      axiosError.message = axiosError.response.data.errorMessage;
     }
     if (axiosError.response?.data?.errorCode) {
       axiosError.errorCode = axiosError.response.data.errorCode;

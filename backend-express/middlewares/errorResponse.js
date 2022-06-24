@@ -9,9 +9,9 @@ const {ResponseError} = require("#helpers/expressHelper");
  */
 module.exports = (err, req, res, next) => {
   if (!(err instanceof ResponseError)) {
-    err = new ResponseError(err, -1, 500);
+    err = new ResponseError(err, ResponseError.ERROR_CODE.COMMON_ERROR, ResponseError.HTTP_BAD_REQUEST);
   }
   
   res.status(err.httpCode)
-    .json({result: false, errorCode: err.errorCode, error: err.message});
+    .json({isError: true, errorCode: err.errorCode, errorMessage: err.errorMessage});
 }
