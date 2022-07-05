@@ -176,5 +176,64 @@ const userHelper = require('#helpers/userHelper')(db);
       process.exit();
     });
   
+  /**
+   * 로그인 실패 횟수 초기화 cli
+   */
+  program.command('reset-login-fail')
+    .description('로그인 실패 횟수 초기화')
+    .action(async () => {
+      //set vars: interactive cli config
+      const promptInfo = [
+        {
+          type: 'input',
+          name: 'userId',
+          message: '사용자ID:',
+          validate: async (input) => {
+            if (!input) return '사용자ID를 입력해주세요.';
+            if (regexpBlank.test(input)) return '사용자ID에는 공백을 사용할 수 없습니다.';
+            
+            const rsHas = await db.exists(db.queryBuilder()
+              .from('users')
+              .where('id', input));
+            if (!rsHas) return '존재하지 않는 사용자ID입니다.';
+            
+            return true;
+          }
+        },
+        {
+          type: 'confirm',
+          name: 'confirmReset',
+          message: '로그인 실패횟수를 초기화 하시겠습니까?',
+        }
+      ]
+      
+      //set vars: argument
+      const {userId, confirmReset} = await inquirer.prompt(promptInfo);
+      if (!confirmReset) {
+        process.exit();
+      }
+      
+      //reset fail count
+      try {
+        //set vars: user data
+        const userIdx = await db.queryScalar(db.queryBuilder()
+          .select('user_idx')
+          .from('users')
+          .where('id', userId)
+        );
+
+        await db.execute(db.queryBuilder()
+          .update({login_fail_count: 0})
+          .from('users')
+          .where('user_idx', userIdx));
+
+        console.info('초기화 완료');
+      } catch (err) {
+        console.error(err);
+      }
+      
+      process.exit();
+    });
+  
   await program.parseAsync(process.argv);
 })();
