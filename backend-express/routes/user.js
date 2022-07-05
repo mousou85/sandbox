@@ -19,10 +19,21 @@ module.exports = (db) => {
    */
   router.post('/login', asyncHandler(async (req, res) => {
     try {
+      //set vars: 로그인 로그 타입 목록
+      const LOGIN_LOG_TYPES = userHelper.LOGIN_LOG_TYPES;
+      
       //set vars: request
       const userId = req.body.id;
       const password = req.body.password;
-      if (!userId || !password) throw new ResponseError('필수 파라미터 누락');
+      
+      //set vars: ip, user agent
+      const ip = getRemoteAddress(req);
+      const userAgent = getUserAgent(req);
+      
+      if (!userId || !password) {
+        await userHelper.insertLoginLog(null, LOGIN_LOG_TYPES.BAD_REQUEST, ip, userAgent);
+        throw new ResponseError('필수 파라미터 누락');
+      }
       
       //set vars: user data
       const rsUser = await db.queryRow(db.queryBuilder()
@@ -30,11 +41,26 @@ module.exports = (db) => {
         .from('users')
         .where('id', userId)
       );
-      if (!rsUser) throw new ResponseError('존재하지 않는 아이디');
+      if (!rsUser) {
+        await userHelper.insertLoginLog(null, LOGIN_LOG_TYPES.ATTEMPT, ip, userAgent);
+        throw new ResponseError('존재하지 않는 아이디');
+      }
+      
+      //check login fail count
+      if (rsUser.login_fail_count >= 5) {
+        throw new ResponseError('로그인 실패 횟수 초과');
+      }
       
       //check password
       if (!userHelper.verifyPassword(password, rsUser.password_salt, rsUser.password)) {
-        throw new ResponseError('비밀번호가 일치하지 않음');
+        await userHelper.updateLoginFailCount(rsUser.user_idx, rsUser.login_fail_count + 1);
+        if (rsUser.login_fail_count >= 4) {
+          await userHelper.insertLoginLog(rsUser.user_idx, LOGIN_LOG_TYPES.LOGIN_FAIL_EXCEED, ip, userAgent);
+          throw new ResponseError('로그인 실패 횟수 초과');
+        } else {
+          await userHelper.insertLoginLog(rsUser.user_idx, LOGIN_LOG_TYPES.PASSWORD_MISMATCH, ip, userAgent);
+          throw new ResponseError('비밀번호가 일치하지 않음');
+        }
       }
       
       //set vars: access token, refresh token
@@ -43,7 +69,7 @@ module.exports = (db) => {
       const refreshToken = userHelper.createRefreshToken(payload);
       
       //insert login log
-      await userHelper.insertLoginLog(rsUser.user_idx, getRemoteAddress(req), getUserAgent(req));
+      await userHelper.insertLoginLog(rsUser.user_idx, LOGIN_LOG_TYPES.LOGIN, ip, userAgent);
       
       //set vars: response data
       const responseData = {

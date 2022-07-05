@@ -8,8 +8,19 @@ const jwt = require("jsonwebtoken");
 module.exports = (db) => {
   const ACCESS_TOKEN_SECRET = process.env.LOGIN_ACCESS_TOKEN_SECRET;
   const REFRESH_TOKEN_SECRET = process.env.LOGIN_REFRESH_TOKEN_SECRET;
+  const LOGIN_LOG_TYPES = {
+    BAD_REQUEST: 'badRequest',
+    ATTEMPT: 'attempt',
+    LOGIN_FAIL_EXCEED: 'loginFailExceed',
+    PASSWORD_MISMATCH: 'passwordMismatch',
+    LOGIN: 'login',
+  };
   
   return {
+    /**
+     * 로그인 로그 타입 목록
+     */
+    LOGIN_LOG_TYPES,
     /**
      * create hashed password
      * @param {string} password
@@ -84,19 +95,34 @@ module.exports = (db) => {
     },
     /**
      * insert user login log
-     * @param {number} userIdx
+     * @param {number|null} [userIdx]
+     * @param {string} logType
      * @param {string} ip
      * @param {string} userAgent
      * @returns {Promise<void>}
      */
-    insertLoginLog: async (userIdx, ip, userAgent) => {
+    insertLoginLog: async (userIdx, logType, ip, userAgent) => {
       await db.execute(db.queryBuilder()
         .insert({
           user_idx: userIdx,
+          log_type: logType,
           ip: db.raw('INET_ATON(:ip)', {ip: ip}),
           user_agent: userAgent
         })
         .into('users_login_log')
+      );
+    },
+    /**
+     * update login fail count
+     * @param {number} userIdx
+     * @param {number} failCount
+     * @returns {Promise<void>}
+     */
+    updateLoginFailCount: async (userIdx, failCount) => {
+      await db.execute(db.queryBuilder()
+        .update({login_fail_count: failCount})
+        .from('users')
+        .where('user_idx', userIdx)
       );
     }
   }
