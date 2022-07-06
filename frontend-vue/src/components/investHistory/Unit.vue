@@ -1,44 +1,40 @@
 <template>
-  <form @submit.prevent="addUnit">
-    <div class="w-full md:w-3">
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <InputText
-              v-model="addForm.unit"
-              class="w-full"
-              :class="{'p-invalid': !addForm.validate.unit}"
-              maxlength="10"
-          ></InputText>
-          <label :class="{'p-error': !addForm.validate.unit}">단위</label>
-        </div>
-        <small
-            v-if="!addForm.validate.unit"
-            :class="{'p-error': !addForm.validate.unit}"
-        >{{addForm.validateMsg.unit}}</small>
-      </div>
+  <template v-if="isMobile">
+    <Dialog
+        header="단위 추가"
+        position="center"
+        v-model:visible="formOverlayVisible"
+        :dismissableMask="true"
+        :closeOnEscape="true"
+        :modal="true"
+        :closable="true"
+        :breakpoints="{'960px': '75vw', '640px': '95vw'}"
+    >
+      <UnitAddForm
+          :unit-type-list="unitTypeList"
+          @get-unit-list="getUnitList"
+      ></UnitAddForm>
+    </Dialog>
+  </template>
+  <template v-else>
+    <OverlayPanel
+        ref="htmlFormOverlay"
+        :dismissable="true"
+        :showCloseIcon="true"
+        :breakpoints="{'960px': '75vw', '640px': '90vw'}"
+        class="w-3"
+        @hide="toggleFormOverlay($event, 'hide')"
+    >
+      <UnitAddForm
+          :unit-type-list="unitTypeList"
+          @get-unit-list="getUnitList"
+      ></UnitAddForm>
+    </OverlayPanel>
+  </template>
 
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <SelectButton
-              v-model="addForm.unitType"
-              :options="unitTypeList"
-              :class="{'p-invalid': !addForm.validate.unitType}"
-              optionLabel="label"
-              optionValue="value"
-          ></SelectButton>
-          <label :class="{'p-error': !addForm.validate.unitType}">타입</label>
-        </div>
-        <small
-            v-if="!addForm.validate.unitType"
-            :class="{'p-error': !addForm.validate.unitType}"
-        >{{addForm.validateMsg.unitType}}</small>
-      </div>
-
-      <div class="field w-full mt-5">
-        <Button type="submit" label="등록" class="w-full md:w-6"></Button>
-      </div>
-    </div>
-  </form>
+  <div class="field w-full md:w-2 mt-5">
+    <Button type="button" @click="toggleFormOverlay($event, 'toggle')" label="단위 추가" icon="pi pi-plus-circle" class="w-full"></Button>
+  </div>
 
   <DataTable
       :value="unitList"
@@ -111,7 +107,8 @@
 </template>
 
 <script>
-import {onBeforeMount, reactive, ref} from "vue";
+import {computed, onBeforeMount, ref} from "vue";
+import {useStore} from "vuex";
 
 import InputText from "primevue/inputtext";
 import SelectButton from "primevue/selectbutton";
@@ -123,8 +120,12 @@ import ColumnGroup from "primevue/columngroup";
 import Row from "primevue/row";
 import ConfirmDialog from 'primevue/confirmdialog';
 import Toast from 'primevue/toast';
+import OverlayPanel from 'primevue/overlaypanel';
+import Dialog from 'primevue/dialog';
 import {useConfirm} from "primevue/useconfirm";
 import {useToast} from "primevue/usetoast";
+
+import UnitAddForm from "@/components/investHistory/UnitAddForm.vue";
 
 import {useInvestApi} from '@/apis/investHistory';
 
@@ -138,10 +139,17 @@ export default {
     Column,
     ColumnGroup,
     Row,
+    OverlayPanel,
+    Dialog,
     ConfirmDialog,
     Toast,
+    UnitAddForm,
   },
   setup() {
+    //set vars: vuex
+    const store = useStore();
+    const isMobile = computed(() => store.getters['isMobile']);
+
     //set vars: confirm dialog
     const confirm = useConfirm();
     const toast = useToast();
@@ -150,23 +158,13 @@ export default {
     const investApi = useInvestApi();
 
     //set vars: 필요 변수
+    const htmlFormOverlay = ref();
+    const formOverlayVisible = ref(false);
     const unitTypeList = ref([
       {label: 'INT', value: 'int'},
       {label: 'FLOAT', value: 'float'},
     ]);
     const unitList = ref([]);
-    const addForm = reactive({
-      unit: '',
-      unitType: '',
-      validate: {
-        unit: true,
-        unitType: true,
-      },
-      validateMsg: {
-        unit: '',
-        unitType: ''
-      }
-    });
 
     /*
     lifecycle hook
@@ -188,47 +186,26 @@ export default {
     }
 
     /**
-     * add unit
-     * @return {Promise<boolean>}
+     * toggle add unit form overlay
+     * @param $event
+     * @param {string} eventType
      */
-    const addUnit = async () => {
-      let validateFlag = true;
-
-      if (!addForm.unit) {
-        setFormValidate('unit', false, '단위를 입력해주세요');
-        validateFlag = false;
-      } else {
-        setFormValidate('unit', true);
-      }
-      if (!addForm.unitType) {
-        setFormValidate('unitType', false, '타입을 선택해주세요');
-        validateFlag = false;
-      } else {
-        setFormValidate('unitType', true);
-      }
-
-      if (!validateFlag) return false;
-
-      try {
-        await investApi.addUnit(addForm.unit, addForm.unitType);
-
-        addForm.unit = '';
-        addForm.unitType = '';
-
-        toast.add({
-          severity: 'success',
-          summary: '추가 완료',
-          life: 3000,
-        });
-
-        await getUnitList();
-      } catch (err) {
-        toast.add({
-          severity: 'error',
-          summary: '추가 실패',
-          detail: err,
-          life: 3000,
-        });
+    const toggleFormOverlay = ($event, eventType) => {
+      if (eventType == 'toggle') {
+        if (!isMobile.value) {
+          if (formOverlayVisible.value) {
+            htmlFormOverlay.value.hide($event);
+          } else {
+            htmlFormOverlay.value.show($event);
+          }
+        }
+        formOverlayVisible.value = !formOverlayVisible.value;
+      } else if (eventType == 'show') {
+        htmlFormOverlay.value.show($event);
+        formOverlayVisible.value = true;
+      } else if (eventType == 'hide') {
+        htmlFormOverlay.value.hide($event);
+        formOverlayVisible.value = false;
       }
     }
 
@@ -319,24 +296,16 @@ export default {
       });
     }
 
-    /**
-     * form validate 설정
-     * @param {string} key
-     * @param {boolean} value
-     * @param {string} [msg]
-     */
-    const setFormValidate = (key, value, msg = '') => {
-      addForm.validate[key] = value;
-      addForm.validateMsg[key] = msg;
-    }
-
     return {
+      isMobile,
+      htmlFormOverlay,
+      formOverlayVisible,
       unitTypeList,
       unitList,
-      addForm,
-      addUnit,
+      getUnitList,
       editUnit,
       delUnit,
+      toggleFormOverlay,
     }
   }
 }

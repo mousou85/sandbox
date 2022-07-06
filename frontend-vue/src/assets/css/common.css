@@ -34,15 +34,6 @@ body {
 	color: #6c757d;
 }
 
-/*primevue checkbox*/
-.field-checkbox.inner-label {
-	margin-bottom: 0.5rem;
-}
-.field-checkbox.inner-label > label {
-	margin:0 0.5rem;
-	line-height: 1.7;
-}
-
 /*primevue select button*/
 .p-selectbutton.grid {
 	display: grid;

@@ -1,9 +1,42 @@
 <template>
-  <ItemAdd
-      :companyList="companyList"
-      :itemTypeList="itemTypeList"
-      :unitList="unitList"
-  ></ItemAdd>
+  <template v-if="isMobile">
+    <Dialog
+        header="상품 추가"
+        position="center"
+        v-model:visible="formOverlayVisible"
+        :dismissableMask="true"
+        :closeOnEscape="true"
+        :modal="true"
+        :closable="true"
+        :breakpoints="{'960px': '75vw', '640px': '95vw'}"
+    >
+      <ItemAddForm
+          :companyList="companyList"
+          :itemTypeList="itemTypeList"
+          :unitList="unitList"
+      ></ItemAddForm>
+    </Dialog>
+  </template>
+  <template v-else>
+    <OverlayPanel
+        ref="htmlFormOverlay"
+        :dismissable="true"
+        :showCloseIcon="true"
+        :breakpoints="{'960px': '75vw', '640px': '90vw'}"
+        class="w-4"
+        @hide="toggleFormOverlay($event, 'hide')"
+    >
+      <ItemAddForm
+          :companyList="companyList"
+          :itemTypeList="itemTypeList"
+          :unitList="unitList"
+      ></ItemAddForm>
+    </OverlayPanel>
+  </template>
+
+  <div class="field w-full md:w-2 mt-5">
+    <Button type="button" @click="toggleFormOverlay($event, 'toggle')" label="상품 추가" icon="pi pi-plus-circle" class="w-full"></Button>
+  </div>
 
   <!-- item list -->
   <DataTable
@@ -122,12 +155,14 @@ import Column from "primevue/column";
 import ColumnGroup from "primevue/columngroup";
 import Row from "primevue/row";
 import MultiSelect from 'primevue/multiselect';
+import OverlayPanel from "primevue/overlaypanel";
+import Dialog from "primevue/dialog";
 import ConfirmDialog from 'primevue/confirmdialog';
 import Toast from 'primevue/toast';
 import {useConfirm} from 'primevue/useconfirm';
 import {useToast} from 'primevue/usetoast';
 
-import ItemAdd from "@/components/investHistory/ItemAdd.vue";
+import ItemAddForm from "@/components/investHistory/ItemAddForm.vue";
 
 import {useInvestApi} from '@/apis/investHistory';
 
@@ -143,13 +178,16 @@ export default {
     ColumnGroup,
     Row,
     MultiSelect,
+    OverlayPanel,
+    Dialog,
     ConfirmDialog,
     Toast,
-    ItemAdd,
+    ItemAddForm,
   },
   setup() {
     //set vars: vuex, dialog, toast
     const store = useStore();
+    const isMobile = computed(() => store.getters['isMobile']);
     const confirm = useConfirm();
     const toast = useToast();
 
@@ -158,6 +196,8 @@ export default {
 
     //set vars: 필요 변수
     const updateListFlag = computed(() => store.getters['investHistory/getUpdateItemListFlag']);
+    const htmlFormOverlay = ref();
+    const formOverlayVisible = ref(false);
     const companyList = ref([]);
     const itemTypeList = ref([]);
     const unitList = ref([]);
@@ -207,6 +247,30 @@ export default {
         await getItemList();
       }
     });
+
+    /**
+     * toggle add item form overlay
+     * @param $event
+     * @param {string} eventType
+     */
+    const toggleFormOverlay = ($event, eventType) => {
+      if (eventType == 'toggle') {
+        if (!isMobile.value) {
+          if (formOverlayVisible.value) {
+            htmlFormOverlay.value.hide($event);
+          } else {
+            htmlFormOverlay.value.show($event);
+          }
+        }
+        formOverlayVisible.value = !formOverlayVisible.value;
+      } else if (eventType == 'show') {
+        htmlFormOverlay.value.show($event);
+        formOverlayVisible.value = true;
+      } else if (eventType == 'hide') {
+        htmlFormOverlay.value.hide($event);
+        formOverlayVisible.value = false;
+      }
+    }
 
     /**
      * print unit set list
@@ -384,12 +448,16 @@ export default {
     }
 
     return {
+      isMobile,
+      htmlFormOverlay,
+      formOverlayVisible,
       companyList,
       itemTypeList,
       unitList,
       itemList,
       btnFormSubmitLabel,
       itemFormData,
+      toggleFormOverlay,
       editItem,
       delItem,
       printUnitText,

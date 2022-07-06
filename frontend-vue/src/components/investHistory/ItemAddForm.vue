@@ -1,6 +1,6 @@
 <template>
   <form id="itemAddForm" @submit.prevent="formSubmit">
-    <div class="w-full md:w-3">
+    <div class="w-full">
       <div class="field w-full mt-5">
         <div class="p-normal-label">
           <Dropdown
@@ -56,18 +56,15 @@
 
       <div class="field w-full mt-5">
         <div class="p-normal-label flex flex-wrap">
-          <div v-for="unit in unitList" class="field-checkbox inner-label">
-            <label
-                :class="{'p-error': !formData.validate.units}"
-            >
-              <Checkbox
-                  v-model="formData.units"
-                  :value="unit.unit_idx"
-                  name="unit"
-                  :class="{'p-invalid': !formData.validate.units}"
-              ></Checkbox>
-              {{unit.unit}}
-            </label>
+          <div v-for="unit in unitList" class="field-checkbox mr-3 mb-3">
+            <Checkbox
+                :id="'unit_idx_' + unit.unit_idx"
+                v-model="formData.units"
+                :value="unit.unit_idx"
+                name="unit"
+                :class="{'p-invalid': !formData.validate.units}"
+            ></Checkbox>
+            <label :for="'unit_idx_' + unit.unit_idx" :class="{'p-error': !formData.validate.units}">{{unit.unit}}</label>
           </div>
           <label :class="{'p-error': !formData.validate.units}">단위</label>
         </div>
@@ -77,8 +74,8 @@
         >{{formData.validateMsg.units}}</small>
       </div>
 
-      <div class="field w-full mt-5">
-        <Button type="submit" class="w-full md:w-6" label="등록"></Button>
+      <div class="field w-full mt-0 mb-0">
+        <Button type="submit" class="w-full" label="등록"></Button>
       </div>
     </div>
   </form>
@@ -129,7 +126,6 @@ export default {
 
     //set vars: form model
     const formData = reactive({
-      itemIdx: '',
       companyIdx: '',
       itemType: '',
       itemName: '',
