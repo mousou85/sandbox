@@ -1,82 +1,80 @@
 <template>
   <form id="itemAddForm" @submit.prevent="formSubmit">
-    <div class="w-full">
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <Dropdown
-              v-model="formData.companyIdx"
-              :options="companyList"
-              :class="{'p-invalid': !formData.validate.companyIdx}"
-              optionLabel="company_name"
-              optionValue="company_idx"
-              class="w-full"
-              placeholder="기업선택"
-          ></Dropdown>
-          <label :class="{'p-error': !formData.validate.companyIdx}">기업</label>
-        </div>
-        <small
-            v-if="!formData.validate.companyIdx"
-            :class="{'p-error': !formData.validate.companyIdx}"
-        >{{formData.validateMsg.companyIdx}}</small>
+    <div class="field mt-5">
+      <div class="p-normal-label">
+        <Dropdown
+            v-model="formData.companyIdx"
+            :options="companyList"
+            :class="{'p-invalid': !formData.validate.companyIdx}"
+            optionLabel="company_name"
+            optionValue="company_idx"
+            class="w-full"
+            placeholder="기업선택"
+        ></Dropdown>
+        <label :class="{'p-error': !formData.validate.companyIdx}">기업</label>
       </div>
+      <small
+          v-if="!formData.validate.companyIdx"
+          :class="{'p-error': !formData.validate.companyIdx}"
+      >{{formData.validateMsg.companyIdx}}</small>
+    </div>
 
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <SelectButton
-              v-model="formData.itemType"
-              :options="itemTypeList"
-              class="grid col-4"
-              :class="{'p-invalid': !formData.validate.itemType}"
-              optionLabel="text"
-              optionValue="type"
-          ></SelectButton>
-          <label :class="{'p-error': !formData.validate.itemType}">상품타입</label>
-        </div>
-        <small
-            v-if="!formData.validate.itemType"
-            :class="{'p-error': !formData.validate.itemType}"
-        >{{formData.validateMsg.itemType}}</small>
+    <div class="field mt-5">
+      <div class="p-normal-label">
+        <SelectButton
+            v-model="formData.itemType"
+            :options="itemTypeList"
+            class="grid col-4"
+            :class="{'p-invalid': !formData.validate.itemType}"
+            optionLabel="text"
+            optionValue="type"
+        ></SelectButton>
+        <label :class="{'p-error': !formData.validate.itemType}">상품타입</label>
       </div>
+      <small
+          v-if="!formData.validate.itemType"
+          :class="{'p-error': !formData.validate.itemType}"
+      >{{formData.validateMsg.itemType}}</small>
+    </div>
 
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <InputText
-              v-model="formData.itemName"
-              class="w-full"
-              :class="{'p-invalid': !formData.validate.itemName}"
-              maxlength="50"
-          ></InputText>
-          <label :class="{'p-error': !formData.validate.itemName}">상품명</label>
-        </div>
-        <small
-            v-if="!formData.validate.itemName"
-            :class="{'p-error': !formData.validate.itemName}"
-        >{{formData.validateMsg.itemName}}</small>
+    <div class="field mt-5">
+      <div class="p-normal-label">
+        <InputText
+            v-model="formData.itemName"
+            class="w-full"
+            :class="{'p-invalid': !formData.validate.itemName}"
+            maxlength="50"
+        ></InputText>
+        <label :class="{'p-error': !formData.validate.itemName}">상품명</label>
       </div>
+      <small
+          v-if="!formData.validate.itemName"
+          :class="{'p-error': !formData.validate.itemName}"
+      >{{formData.validateMsg.itemName}}</small>
+    </div>
 
-      <div class="field w-full mt-5">
-        <div class="p-normal-label flex flex-wrap">
-          <div v-for="unit in unitList" class="field-checkbox mr-3 mb-3">
-            <Checkbox
-                :id="'unit_idx_' + unit.unit_idx"
-                v-model="formData.units"
-                :value="unit.unit_idx"
-                name="unit"
-                :class="{'p-invalid': !formData.validate.units}"
-            ></Checkbox>
-            <label :for="'unit_idx_' + unit.unit_idx" :class="{'p-error': !formData.validate.units}">{{unit.unit}}</label>
-          </div>
-          <label :class="{'p-error': !formData.validate.units}">단위</label>
+    <div class="field mt-5">
+      <div class="p-normal-label flex flex-wrap">
+        <div v-for="unit in unitList" class="field-checkbox mr-3 mb-3">
+          <Checkbox
+              :id="'unit_idx_' + unit.unit_idx"
+              v-model="formData.units"
+              :value="unit.unit_idx"
+              name="unit"
+              :class="{'p-invalid': !formData.validate.units}"
+          ></Checkbox>
+          <label :for="'unit_idx_' + unit.unit_idx" :class="{'p-error': !formData.validate.units}">{{unit.unit}}</label>
         </div>
-        <small
-            v-if="!formData.validate.units"
-            :class="{'p-error': !formData.validate.units}"
-        >{{formData.validateMsg.units}}</small>
+        <label :class="{'p-error': !formData.validate.units}">단위</label>
       </div>
+      <small
+          v-if="!formData.validate.units"
+          :class="{'p-error': !formData.validate.units}"
+      >{{formData.validateMsg.units}}</small>
+    </div>
 
-      <div class="field w-full mt-0 mb-0">
-        <Button type="submit" class="w-full" label="등록"></Button>
-      </div>
+    <div class="field mt-0 mb-0">
+      <Button type="submit" class="w-full" label="등록" icon="pi pi-check" ></Button>
     </div>
   </form>
 </template>

@@ -1,42 +1,40 @@
 <template>
   <form @submit.prevent="addUnit">
-    <div>
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <InputText
-              v-model="addForm.unit"
-              class="w-full"
-              :class="{'p-invalid': !addForm.validate.unit}"
-              maxlength="10"
-          ></InputText>
-          <label :class="{'p-error': !addForm.validate.unit}">단위</label>
-        </div>
-        <small
-            v-if="!addForm.validate.unit"
-            :class="{'p-error': !addForm.validate.unit}"
-        >{{addForm.validateMsg.unit}}</small>
+    <div class="field mt-5">
+      <div class="p-normal-label">
+        <InputText
+            v-model="addForm.unit"
+            class="w-full"
+            :class="{'p-invalid': !addForm.validate.unit}"
+            maxlength="10"
+        ></InputText>
+        <label :class="{'p-error': !addForm.validate.unit}">단위</label>
       </div>
+      <small
+          v-if="!addForm.validate.unit"
+          :class="{'p-error': !addForm.validate.unit}"
+      >{{addForm.validateMsg.unit}}</small>
+    </div>
 
-      <div class="field w-full mt-5">
-        <div class="p-normal-label">
-          <SelectButton
-              v-model="addForm.unitType"
-              :options="unitTypeList"
-              :class="{'p-invalid': !addForm.validate.unitType}"
-              optionLabel="label"
-              optionValue="value"
-          ></SelectButton>
-          <label :class="{'p-error': !addForm.validate.unitType}">타입</label>
-        </div>
-        <small
-            v-if="!addForm.validate.unitType"
-            :class="{'p-error': !addForm.validate.unitType}"
-        >{{addForm.validateMsg.unitType}}</small>
+    <div class="field mt-5">
+      <div class="p-normal-label">
+        <SelectButton
+            v-model="addForm.unitType"
+            :options="unitTypeList"
+            :class="{'p-invalid': !addForm.validate.unitType}"
+            optionLabel="label"
+            optionValue="value"
+        ></SelectButton>
+        <label :class="{'p-error': !addForm.validate.unitType}">타입</label>
       </div>
+      <small
+          v-if="!addForm.validate.unitType"
+          :class="{'p-error': !addForm.validate.unitType}"
+      >{{addForm.validateMsg.unitType}}</small>
+    </div>
 
-      <div class="field w-full mt-0 mb-0">
-        <Button type="submit" label="등록" class="w-full"></Button>
-      </div>
+    <div class="field mt-0 mb-0">
+      <Button type="submit" label="등록" class="w-full" icon="pi pi-check" ></Button>
     </div>
   </form>
 

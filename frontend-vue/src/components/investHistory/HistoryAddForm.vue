@@ -2,24 +2,31 @@
   <form id="addForm" @submit.prevent="submitAddHistory">
     <input type="hidden" name="item_idx" :value="currentItemIdx">
 
-    <h3>기록 추가</h3>
-
-    <div class="formgroup-inline mt-5" v-if="usableUnitList.length > 0">
-      <div class="field-radiobutton" v-for="unit in usableUnitList" :key="unit.unit_idx">
-        <RadioButton
-            v-bind:id="'unitIdx' + unit.unit_idx"
-            name="unit_idx"
-            :value="unit.unit_idx"
-            v-model="formData.unitIdx"
-            @change="changeUnit(unit)"
-        ></RadioButton>
-        <label :for="'unitIdx' + unit.unit_idx">{{ unit.unit }}</label>
+    <div class="field mt-5" v-if="usableUnitList.length > 0">
+      <div class="p-normal-label formgroup-inline">
+        <div class="field-radiobutton mb-3 md:mb-0" v-for="unit in usableUnitList" :key="unit.unit_idx">
+          <RadioButton
+              v-bind:id="'unitIdx' + unit.unit_idx"
+              name="unit_idx"
+              :value="unit.unit_idx"
+              v-model="formData.unitIdx"
+              @change="changeUnit(unit)"
+              :class="{'p-invalid': !formData.validate.unitIdx}"
+          ></RadioButton>
+          <label :for="'unitIdx' + unit.unit_idx" :class="{'p-error': !formData.validate.unitIdx}">{{ unit.unit }}</label>
+        </div>
+        <label :class="{'p-error': !formData.validate.unitIdx}">단위</label>
       </div>
+      <small
+          v-if="!formData.validate.unitIdx"
+          :class="{'p-error': !formData.validate.unitIdx}"
+      >{{formData.validateMsg.unitIdx}}</small>
     </div>
 
     <div class="field mt-5">
-      <div class="p-float-label">
+      <div class="p-normal-label">
         <Calendar
+            id="addFormHistoryDate"
             name="history_date"
             v-model="formData.historyDate"
             selectionMode="single"
@@ -27,82 +34,124 @@
             :showIcon="true"
             class="min-w-full md:min-w-min"
             @date-select="selectCalendar"
+            :class="{'p-invalid': !formData.validate.historyDate}"
         ></Calendar>
-        <label for="addFormHistoryDate">일자</label>
+        <label for="addFormHistoryDate" :class="{'p-error': !formData.validate.historyDate}">일자</label>
       </div>
+      <small
+          v-if="!formData.validate.historyDate"
+          :class="{'p-error': !formData.validate.historyDate}"
+      >{{formData.validateMsg.historyDate}}</small>
     </div>
 
     <div class="field mt-5">
-      <SelectButton
-          v-model="selectedHistoryType"
-          :options="historyTypes"
-          optionLabel="name"
-      >
-        <template #option="item">
-          <i v-if="item.option.icon" :class="item.option.icon"></i>
-          <span class="p-button-label">{{item.option.name}}</span>
-        </template>
-      </SelectButton>
+      <div class="p-normal-label w-full md:w-10">
+        <SelectButton
+            id="addFormHistoryType"
+            v-model="selectedHistoryType"
+            :options="historyTypes"
+            optionLabel="name"
+            class="grid col-2"
+            :class="{'p-invalid': !formData.validate.historyType}"
+        >
+          <template #option="item">
+            <i v-if="item.option.icon" :class="item.option.icon"></i>
+            <span class="p-button-label">{{item.option.name}}</span>
+          </template>
+        </SelectButton>
+        <label for="addFormHistoryType" :class="{'p-error': !formData.validate.historyType}">기록 타입</label>
+      </div>
+      <small
+          v-if="!formData.validate.historyType"
+          :class="{'p-error': !formData.validate.historyType}"
+      >{{formData.validateMsg.historyType}}</small>
     </div>
 
-    <div class="formgroup-inline mt-5" v-if="formData.historyType == 'inout'">
-      <div class="field-radiobutton">
-        <RadioButton
-            id="inoutTypePrincipal"
-            name="inout_type"
-            value="principal"
-            v-model="formData.inoutType"
-        ></RadioButton>
-        <label for="inoutTypePrincipal">원금</label>
+    <div class="field mt-5" v-if="formData.historyType == 'inout'">
+      <div class="p-normal-label formgroup-inline">
+        <div class="field-radiobutton mb-0">
+          <RadioButton
+              id="inoutTypePrincipal"
+              name="inout_type"
+              value="principal"
+              v-model="formData.inoutType"
+              :class="{'p-invalid': !formData.validate.inoutType}"
+          ></RadioButton>
+          <label for="inoutTypePrincipal">원금</label>
+        </div>
+        <div class="field-radiobutton mb-0">
+          <RadioButton
+              id="inoutTypeProceeds"
+              name="inout_type"
+              value="proceeds"
+              v-model="formData.inoutType"
+              :class="{'p-invalid': !formData.validate.inoutType}"
+          ></RadioButton>
+          <label for="inoutTypeProceeds">수익금재투자</label>
+        </div>
+        <label :class="{'p-error': !formData.validate.inoutType}">유입/유출 타입</label>
       </div>
-      <div class="field-radiobutton">
-        <RadioButton
-            id="inoutTypeProceeds"
-            name="inout_type"
-            value="proceeds"
-            v-model="formData.inoutType"
-        ></RadioButton>
-        <label for="inoutTypeProceeds">수익금재투자</label>
-      </div>
+      <small
+          v-if="!formData.validate.inoutType"
+          :class="{'p-error': !formData.validate.inoutType}"
+      >{{formData.validateMsg.inoutType}}</small>
     </div>
 
-    <div class="formgroup-inline mt-5" v-if="formData.historyType == 'revenue'">
-      <div class="field-radiobutton">
-        <RadioButton
-            id="revenueTypeInterest"
-            name="revenue_type"
-            value="interest"
-            v-model="formData.revenueType"
-        ></RadioButton>
-        <label for="revenueTypeInterest">이자</label>
+    <div class="field mt-5" v-if="formData.historyType == 'revenue'">
+      <div class="p-normal-label formgroup-inline">
+        <div class="field-radiobutton mb-0">
+          <RadioButton
+              id="revenueTypeInterest"
+              name="revenue_type"
+              value="interest"
+              v-model="formData.revenueType"
+              :class="{'p-invalid': !formData.validate.revenueType}"
+          ></RadioButton>
+          <label for="revenueTypeInterest">이자</label>
+        </div>
+        <div class="field-radiobutton mb-0">
+          <RadioButton
+              id="revenueTypeEval"
+              name="revenue_type"
+              value="eval"
+              v-model="formData.revenueType"
+              :class="{'p-invalid': !formData.validate.revenueType}"
+          ></RadioButton>
+          <label for="revenueTypeEval">평가금액</label>
+        </div>
+        <label :class="{'p-error': !formData.validate.inoutType}">평가 타입</label>
       </div>
-      <div class="field-radiobutton">
-        <RadioButton
-            id="revenueTypeEval"
-            name="revenue_type"
-            value="eval"
-            v-model="formData.revenueType"
-        ></RadioButton>
-        <label for="revenueTypeEval">평가금액</label>
-      </div>
+      <small
+          v-if="!formData.validate.revenueType"
+          :class="{'p-error': !formData.validate.revenueType}"
+      >{{formData.validateMsg.revenueType}}</small>
     </div>
 
     <div class="field mt-5">
-      <InputNumber
-          id="addFormInputVal"
-          name="val"
-          v-model="formData.val"
-          mode="decimal"
-          :format="true"
-          :suffix="` ${selectedUnit.unit != '' ? selectedUnit.unit : 'KRW'}`"
-          :minFractionDigits="selectedUnit.minPrecision"
-          :maxFractionDigits="selectedUnit.maxPrecision"
-          inputClass="text-right"
-      ></InputNumber>
+      <div class="p-normal-label">
+        <InputNumber
+            id="addFormInputVal"
+            name="val"
+            v-model="formData.val"
+            mode="decimal"
+            :format="true"
+            :suffix="` ${selectedUnit.unit != '' ? selectedUnit.unit : 'KRW'}`"
+            :minFractionDigits="selectedUnit.minPrecision"
+            :maxFractionDigits="selectedUnit.maxPrecision"
+            inputClass="text-right"
+            class="w-full md:w-6"
+            :class="{'p-invalid': !formData.validate.val}"
+        ></InputNumber>
+        <label for="addFormInputVal" :class="{'p-error': !formData.validate.val}">금액</label>
+      </div>
+      <small
+          v-if="!formData.validate.val"
+          :class="{'p-error': !formData.validate.val}"
+      >{{formData.validateMsg.val}}</small>
     </div>
 
     <div class="field mt-5">
-      <div class="p-float-label">
+      <div class="p-normal-label">
         <Textarea
             id="addFormMemo"
             name="memo"
@@ -110,20 +159,20 @@
             :autoResize="true"
             rows="4"
             cols="40"
+            class="w-full"
         ></Textarea>
         <label for="addFormMemo">메모</label>
       </div>
     </div>
 
-    <div class="field mt-5">
-      <Button
-          type="submit"
-          label="추가"
-          icon="pi pi-check"
-          class="p-button-raised min-w-full md:min-w-min"
-      ></Button>
+    <div class="field mt-0 mb-0">
+      <Button type="submit" label="등록" icon="pi pi-check" class="w-full"></Button>
     </div>
   </form>
+
+  <Toast
+      :breakpoints="{'960px': {width: '100%', right: '0', left: '0'}}"
+  ></Toast>
 </template>
 
 <script>
@@ -136,6 +185,8 @@ import SelectButton from 'primevue/selectbutton';
 import InputNumber from 'primevue/inputnumber';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
+import Toast from "primevue/toast";
+import {useToast} from "primevue/usetoast";
 
 import dayjs from "dayjs";
 
@@ -149,6 +200,7 @@ export default  {
     InputNumber,
     Textarea,
     Button,
+    Toast,
   },
   props: [
       'usableUnitList'
@@ -156,6 +208,9 @@ export default  {
   setup(props) {
     //set vars: vuex
     const store = useStore();
+
+    //set vars: toast
+    const toast = useToast();
 
     //set vars: api module
     const investApi = useInvestApi();
@@ -189,7 +244,23 @@ export default  {
       inoutType: '',
       revenueType: '',
       val: 0.0,
-      memo: ''
+      memo: '',
+      validate: {
+        unitIdx: true,
+        historyDate: true,
+        historyType: true,
+        inoutType: true,
+        revenueType: true,
+        val: true,
+      },
+      validateMsg: {
+        unitIdx: '',
+        historyDate: '',
+        historyType: '',
+        inoutType: '',
+        revenueType: '',
+        val: '',
+      }
     });
 
     /*
@@ -201,45 +272,60 @@ export default  {
 
     /**
      * 히스토리 추가
-     * @param $event
      * @return {Promise<boolean>}
      */
-    const submitAddHistory = async ($event) => {
-      const $form = $event.target;
+    const submitAddHistory = async () => {
+      let validateFlag = true;
 
       if (currentItemIdx.value == 0) {
-        alert('상품 선택');
-        return false;
+        toast.add({
+          severity: 'error',
+          summary: '상품을 선택해주세요.',
+          life: 3000,
+        });
+        validateFlag = false;
       }
       if (!formData.unitIdx) {
-        alert('단위 선택');
-        $form.elements.unit_idx.focus();
-        return false;
+        setFormValidate('unitIdx', false, '단위를 선택해주세요.');
+        validateFlag = false;
+      } else {
+        setFormValidate('unitIdx', true);
       }
       if (!formData.historyDate) {
-        alert('날짜 선택');
-        $form.elements.history_date.focus();
-        return false;
+        setFormValidate('historyDate', false, '날짜를 선택해주세요.');
+        validateFlag = false;
+      } else {
+        setFormValidate('historyDate', true);
       }
       if (!formData.historyType) {
-        alert('기록 타입 선택');
-        return false;
+        setFormValidate('historyType', false, '기록 타입을 선택해주세요.');
+        validateFlag = false;
+      } else {
+        setFormValidate('historyType', true);
       }
       if (formData.historyType == 'inout') {
         if (!formData.inoutType) {
-          alert('유입/유출 타입 선택');
-          return false;
+          setFormValidate('inoutType', false, '유입/유출 타입을 선택해주세요.');
+          validateFlag = false;
+        } else {
+          setFormValidate('inoutType', true);
         }
-      } else {
+      } else if(formData.historyType == 'revenue') {
         if (!formData.revenueType) {
-          alert('평가 타입 선택');
-          return false;
+          setFormValidate('revenueType', false, '평가 타입을 선택해주세요.');
+          validateFlag = false;
+        } else {
+          setFormValidate('revenueType', true);
         }
       }
       if (!formData.val) {
-        alert('금액 입력');
-        return false;
+        setFormValidate('val', false, '금액을 입력해주세요.');
+        validateFlag = false;
+      } else {
+        setFormValidate('val', true);
       }
+
+      if (!validateFlag) return false;
 
       try {
         await investApi.addHistory({
@@ -261,9 +347,19 @@ export default  {
         } else if (formData.historyType == 'revenue') {
           store.commit('investHistory/setUpdateRevenueListFlag', true);
         }
+
+        toast.add({
+          severity: 'success',
+          summary: '추가 완료',
+          life: 3000,
+        });
       } catch (err) {
-        alert(err);
-        return false;
+        toast.add({
+          severity: 'error',
+          summary: '추가 실패',
+          detail: err,
+          life: 3000,
+        });
       }
     }
 
@@ -286,6 +382,17 @@ export default  {
       selectedUnit.unit_type = unit.unit_type;
     }
 
+    /**
+     * form validate 설정
+     * @param {string} key
+     * @param {boolean} value
+     * @param {string} [msg]
+     */
+    const setFormValidate = (key, value, msg = '') => {
+      formData.validate[key] = value;
+      formData.validateMsg[key] = msg;
+    }
+
     return {
       currentItemIdx,
       selectedHistoryType,
@@ -301,8 +408,5 @@ export default  {
 </script>
 
 <style scoped>
-.p-selectbutton :deep(.p-button) {
-  width: 10rem;
-  margin:auto;
-}
+
 </style>

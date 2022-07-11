@@ -4,16 +4,45 @@
       :options="treeItemList"
       selectionMode="single"
       placeholder="상품선택"
-      class="mt-3 min-w-full md:min-w-min"
+      class="mt-3 min-w-full md:min-w-min md:w-2"
   >
     <template #value="{value: item, placeholder}">
       {{item.length ? item[0].selected_label : placeholder}}
     </template>
   </TreeSelect>
 
-  <HistoryAddForm
-      :usable-unit-list="itemUsableUnitList"
-  ></HistoryAddForm>
+  <div class="field w-full md:w-2 mt-3">
+    <Button type="button" @click="toggleFormOverlay($event, 'toggle')" label="기록 추가" icon="pi pi-plus-circle" class="w-full"></Button>
+  </div>
+
+  <Dialog
+      v-if="isMobile"
+      header="기록 추가"
+      position="center"
+      v-model:visible="formOverlayVisible"
+      :dismissableMask="true"
+      :closeOnEscape="true"
+      :modal="true"
+      :closable="true"
+      :breakpoints="{'960px': '75vw', '640px': '95vw'}"
+  >
+    <HistoryAddForm
+        :usable-unit-list="itemUsableUnitList"
+    ></HistoryAddForm>
+  </Dialog>
+  <OverlayPanel
+      v-else
+      ref="htmlFormOverlay"
+      :dismissable="true"
+      :showCloseIcon="true"
+      :breakpoints="{'960px': '75vw', '640px': '90vw'}"
+      class="w-4"
+      @hide="toggleFormOverlay($event, 'hide')"
+  >
+    <HistoryAddForm
+        :usable-unit-list="itemUsableUnitList"
+    ></HistoryAddForm>
+  </OverlayPanel>
 
   <div>
     <HistoryItemSummary
@@ -44,7 +73,7 @@
 </template>
 
 <script>
-import {onBeforeMount, reactive, ref, watch} from "vue";
+import {computed, onBeforeMount, reactive, ref, watch} from "vue";
 import {useStore} from 'vuex';
 
 import dayjs from 'dayjs';
@@ -56,6 +85,8 @@ import HistoryRevenueList from '@/components/investHistory/HistoryRevenueList.vu
 
 import TreeSelect from 'primevue/treeselect';
 import Button from 'primevue/button';
+import OverlayPanel from "primevue/overlaypanel";
+import Dialog from "primevue/dialog";
 
 import {useInvestApi} from '@/apis/investHistory';
 
@@ -67,10 +98,13 @@ export default {
     HistoryRevenueList,
     TreeSelect,
     Button,
+    OverlayPanel,
+    Dialog,
   },
   setup() {
     //set vars: vuex
     const store = useStore();
+    const isMobile = computed(() => store.getters['isMobile']);
 
     //set vars: api module
     const investApi = useInvestApi();
@@ -81,6 +115,8 @@ export default {
     const itemList = ref([]);
     const treeItemList = ref([]);
     const treeSelectedVal = ref();
+    const htmlFormOverlay = ref();
+    const formOverlayVisible = ref(false);
 
     /*
     lifecycle hook
@@ -166,12 +202,40 @@ export default {
       store.commit('investHistory/setUpdateRevenueListFlag', true);
     }
 
+    /**
+     * toggle add item form overlay
+     * @param $event
+     * @param {string} eventType
+     */
+    const toggleFormOverlay = ($event, eventType) => {
+      if (eventType == 'toggle') {
+        if (!isMobile.value) {
+          if (formOverlayVisible.value) {
+            htmlFormOverlay.value.hide($event);
+          } else {
+            htmlFormOverlay.value.show($event);
+          }
+        }
+        formOverlayVisible.value = !formOverlayVisible.value;
+      } else if (eventType == 'show') {
+        htmlFormOverlay.value.show($event);
+        formOverlayVisible.value = true;
+      } else if (eventType == 'hide') {
+        htmlFormOverlay.value.hide($event);
+        formOverlayVisible.value = false;
+      }
+    }
+
     return {
+      isMobile,
       itemUsableUnitList,
       thisMonth,
       treeItemList,
       treeSelectedVal,
+      formOverlayVisible,
+      htmlFormOverlay,
       changeHistoryListMonth,
+      toggleFormOverlay,
     }
   }
 }
