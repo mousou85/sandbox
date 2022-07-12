@@ -139,4 +139,9 @@ body {
 	.p-datatable.bordered td:last-child {
 		border-width: 0 0 3px 0 !important;
 	}
+
+	/*primevue calendar*/
+	.p-datepicker.p-datepicker-touch-ui {
+		min-width: 95vw;
+	}
 }

@@ -30,12 +30,13 @@
             name="history_date"
             v-model="formData.historyDate"
             selectionMode="single"
-            dateFormat="yy-mm-dd"
             :showIcon="true"
             class="min-w-full md:min-w-min"
             @date-select="selectCalendar"
             :class="{'p-invalid': !formData.validate.historyDate}"
-        ></Calendar>
+            :touchUI="isMobile"
+        >
+        </Calendar>
         <label for="addFormHistoryDate" :class="{'p-error': !formData.validate.historyDate}">일자</label>
       </div>
       <small
@@ -208,6 +209,7 @@ export default  {
   setup(props) {
     //set vars: vuex
     const store = useStore();
+    const isMobile = computed(() => store.getters['isMobile']);
 
     //set vars: toast
     const toast = useToast();
@@ -394,6 +396,7 @@ export default  {
     }
 
     return {
+      isMobile,
       currentItemIdx,
       selectedHistoryType,
       historyTypes,
