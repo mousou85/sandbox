@@ -147,7 +147,7 @@ module.exports = {
      * execute query
      * @param {Knex.QueryBuilder} queryBuilder
      * @param {Knex.Transaction} [trx]
-     * @return {Promise<number>|Promise<Array>} last insert id or affected rows
+     * @return {Promise<number>|Promise<Array>} last insert id(insert) or affected rows(update)
      */
     async execute(queryBuilder, trx) {
       try {

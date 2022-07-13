@@ -111,6 +111,15 @@ module.exports = (db) => {
         })
         .into('users_login_log')
       );
+      
+      //update last login time
+      if (logType == LOGIN_LOG_TYPES.LOGIN) {
+        await db.execute(db.queryBuilder()
+          .update({last_login_at: db.raw('NOW()')})
+          .from('users')
+          .where('user_idx', userIdx)
+        );
+      }
     },
     /**
      * update login fail count

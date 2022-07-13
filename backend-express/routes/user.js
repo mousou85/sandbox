@@ -51,8 +51,15 @@ module.exports = (db) => {
         throw new ResponseError('로그인 실패 횟수 초과');
       }
       
+      //set vars: password salt
+      const rsPasswordSalt = await db.queryRow(db.queryBuilder()
+        .select('salt')
+        .from('users_password_salt')
+        .where('user_idx', rsUser.user_idx)
+      );
+      
       //check password
-      if (!userHelper.verifyPassword(password, rsUser.password_salt, rsUser.password)) {
+      if (!userHelper.verifyPassword(password, rsPasswordSalt.salt, rsUser.password)) {
         await userHelper.updateLoginFailCount(rsUser.user_idx, rsUser.login_fail_count + 1);
         if (rsUser.login_fail_count >= 4) {
           await userHelper.insertLoginLog(rsUser.user_idx, LOGIN_LOG_TYPES.LOGIN_FAIL_EXCEED, ip, userAgent);

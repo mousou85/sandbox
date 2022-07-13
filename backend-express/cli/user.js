@@ -83,22 +83,32 @@ const userHelper = require('#helpers/userHelper')(db);
       const {userId, password, name} = await inquirer.prompt(promptInfo);
       
       //insert user data
+      const dbTrx = await db.transaction();
       try {
         //set vars: encrypt password
         const encryptPassword = userHelper.encryptPassword(password);
         
-        await db.execute(db.queryBuilder()
+        //insert user data
+        const userIdx = await db.execute(db.queryBuilder()
           .insert({
             id: userId,
             password: encryptPassword.hashedPassword,
-            password_salt: encryptPassword.salt,
             name: name,
           })
           .into('users')
-        );
+        , dbTrx);
+        
+        //insert password salt
+        await db.execute(db.queryBuilder()
+          .insert({user_idx: userIdx, salt: encryptPassword.salt})
+          .into('users_password_salt')
+        , dbTrx);
+        
+        await dbTrx.commit();
         
         console.info('사용자 추가 완료');
       } catch (err) {
+        await dbTrx.rollback();
         console.error(err);
       }
       
@@ -148,28 +158,50 @@ const userHelper = require('#helpers/userHelper')(db);
       const {userId, password} = await inquirer.prompt(promptInfo);
   
       //update password
+      const dbTrx = await db.transaction();
       try {
         //set vars: user data
         const userIdx = await db.queryScalar(db.queryBuilder()
           .select('user_idx')
           .from('users')
           .where('id', userId)
-        );
+        , dbTrx);
         
         //set vars: encrypt password
         const encryptPassword = userHelper.encryptPassword(password);
         
         //update password
         await db.execute(db.queryBuilder()
-          .update({
-            password: encryptPassword.hashedPassword,
-            password_salt: encryptPassword.salt
-          })
+          .update({password: encryptPassword.hashedPassword})
           .from('users')
-          .where('user_idx', userIdx));
+          .where('user_idx', userIdx)
+        , dbTrx);
+        
+        //check password salt record
+        const hasSaltData = await db.exists(db.queryBuilder()
+          .from('users_password_salt')
+          .where('user_idx', userIdx)
+        , dbTrx);
+        
+        //insert or update password salt
+        if (hasSaltData) {
+          await db.execute(db.queryBuilder()
+            .update({salt: encryptPassword.salt})
+            .from('users_password_salt')
+            .where('user_idx', userIdx)
+          , dbTrx);
+        } else {
+          await db.execute(db.queryBuilder()
+            .insert({user_idx: userIdx, salt: encryptPassword.salt})
+            .into('users_password_salt')
+          , dbTrx);
+        }
+        
+        await dbTrx.commit();
     
         console.info('비밀번호 변경 완료');
       } catch (err) {
+        await dbTrx.rollback();
         console.error(err);
       }
   
