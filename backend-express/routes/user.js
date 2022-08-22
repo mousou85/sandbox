@@ -89,6 +89,7 @@ module.exports = (db) => {
           user_idx: rsUser.user_idx,
           id: rsUser.id,
           name: rsUser.name,
+          use_otp: rsUser.use_otp,
         }
       }
       
