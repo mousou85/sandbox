@@ -31,5 +31,17 @@ export const useUserApi = () => {
         access_token: res.data.access_token,
       }
     },
+    /**
+     * request otp register code
+     * @returns {Promise<{qrcode: string, secret: string}>}
+     */
+    getOTPRegisterCode: async () => {
+      const res = await api.get('/user/otp/register');
+
+      return {
+        secret: res.data.secret,
+        qrcode: res.data.qrcode
+      }
+    }
   }
 }

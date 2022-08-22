@@ -6,7 +6,13 @@
     >
       <template #end>
         <template v-if="isLogin">
-          <Button label="LOGOUT" class="p-button-sm p-button-outlined p-button-rounded p-button-danger" icon="pi pi-sign-out" @click="logout"></Button>
+          <SplitButton
+              label="LOGOUT"
+              icon="pi pi-sign-out"
+              class="p-button-sm p-button-outlined p-button-rounded p-button-danger"
+              :model="logoutMenus"
+              @click="logout"
+          ></SplitButton>
         </template>
         <template v-else>
           <Button label="LOGIN" class="p-button-sm p-button-outlined p-button-rounded p-button-info" icon="pi pi-sign-in" @click="login"></Button>
@@ -29,7 +35,13 @@
     >
       <template #header>
         <template v-if="isLogin">
-          <Button label="LOGOUT" class="p-button-sm p-button-outlined p-button-rounded p-button-danger" icon="pi pi-sign-out" @click="logout"></Button>
+          <SplitButton
+              label="LOGOUT"
+              icon="pi pi-sign-out"
+              class="p-button-sm p-button-outlined p-button-rounded p-button-danger"
+              :model="logoutMenus"
+              @click="logout"
+          ></SplitButton>
         </template>
         <template v-else>
           <Button label="LOGIN" class="p-button-sm p-button-outlined p-button-rounded p-button-info" icon="pi pi-sign-in" @click="login"></Button>
@@ -41,6 +53,10 @@
       </PanelMenu>
     </Sidebar>
   </template>
+
+  <UserOtp
+    ref="otpDialog"
+  ></UserOtp>
 </template>
 
 <script>
@@ -51,14 +67,21 @@ import {useRouter} from 'vue-router';
 import Menubar from 'primevue/menubar';
 import Sidebar from 'primevue/sidebar';
 import PanelMenu from 'primevue/panelmenu';
+import Dialog from "primevue/dialog";
+import SplitButton from 'primevue/splitbutton';
 import Button from "primevue/button";
+
+import UserOtp from '@/components/user/Otp.vue';
 
 export default {
   components: {
     Menubar,
     Sidebar,
     PanelMenu,
+    Dialog,
+    SplitButton,
     Button,
+    UserOtp,
   },
   setup(props) {
     //set vars: vuex, router
@@ -69,6 +92,9 @@ export default {
     const SITE_NAME = computed(() => store.getters['getSiteName']);
     const isMobile = computed(() => store.getters["isMobile"]);
     const isLogin = computed(() => store.getters['user/isLogin']);
+
+    //set vars: otp dialog component
+    const otpDialog = ref(null);
 
     //set vars: sidebar flag
     const showSidebar = ref(false);
@@ -95,6 +121,19 @@ export default {
       }
     ]);
 
+    //set vars: logout button menu
+    const logoutMenus = ref([
+      /*{
+        label: 'Edit Info',
+      },*/
+      {
+        label: 'OTP Setting',
+        command: () => {
+          otpDialog.value.toggleDialog();
+        }
+      }
+    ]);
+
     /**
      * login event
      */
@@ -115,7 +154,9 @@ export default {
       isMobile,
       isLogin,
       menus,
+      logoutMenus,
       showSidebar,
+      otpDialog,
       login,
       logout,
     }
