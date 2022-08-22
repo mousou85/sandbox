@@ -1,7 +1,10 @@
 //load express module
 const express = require('express');
 const {asyncHandler, ResponseError, createResult, getRemoteAddress, getUserAgent} = require('#helpers/expressHelper');
+const authTokenMiddleWare = require('#middlewares/authenticateToken');
 const {TokenExpiredError} = require("jsonwebtoken");
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 
 /**
  * @param {Mysql} db
@@ -117,6 +120,58 @@ module.exports = (db) => {
         errorMessage = 'refresh token expired';
       }
       throw new ResponseError(errorMessage, errorCode);
+    }
+  }));
+  
+  /**
+   * OTP 등록
+   */
+  router.get('/otp/register', authTokenMiddleWare, asyncHandler(async (req, res) => {
+    try {
+      //set vars: request
+      const userIdx = req.user.user_idx;
+  
+      //set vars: user data
+      const rsUser = await db.queryRow(db.queryBuilder()
+        .select('*')
+        .from('users')
+        .where('user_idx', userIdx)
+      );
+      if (!rsUser) {
+        throw new ResponseError('잘못된 접근입니다.');
+      }
+      
+      //check already register otp
+      const hasOtp = await db.exists(db.queryBuilder()
+        .from('users_otp')
+        .where('user_idx', userIdx)
+      );
+      if (rsUser.use_otp == 'y' && hasOtp) {
+        throw new ResponseError('이미 OTP를 등록하셨습니다.');
+      }
+      
+      //set vars: otp secret, auth url, qr code
+      const otpSecret = speakeasy.generateSecret({
+        length: 32,
+        name: 'sand box',
+      });
+      const authURL = speakeasy.otpauthURL({
+        secret: otpSecret.base32,
+        issuer: 'sand box',
+        label: rsUser.id,
+        algorithm: 'sha512',
+        period: 30,
+        digits: 6,
+        encoding: 'base32',
+      });
+      const generateQRCode = await QRCode.toDataURL(authURL);
+      
+      res.json(createResult('success', {
+        secret: otpSecret.base32,
+        qrcode: generateQRCode,
+      }));
+    } catch (err) {
+      throw err;
     }
   }));
   

@@ -21,6 +21,8 @@
     "inquirer": "^8.2.4",
     "jsonwebtoken": "^8.5.1",
     "knex": "^1.0.4",
-    "mysql2": "^2.3.3"
+    "mysql2": "^2.3.3",
+    "qrcode": "^1.5.1",
+    "speakeasy": "^2.0.0"
   }
 }

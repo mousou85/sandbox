@@ -50,7 +50,7 @@ module.exports = {
    * 결과 json data 생성
    * @param {string} [resultMessage='success']
    * @param {*} [extraData]
-   * @return {{result: boolean, resultMessage: (*|string)}}
+   * @return {{result: boolean, resultMessage: string, [data]: *}}
    */
   createResult: (resultMessage, extraData) => {
     let jsonData = {
