@@ -32,16 +32,27 @@ export const useUserApi = () => {
       }
     },
     /**
-     * request otp register code
+     * request otp qr code
      * @returns {Promise<{qrcode: string, secret: string}>}
      */
-    getOTPRegisterCode: async () => {
+    getOtpQRCode: async () => {
       const res = await api.get('/user/otp/register');
 
       return {
         secret: res.data.secret,
         qrcode: res.data.qrcode
       }
+    },
+    /**
+     * register otp
+     * @param {string} secret
+     * @param {string} verifyToken
+     * @returns {Promise<boolean>}
+     */
+    setOtp: async (secret, verifyToken) => {
+      const res = await api.post('/user/otp/register', {secret: secret, authToken: verifyToken});
+      
+      return res.result;
     }
   }
 }

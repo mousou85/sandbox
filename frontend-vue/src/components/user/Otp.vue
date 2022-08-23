@@ -15,14 +15,25 @@
     <template v-else>
       <div class="max-w-max">아래 QR코드를 OTP 앱으로 촬영하여 등록하세요.</div>
       <img :src="qrCodeURL" alt="otp QR code" class="block mx-auto">
-      <InputText
+
+      <div class="p-normal-label">
+        <InputText
           v-model="inputVerifyToken"
           class="block w-full text-center text-xl"
           placeholder="OTP 코드 입력"
-      ></InputText>
+          maxlength="6"
+          :class="{'p-invalid': invalidVerifyToken}"
+        ></InputText>
+      </div>
+      <small
+        v-if="invalidVerifyToken"
+        :class="{'p-error': invalidVerifyToken}"
+      >{{invalidVerifyToken}}</small>
+
       <Button
         label="등록"
         class="block w-full mt-3"
+        @click="submitOTPRegister"
       ></Button>
     </template>
   </Dialog>
@@ -32,7 +43,7 @@
 </template>
 
 <script>
-import {computed, onMounted, ref} from "vue";
+import {computed, ref} from "vue";
 import {useStore} from 'vuex';
 
 import InputText from "primevue/inputtext";
@@ -65,9 +76,11 @@ export default {
     //set vars: dialog visible flag
     const dialogVisible = ref(false);
 
-    //set vars: otp element
+    //set vars: otp 관련
+    const otpSecret = ref('');
     const qrCodeURL = ref('');
     const inputVerifyToken = ref('');
+    const invalidVerifyToken = ref('');
 
     /**
      * OTP 설정 dialog 토글
@@ -82,8 +95,9 @@ export default {
           if (useOtp.value) {
 
           } else {
-            const otpRegister = await userApi.getOTPRegisterCode();
-            qrCodeURL.value = otpRegister.qrcode;
+            const rsOtpQRCode = await userApi.getOtpQRCode();
+            otpSecret.value = rsOtpQRCode.secret;
+            qrCodeURL.value = rsOtpQRCode.qrcode;
           }
 
           dialogVisible.value = !dialogVisible.value;
@@ -98,6 +112,28 @@ export default {
       }
     }
 
+    /**
+     * OTP 등록 submit
+     * @returns {Promise<boolean>}
+     */
+    const submitOTPRegister = async () => {
+      invalidVerifyToken.value = '';
+
+      if (!inputVerifyToken.value) {
+        invalidVerifyToken.value = 'OTP 코드를 입력해주세요.';
+        return false;
+      }
+
+      try {
+        await userApi.setOtp(otpSecret.value, inputVerifyToken.value);
+
+
+      } catch (err) {
+        invalidVerifyToken.value = err.message;
+        return false;
+      }
+    };
+
     //expose property
     expose({toggleDialog});
 
@@ -106,6 +142,8 @@ export default {
       dialogVisible,
       qrCodeURL,
       inputVerifyToken,
+      invalidVerifyToken,
+      submitOTPRegister,
     }
   }
 }

@@ -125,7 +125,7 @@ module.exports = (db) => {
   }));
   
   /**
-   * OTP 등록
+   * OTP 등록용 QR코드 반환
    */
   router.get('/otp/register', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
@@ -160,7 +160,6 @@ module.exports = (db) => {
         secret: otpSecret.base32,
         issuer: 'sand box',
         label: rsUser.id,
-        algorithm: 'sha512',
         period: 30,
         digits: 6,
         encoding: 'base32',
@@ -171,6 +170,74 @@ module.exports = (db) => {
         secret: otpSecret.base32,
         qrcode: generateQRCode,
       }));
+    } catch (err) {
+      throw err;
+    }
+  }));
+  
+  /**
+   * OTP 등록 처리
+   */
+  router.post('/otp/register', authTokenMiddleWare, asyncHandler(async (req, res) => {
+    try {
+      //set vars: user info
+      const userIdx = req.user.user_idx;
+      
+      //set vars: request
+      const secret = req.body.secret;
+      const authToken = req.body.authToken;
+      if (!secret || !authToken) {
+        throw new ResponseError('잘못된 접근입니다.');
+      }
+      
+      //otp 코드 인증 확인
+      const isVerified = speakeasy.totp.verify({
+        secret: secret,
+        token: authToken,
+        digits: 6,
+        encoding: 'base32',
+      });
+      
+      if (!isVerified) {
+        throw new ResponseError('OTP 코드가 잘못되었습니다.\n다시 입력해주세요.');
+      }
+      
+      //db에 OTP 정보 갱신
+      const dbTrx = await db.transaction();
+      try {
+        //set vars: OTP 정보 유무
+        const hasOtpData = await db.exists(db.queryBuilder()
+          .from('users_otp')
+          .where('user_idx', userIdx)
+        , dbTrx);
+        
+        //OTP 정보 유무에 따라 쿼리 분리
+        let dbBuilder;
+        if (hasOtpData) {
+          dbBuilder = db.queryBuilder()
+            .update({secret: secret})
+            .from('users_otp');
+        } else {
+          dbBuilder = db.queryBuilder()
+            .insert({user_idx: userIdx, secret: secret})
+            .into('users_otp');
+        }
+        await db.execute(dbBuilder, dbTrx);
+        
+        //users 테이블에 otp 사용여부 갱신
+        await db.execute(db.queryBuilder()
+          .update({use_otp: 'y'})
+          .from('users')
+          .where({user_idx: userIdx})
+        , dbTrx);
+        
+        await dbTrx.commit();
+      } catch (err) {
+        await dbTrx.rollback();
+        throw new ResponseError('OTP 등록중 문제가 발생했습니다.');
+      }
+      
+      res.json(createResult('success'));
     } catch (err) {
       throw err;
     }
