@@ -5,36 +5,56 @@
         <div class="text-center">{{SITE_NAME}}</div>
       </template>
       <template #content>
-        <form @submit.prevent="doLogin">
-          <div class="field mb-5">
-            <div class="p-float-label">
-              <InputText
-                  id="id"
-                  v-model="formData.id"
-                  class="w-full"
-                  maxlength="100"
-                  :class="{'p-invalid': !formData.validate.id.valid}"
-              ></InputText>
-              <label for="id">ID</label>
+        <template v-if="!otpFormFlag">
+          <form @submit.prevent="doLogin">
+            <div class="field mb-5">
+              <div class="p-float-label">
+                <InputText
+                    id="id"
+                    v-model="formData.id"
+                    class="w-full"
+                    maxlength="100"
+                    :class="{'p-invalid': !formData.validate.id.valid}"
+                ></InputText>
+                <label for="id">ID</label>
+              </div>
+              <small v-if="!formData.validate.id.valid" class="p-error">{{formData.validate.id.msg}}</small>
             </div>
-            <small v-if="!formData.validate.id.valid" class="p-error">{{formData.validate.id.msg}}</small>
-          </div>
-          <div class="field">
-            <div class="p-float-label">
-              <Password
-                  id="password"
-                  v-model="formData.password"
-                  class="w-full"
-                  inputClass="w-full"
-                  :class="{'p-invalid': !formData.validate.password.valid}"
-              ></Password>
-              <label for="password">PASSWORD</label>
+            <div class="field">
+              <div class="p-float-label">
+                <Password
+                    id="password"
+                    v-model="formData.password"
+                    class="w-full"
+                    inputClass="w-full"
+                    :class="{'p-invalid': !formData.validate.password.valid}"
+                ></Password>
+                <label for="password">PASSWORD</label>
+              </div>
+              <small v-if="!formData.validate.password.valid" class="p-error">{{formData.validate.password.msg}}</small>
             </div>
-            <small v-if="!formData.validate.password.valid" class="p-error">{{formData.validate.password.msg}}</small>
-          </div>
-          <Message v-if="messageBox.length > 0" severity="error" :closable="false">{{messageBox}}</Message>
-          <Button type="submit" label="LOGIN" icon="pi pi-check-circle" class="w-full"></Button>
-        </form>
+            <Message v-if="messageBox.length > 0" severity="error" :closable="false">{{messageBox}}</Message>
+            <Button type="submit" label="LOGIN" icon="pi pi-check-circle" class="w-full"></Button>
+          </form>
+        </template>
+        <template v-else>
+          <form>
+            <div class="field mb-5">Authentication code</div>
+            <div class="field mb-5">
+              <div class="p-normal-label">
+                <InputText
+                  v-model="otpFormData.verifyToken"
+                  class="w-full"
+                  maxlength="6"
+                  placeholder="OTP 코드 입력"
+                  :class="{'p-invalid': !otpFormData.valid}"
+                ></InputText>
+              </div>
+              <small v-if="!otpFormData.valid" class="p-error">{{otpFormData.errorMsg}}</small>
+            </div>
+            <Button type="submit" label="Verify" class="w-full"></Button>
+          </form>
+        </template>
       </template>
     </Card>
   </div>
@@ -88,6 +108,16 @@ export default {
       }
     });
 
+    //set vars: otp auth form flag
+    const otpFormFlag = ref(false);
+
+    //set vars: otp form
+    const otpFormData = reactive({
+      verifyToken: '',
+      valid: true,
+      errorMsg: '',
+    });
+
     //set vars: error message box
     const messageBox = ref('');
 
@@ -138,6 +168,8 @@ export default {
     return {
       SITE_NAME,
       formData,
+      otpFormFlag,
+      otpFormData,
       messageBox,
       doLogin,
     }

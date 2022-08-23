@@ -21,10 +21,7 @@
           @keyup.enter="OTPUnregister"
         ></InputText>
       </div>
-      <small
-        v-if="invalidVerifyToken"
-        :class="{'p-error': invalidVerifyToken}"
-      >{{invalidVerifyToken}}</small>
+      <small v-if="invalidVerifyToken" class="p-error">{{invalidVerifyToken}}</small>
 
       <Button
         label="해제하기"
@@ -46,10 +43,7 @@
           @keyup.enter="OTPRegister"
         ></InputText>
       </div>
-      <small
-        v-if="invalidVerifyToken"
-        :class="{'p-error': invalidVerifyToken}"
-      >{{invalidVerifyToken}}</small>
+      <small v-if="invalidVerifyToken" class="p-error">{{invalidVerifyToken}}</small>
 
       <Button
         label="등록"
