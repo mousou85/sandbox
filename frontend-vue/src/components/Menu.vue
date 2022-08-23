@@ -123,13 +123,10 @@ export default {
 
     //set vars: logout button menu
     const logoutMenus = ref([
-      /*{
-        label: 'Edit Info',
-      },*/
       {
         label: 'OTP Setting',
         command: () => {
-          otpDialog.value.toggleDialog();
+          otpDialog.value.toggleDialog('show');
         }
       }
     ]);

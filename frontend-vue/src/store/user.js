@@ -2,41 +2,60 @@ export const user = {
   namespaced: true,
   state: {
     isLoggedIn: false,
-    data: null,
-    accessToken: '',
-    refreshToken: '',
+    data: {
+      user_idx: null,
+      id: null,
+      name: null,
+      use_otp: false
+    },
+    accessToken: null,
+    refreshToken: null,
   },
   mutations: {
     /**
-     * set login info
+     * set login flag
      * @param state
-     * @param {{data: {}, accessToken: string, refreshToken: string}} value
      */
-    doLogin(state, value) {
+    doLogin(state) {
       state.isLoggedIn = true;
-      state.data = value.data;
-      state.accessToken = value.accessToken;
-      state.refreshToken = value.refreshToken;
     },
     /**
-     * logout
+     * set logout flag
      * @param state
      */
     doLogout(state) {
       state.isLoggedIn = false;
-      state.data = null;
-      state.accessToken = '';
-      state.refreshToken = '';
+    },
+    /**
+     * set user info
+     * @param state
+     * @param {{user_idx: (number|null), id: (string|null), name: (string|null), use_otp: boolean}} value
+     */
+    setUserInfo(state, value) {
+      state.data = Object.assign(
+        {},
+        state.data,
+        {
+          user_idx: value.user_idx,
+          id: value.id,
+          name: value.name,
+          use_otp: value.use_otp
+        }
+      );
     },
     /**
      * set access token
      * @param state
-     * @param {string} accessToken
+     * @param {string|null} accessToken
      */
     setAccessToken(state, accessToken) {
       state.accessToken = accessToken;
     },
-    
+    /**
+     * set refresh token
+     * @param state
+     * @param {string|null} refreshToken
+     */
     setRefreshToken(state, refreshToken) {
       state.refreshToken = refreshToken;
     }
@@ -53,7 +72,7 @@ export const user = {
     /**
      * get user info
      * @param state
-     * @returns {{}}
+     * @returns {{user_idx: (number|null), id: (string|null), name: (string|null), use_otp: boolean}}
      */
     getUserInfo(state) {
       return state.data;
@@ -61,7 +80,7 @@ export const user = {
     /**
      * get access token
      * @param state
-     * @returns {string}
+     * @returns {string|null}
      */
     getAccessToken(state) {
       return state.accessToken;
@@ -69,7 +88,7 @@ export const user = {
     /**
      * get refresh token
      * @param state
-     * @returns {string}
+     * @returns {string|null}
      */
     getRefreshToken(state) {
       return state.refreshToken;
@@ -79,13 +98,31 @@ export const user = {
     /**
      * 로그인 처리
      * @param commit
-     * @param {{data: {}, accessToken: string, refreshToken: string}} value
+     * @param {{
+     *  data: {
+     *    user_idx: (number|null),
+     *    id: (string|null),
+     *    name: (string|null),
+     *    use_otp: boolean
+     *  },
+     *  accessToken: string,
+     *  refreshToken: string
+     * }} value
      * @returns {Promise<void>}
      */
-    async login({commit}, value) {
+    login({commit}, value) {
       try {
-        commit('doLogin', {data: value.data, accessToken: value.accessToken, refreshToken: value.refreshToken});
+        commit('setUserInfo', {
+          user_idx: value.data.user_idx,
+          id: value.data.id,
+          name: value.data.name,
+          use_otp: value.data.use_otp
+        });
+        commit('setAccessToken', value.accessToken);
+        commit('setRefreshToken', value.refreshToken);
+        commit('doLogin');
       } catch (err) {
+        console.log(err);
         throw err;
       }
     },
@@ -94,7 +131,23 @@ export const user = {
      * @param commit
      */
     logout({commit}) {
+      commit('setUserInfo', {user_idx: null, id: null, name: null, use_otp: false});
+      commit('setAccessToken', null);
+      commit('setRefreshToken', null);
       commit('doLogout');
+    },
+    /**
+     * set user info
+     * @param commit
+     * @param {{user_idx: (number|null), id: (string|null), name: (string|null), use_otp: boolean}} userInfo
+     */
+    userInfo({commit}, userInfo) {
+      commit('setUserInfo', {
+        user_idx: userInfo.user_idx,
+        id: userInfo.id,
+        name: userInfo.name,
+        use_otp: userInfo.use_otp
+      });
     },
     /**
      * set access token

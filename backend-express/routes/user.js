@@ -100,6 +100,34 @@ module.exports = (db) => {
   }));
   
   /**
+   * 회원 정보 반환
+   */
+  router.get('/info', authTokenMiddleWare, asyncHandler(async (req, res) => {
+    //set vars: user idx
+    const userIdx = req.user.user_idx;
+    if (!userIdx) {
+      throw new ResponseError('잘못된 접근입니다.');
+    }
+    
+    //set vars: user data
+    const rsUser = await db.queryRow(db.queryBuilder()
+      .select(['user_idx', 'id', 'name', 'use_otp'])
+      .from('users')
+      .where('user_idx', userIdx)
+    );
+    if (!rsUser) {
+      throw new ResponseError('회원이 존재하지 않습니다.');
+    }
+  
+    res.json(createResult('success', {
+      user_idx: rsUser.user_idx,
+      id: rsUser.id,
+      name: rsUser.name,
+      use_otp: rsUser.use_otp == 'y'
+    }));
+  }));
+  
+  /**
    * 액세스 토큰 재발급
    */
   router.post('/refreshToken', asyncHandler(async (req, res) => {
@@ -180,9 +208,6 @@ module.exports = (db) => {
    */
   router.post('/otp/register', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
-      //set vars: user info
-      const userIdx = req.user.user_idx;
-      
       //set vars: request
       const secret = req.body.secret;
       const authToken = req.body.authToken;
@@ -190,6 +215,26 @@ module.exports = (db) => {
         throw new ResponseError('잘못된 접근입니다.');
       }
       
+      //set vars: user info
+      const userIdx = req.user.user_idx;
+      const rsUser = await db.queryRow(db.queryBuilder()
+        .select('*')
+        .from('users')
+        .where('user_idx', userIdx)
+      );
+      if (!rsUser) {
+        throw new ResponseError('잘못된 접근입니다.');
+      }
+      
+      //check already register otp
+      const hasOtp = await db.exists(db.queryBuilder()
+        .from('users_otp')
+        .where('user_idx', userIdx)
+      );
+      if (rsUser.use_otp == 'y' && hasOtp) {
+        throw new ResponseError('이미 OTP를 등록하셨습니다.');
+      }
+  
       //otp 코드 인증 확인
       const isVerified = speakeasy.totp.verify({
         secret: secret,
@@ -235,6 +280,73 @@ module.exports = (db) => {
       } catch (err) {
         await dbTrx.rollback();
         throw new ResponseError('OTP 등록중 문제가 발생했습니다.');
+      }
+      
+      res.json(createResult('success'));
+    } catch (err) {
+      throw err;
+    }
+  }));
+  
+  /**
+   * OTP 해제 처리
+   */
+  router.post('/otp/unregister', authTokenMiddleWare, asyncHandler(async (req, res) => {
+    try {
+      //set vars: request
+      const authToken = req.body.authToken;
+      if (!authToken) {
+        throw new ResponseError('잘못된 접근입니다.');
+      }
+      
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      const rsUser = await db.queryRow(db.queryBuilder()
+        .select(['u.use_otp', 'uo.secret'])
+        .from({u: 'users'})
+        .join({uo: 'users_otp'}, 'u.user_idx', 'uo.user_idx')
+        .where('u.user_idx', userIdx)
+      );
+      if (!rsUser) {
+        throw new ResponseError('회원정보가 존재하지 않습니다.');
+      }
+      if (rsUser.use_otp != 'y') {
+        throw new ResponseError('OTP를 사용하고 있지 않습니다.');
+      }
+      
+      //otp 코드 인증 확인
+      const isVerified = speakeasy.totp.verify({
+        secret: rsUser.secret,
+        token: authToken,
+        digits: 6,
+        encoding: 'base32',
+      });
+
+      if (!isVerified) {
+        throw new ResponseError('OTP 코드가 잘못되었습니다.\n다시 입력해주세요.');
+      }
+
+      //db에 OTP 정보 갱신
+      const dbTrx = await db.transaction();
+      try {
+        //OTP 정보 삭제
+        await db.execute(db.queryBuilder()
+          .delete()
+          .from('users_otp')
+          .where('user_idx', userIdx)
+        , dbTrx);
+
+        //users 테이블에 otp 사용여부 갱신
+        await db.execute(db.queryBuilder()
+          .update({use_otp: 'n'})
+          .from('users')
+          .where({user_idx: userIdx})
+        , dbTrx);
+
+        await dbTrx.commit();
+      } catch (err) {
+        await dbTrx.rollback();
+        throw new ResponseError('OTP 해제중 문제가 발생했습니다.');
       }
       
       res.json(createResult('success'));

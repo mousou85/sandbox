@@ -118,7 +118,16 @@ export default {
 
       try {
         const res = await userApi.login(formData.id, formData.password);
-        await store.dispatch('user/login', {data: res.data, accessToken: res.access_token, refreshToken: res.refresh_token});
+        await store.dispatch('user/login', {
+          data: {
+            user_idx: res.data.user_idx,
+            id: res.data.id,
+            name: res.data.name,
+            use_otp: res.data.use_otp
+          },
+          accessToken: res.access_token,
+          refreshToken: res.refresh_token
+        });
 
         await router.push({name: 'index'});
       } catch (err) {
