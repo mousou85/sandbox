@@ -5,7 +5,7 @@ export const useUserApi = () => {
   
   return {
     /**
-     * get login
+     * do login
      * @param {string} userId
      * @param {string} userPassword
      * @return {Promise<{
@@ -17,11 +17,43 @@ export const useUserApi = () => {
      *    name: string,
      *    use_otp: boolean
      *  }
-     * }>}
+     * }|{needOTPVerify: boolean}>}
      */
     login: async (userId, userPassword) => {
-      const res = await api.post('/user/login', {id: userId, password: userPassword});
-  
+      const res = await api.post('/user/login', {mode: 'auth', id: userId, password: userPassword});
+      if (res.data.hasOwnProperty('needOTPVerify')) {
+        return {needOTPVerify: res.data.needOTPVerify};
+      } else {
+        return {
+          access_token: res.data.access_token,
+          refresh_token: res.data.refresh_token,
+          data: res.data.data,
+        };
+      }
+    },
+    /**
+     * do login otp verify
+     * @param {string} userId
+     * @param {string} userPassword
+     * @param {string|number} authToken
+     * @returns {Promise<{
+     *  access_token: string,
+     *  refresh_token: string,
+     *  data: {
+     *    user_idx: number,
+     *    id: string,
+     *    name: string,
+     *    use_otp: boolean
+     *  }
+     * }>}
+     */
+    loginVerifyOTP: async (userId, userPassword, authToken) => {
+      const res = await api.post('/user/login', {
+        mode: 'verifyOTP',
+        id: userId,
+        password: userPassword,
+        authToken: authToken
+      });
       return {
         access_token: res.data.access_token,
         refresh_token: res.data.refresh_token,

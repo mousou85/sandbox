@@ -1,6 +1,8 @@
 require('dotenv').config();
 const crypto = require('crypto');
 const jwt = require("jsonwebtoken");
+const speakeasy = require("speakeasy");
+const QRCode = require("qrcode");
 
 /**
  * @param {Mysql} [db]
@@ -92,6 +94,47 @@ module.exports = (db) => {
       } catch (err) {
         throw err;
       }
+    },
+    /**
+     * create otp secret
+     * @param {string} userId
+     * @returns {Promise<{otpAuthUrl: string, qrCode: string, secret: String}>}
+     */
+    createOTPSecret: async (userId) => {
+      //set vars: otp secret, auth url, qr code
+      const otpSecret = speakeasy.generateSecret({
+        length: 32,
+        name: 'sand box',
+      });
+      const authURL = speakeasy.otpauthURL({
+        secret: otpSecret.base32,
+        issuer: 'sand box',
+        label: userId,
+        period: 30,
+        digits: 6,
+        encoding: 'base32',
+      });
+      const generateQRCode = await QRCode.toDataURL(authURL);
+      
+      return {
+        secret: otpSecret.base32,
+        otpAuthUrl: authURL,
+        qrCode: generateQRCode || '',
+      };
+    },
+    /**
+     * verify otp token
+     * @param {string} secret
+     * @param {string} token
+     * @returns {boolean}
+     */
+    verifyOTPToken: (secret, token) => {
+      return  speakeasy.totp.verify({
+        secret: secret,
+        token: token,
+        digits: 6,
+        encoding: 'base32',
+      });
     },
     /**
      * insert user login log

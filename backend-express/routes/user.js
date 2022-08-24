@@ -3,8 +3,6 @@ const express = require('express');
 const {asyncHandler, ResponseError, createResult, getRemoteAddress, getUserAgent} = require('#helpers/expressHelper');
 const authTokenMiddleWare = require('#middlewares/authenticateToken');
 const {TokenExpiredError} = require("jsonwebtoken");
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
 
 /**
  * @param {Mysql} db
@@ -16,7 +14,7 @@ module.exports = (db) => {
   
   //set vars: express router
   const router = express.Router();
-  
+
   /**
    * 로그인 처리
    */
@@ -26,8 +24,10 @@ module.exports = (db) => {
       const LOGIN_LOG_TYPES = userHelper.LOGIN_LOG_TYPES;
       
       //set vars: request
+      const mode = req.body.mode || 'auth'; //auth, verifyOTP
       const userId = req.body.id;
       const password = req.body.password;
+      const otpAuthToken = req.body.authToken;
       
       //set vars: ip, user agent
       const ip = getRemoteAddress(req);
@@ -73,24 +73,71 @@ module.exports = (db) => {
         }
       }
       
-      //set vars: access token, refresh token
-      const payload = {user_idx: rsUser.user_idx, id: rsUser.id};
-      const accessToken = userHelper.createAccessToken(payload);
-      const refreshToken = userHelper.createRefreshToken(payload);
-      
-      //insert login log
-      await userHelper.insertLoginLog(rsUser.user_idx, LOGIN_LOG_TYPES.LOGIN, ip, userAgent);
-      
-      //set vars: response data
-      const responseData = {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        data: {
-          user_idx: rsUser.user_idx,
-          id: rsUser.id,
-          name: rsUser.name,
-          use_otp: rsUser.use_otp == 'y',
-        }
+      /*
+       * mode에 따라 처리 분리
+       */
+      let responseData = {};
+      switch (mode) {
+        case 'auth':
+          if (rsUser.use_otp == 'y') {
+            responseData.needOTPVerify = true;
+          } else {
+            //set vars: access token, refresh token
+            const payload = {user_idx: rsUser.user_idx, id: rsUser.id};
+            const accessToken = userHelper.createAccessToken(payload);
+            const refreshToken = userHelper.createRefreshToken(payload);
+  
+            //insert login log
+            await userHelper.insertLoginLog(rsUser.user_idx, LOGIN_LOG_TYPES.LOGIN, ip, userAgent);
+            
+            responseData.access_token = accessToken;
+            responseData.refresh_token = refreshToken;
+            responseData.data = {
+              user_idx: rsUser.user_idx,
+              id: rsUser.id,
+              name: rsUser.name,
+              use_otp: rsUser.use_otp == 'y',
+            };
+          }
+          break;
+        case 'verifyOTP':
+          if (!otpAuthToken) {
+            throw new ResponseError('OTP 코드를 입력해주세요.');
+          }
+          
+          const otpSecret = await db.queryScalar(db.queryBuilder()
+            .select('secret')
+            .from('users_otp')
+            .where('user_idx', rsUser.user_idx)
+          );
+          if (!otpSecret) {
+            throw new ResponseError('OTP 등록 정보를 찾지 못했습니다.');
+          }
+          
+          const isOTPVerified = userHelper.verifyOTPToken(otpSecret, otpAuthToken);
+          if (!isOTPVerified) {
+            throw new ResponseError('OTP 코드가 잘못되었습니다.\n다시 입력해주세요.');
+          }
+  
+          //set vars: access token, refresh token
+          const payload = {user_idx: rsUser.user_idx, id: rsUser.id};
+          const accessToken = userHelper.createAccessToken(payload);
+          const refreshToken = userHelper.createRefreshToken(payload);
+  
+          //insert login log
+          await userHelper.insertLoginLog(rsUser.user_idx, LOGIN_LOG_TYPES.LOGIN, ip, userAgent);
+  
+          responseData.access_token = accessToken;
+          responseData.refresh_token = refreshToken;
+          responseData.data = {
+            user_idx: rsUser.user_idx,
+            id: rsUser.id,
+            name: rsUser.name,
+            use_otp: rsUser.use_otp == 'y',
+          };
+          break;
+        default:
+          throw new ResponseError('잘못된 접근입니다.');
       }
       
       res.json(createResult('success', responseData));
@@ -180,23 +227,11 @@ module.exports = (db) => {
       }
       
       //set vars: otp secret, auth url, qr code
-      const otpSecret = speakeasy.generateSecret({
-        length: 32,
-        name: 'sand box',
-      });
-      const authURL = speakeasy.otpauthURL({
-        secret: otpSecret.base32,
-        issuer: 'sand box',
-        label: rsUser.id,
-        period: 30,
-        digits: 6,
-        encoding: 'base32',
-      });
-      const generateQRCode = await QRCode.toDataURL(authURL);
+      const otpSecret = await userHelper.createOTPSecret(rsUser.id);
       
       res.json(createResult('success', {
-        secret: otpSecret.base32,
-        qrcode: generateQRCode,
+        secret: otpSecret.secret,
+        qrcode: otpSecret.qrCode,
       }));
     } catch (err) {
       throw err;
@@ -236,13 +271,7 @@ module.exports = (db) => {
       }
   
       //otp 코드 인증 확인
-      const isVerified = speakeasy.totp.verify({
-        secret: secret,
-        token: authToken,
-        digits: 6,
-        encoding: 'base32',
-      });
-      
+      const isVerified = userHelper.verifyOTPToken(secret, authToken);
       if (!isVerified) {
         throw new ResponseError('OTP 코드가 잘못되었습니다.\n다시 입력해주세요.');
       }
@@ -315,13 +344,7 @@ module.exports = (db) => {
       }
       
       //otp 코드 인증 확인
-      const isVerified = speakeasy.totp.verify({
-        secret: rsUser.secret,
-        token: authToken,
-        digits: 6,
-        encoding: 'base32',
-      });
-
+      const isVerified = userHelper.verifyOTPToken(rsUser.secret, authToken);
       if (!isVerified) {
         throw new ResponseError('OTP 코드가 잘못되었습니다.\n다시 입력해주세요.');
       }

@@ -1,11 +1,11 @@
 <template>
   <div class="w-full h-full flex justify-content-center align-items-center">
-    <Card class="w-11 md:w-4">
-      <template #title>
-        <div class="text-center">{{SITE_NAME}}</div>
-      </template>
-      <template #content>
-        <template v-if="!otpFormFlag">
+    <template v-if="!otpFormFlag">
+      <Card class="w-11 md:w-4">
+        <template #title>
+          <div class="text-center">{{SITE_NAME}}</div>
+        </template>
+        <template #content>
           <form @submit.prevent="doLogin">
             <div class="field mb-5">
               <div class="p-float-label">
@@ -37,26 +37,34 @@
             <Button type="submit" label="LOGIN" icon="pi pi-check-circle" class="w-full"></Button>
           </form>
         </template>
-        <template v-else>
-          <form>
-            <div class="field mb-5">Authentication code</div>
-            <div class="field mb-5">
+      </Card>
+    </template>
+    <template v-else>
+      <Card class="w-11 md:w-3">
+        <template #title>
+          <div class="text-center">{{SITE_NAME}}</div>
+        </template>
+        <template #content>
+          <form @submit.prevent="verifyOTP">
+            <div class="field mb-3">Authentication code</div>
+            <div class="field mb-3">
               <div class="p-normal-label">
                 <InputText
-                  v-model="otpFormData.verifyToken"
-                  class="w-full"
-                  maxlength="6"
-                  placeholder="OTP 코드 입력"
-                  :class="{'p-invalid': !otpFormData.valid}"
+                    v-model="formData.authToken"
+                    class="w-full text-xl text-center"
+                    maxlength="6"
+                    placeholder="OTP 코드 입력"
+                    :class="{'p-invalid': !formData.validate.authToken.valid}"
                 ></InputText>
               </div>
-              <small v-if="!otpFormData.valid" class="p-error">{{otpFormData.errorMsg}}</small>
+              <small v-if="!formData.validate.authToken.valid" class="p-error">{{formData.validate.authToken.msg}}</small>
             </div>
+            <Message v-if="messageBox.length > 0" id="otpMessage" severity="error" :closable="false" class="text-xs">{{messageBox}}</Message>
             <Button type="submit" label="Verify" class="w-full"></Button>
           </form>
         </template>
-      </template>
-    </Card>
+      </Card>
+    </template>
   </div>
 </template>
 
@@ -96,12 +104,17 @@ export default {
     const formData = reactive({
       id: '',
       password: '',
+      authToken: '',
       validate: {
         id: {
           valid: true,
           msg: '',
         },
         password: {
+          valid: true,
+          msg: '',
+        },
+        authToken: {
           valid: true,
           msg: '',
         }
@@ -111,13 +124,6 @@ export default {
     //set vars: otp auth form flag
     const otpFormFlag = ref(false);
 
-    //set vars: otp form
-    const otpFormData = reactive({
-      verifyToken: '',
-      valid: true,
-      errorMsg: '',
-    });
-
     //set vars: error message box
     const messageBox = ref('');
 
@@ -126,6 +132,7 @@ export default {
      */
     const doLogin = async () => {
       let isValid = true;
+      messageBox.value = '';
 
       if (!formData.id) {
         isValid = false;
@@ -148,6 +155,48 @@ export default {
 
       try {
         const res = await userApi.login(formData.id, formData.password);
+        if (res.hasOwnProperty('needOTPVerify') && res.needOTPVerify) {
+          otpFormFlag.value = true;
+        } else {
+          await store.dispatch('user/login', {
+            data: {
+              user_idx: res.data.user_idx,
+              id: res.data.id,
+              name: res.data.name,
+              use_otp: res.data.use_otp
+            },
+            accessToken: res.access_token,
+            refreshToken: res.refresh_token
+          });
+
+          await router.push({name: 'index'});
+        }
+      } catch (err) {
+        messageBox.value = err.toString();
+      }
+    }
+
+    /**
+     * verify otp code
+     */
+    const verifyOTP = async () => {
+      let isValid = true;
+      messageBox.value = '';
+
+      if (!formData.authToken) {
+        isValid = false;
+        formData.validate.authToken.valid = false;
+        formData.validate.authToken.msg = 'OTP코드를 입력해주세요.';
+      } else {
+        formData.validate.authToken.valid = true;
+        formData.validate.authToken.msg = '';
+      }
+
+      if (!isValid) return;
+
+      try {
+        const res = await userApi.loginVerifyOTP(formData.id, formData.password, formData.authToken);
+
         await store.dispatch('user/login', {
           data: {
             user_idx: res.data.user_idx,
@@ -163,15 +212,15 @@ export default {
       } catch (err) {
         messageBox.value = err.toString();
       }
-    }
+    };
 
     return {
       SITE_NAME,
       formData,
       otpFormFlag,
-      otpFormData,
       messageBox,
       doLogin,
+      verifyOTP,
     }
   }
 }
@@ -184,5 +233,8 @@ export default {
 }
 .p-card :deep(.p-card-footer) {
   padding: 0;
+}
+.p-message#otpMessage :deep(.p-message-wrapper) {
+  padding: 0.8rem 1rem;
 }
 </style>
