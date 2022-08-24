@@ -1,29 +1,24 @@
 # frontend-vue
 
-This template should help get you started developing with Vue 3 in Vite.
-
-## Recommended IDE Setup
-
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.vscode-typescript-vue-plugin).
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
+### 애플리케이션 셋업
+```shell
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### 환경변수(.env) 설정
+`.env.sample`을 `.env`로 복사하여 사용.
+프로덕션 빌드는 `.env`가 변경된 경우 다시 실행해야함.
+```dotenv
+VITE_SITE_NAME='사이트 이름'
+VITE_API_BASE_URL='백엔드 API 주소(default: http://localhost:5000)'
+```
 
-```sh
+### 개발 및 테스트 실행
+```shell
 npm run dev
 ```
 
-### Compile and Minify for Production
-
-```sh
+### 프로덕션 빌드
+```shell
 npm run build
 ```

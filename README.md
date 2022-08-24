@@ -11,7 +11,7 @@
 - `frontend-vue`: vuejs3로 구현한 프론트엔드
 ### 애플리케이션 기능
 - 사용자 관련
-  - 사용자 추가
+  - 사용자 관리
   - 로그인
 - 재테크 가계부
   - 기업 관리
@@ -27,7 +27,7 @@
       - :white_check_mark: mysql2, knex 패키지 적용
       - 다른 모듈로 전환 검토
     - :white_check_mark: PM2 설정 추가
-    - :white_check_mark: JSON web token 인증 적용
+    - :white_check_mark: JWT 인증 적용
     - DB 테이블 생성 CLI 추가
   - 유저/로그인
     - 로그인
@@ -57,7 +57,7 @@
 - frontend-vue
   - 공통
     - :white_check_mark: vuex 적용
-    - :white_check_mark: JSON web token 인증 적용
+    - :white_check_mark: JWT 인증 적용
     - :white_check_mark: primevue 적용
     - :white_check_mark: 데스크톱/모바일 레이아웃 반응형으로 구성
   - 로그인
