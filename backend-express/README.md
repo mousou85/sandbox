@@ -30,13 +30,13 @@ pm2 전역 설치
 ```shell
 npm i -g pm2
 ```
-`ecosystem.config.js`를 입맛에 맞게 수정.  
+`ecosystem.config.js.sample`을 `ecosystem.config.js`로 복사한 뒤 입맛에 맞게 수정.  
 `script`항목은 `main.js`의 절대경로를 입력(ex: `/www/backend-express/main.js`)
 
 pm2 실행
 ```shell
 # 설정 파일로 실행
-pm2 start ecosystem.config.js
+pm2 start ecosystem.config.js.sample
 
 # 실행 상태 확인
 pm2 list
