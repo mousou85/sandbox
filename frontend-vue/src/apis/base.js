@@ -9,8 +9,7 @@ import * as _ from 'lodash';
  * api base url
  * @type {string}
  */
-const baseURL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000';
-console.log(baseURL);
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export const apiBase = () => {
   //set vars: vuex, router
