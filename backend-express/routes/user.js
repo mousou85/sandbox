@@ -83,7 +83,7 @@ module.exports = (db) => {
             responseData.needOTPVerify = true;
           } else {
             //set vars: access token, refresh token
-            const payload = {id: rsUser.id};
+            const payload = {user_idx: rsUser.user_idx};
             const accessToken = userHelper.createAccessToken(payload);
             const refreshToken = userHelper.createRefreshToken(payload);
   
@@ -149,8 +149,8 @@ module.exports = (db) => {
    */
   router.get('/info', authTokenMiddleWare, asyncHandler(async (req, res) => {
     //set vars: user idx
-    const userId = req.user.id;
-    if (!userId) {
+    const userIdx = req.user.user_idx;
+    if (!userIdx) {
       throw new ResponseError('잘못된 접근입니다.');
     }
     
@@ -158,7 +158,7 @@ module.exports = (db) => {
     const rsUser = await db.queryRow(db.queryBuilder()
       .select(['user_idx', 'id', 'name', 'use_otp'])
       .from('users')
-      .where('id', userId)
+      .where('user_idx', userIdx)
     );
     if (!rsUser) {
       throw new ResponseError('회원이 존재하지 않습니다.');
@@ -202,14 +202,14 @@ module.exports = (db) => {
    */
   router.get('/otp/register', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
-      //set vars: request
-      const userId = req.user.id;
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
   
       //set vars: user data
       const rsUser = await db.queryRow(db.queryBuilder()
         .select('*')
         .from('users')
-        .where('id', userId)
+        .where('user_idx', userIdx)
       );
       if (!rsUser) {
         throw new ResponseError('잘못된 접근입니다.');
@@ -249,11 +249,11 @@ module.exports = (db) => {
       }
       
       //set vars: user info
-      const userId = req.user.id;
+      const userIdx = req.user.user_idx;
       const rsUser = await db.queryRow(db.queryBuilder()
         .select('*')
         .from('users')
-        .where('id', userId)
+        .where('user_idx', userIdx)
       );
       if (!rsUser) {
         throw new ResponseError('잘못된 접근입니다.');
@@ -327,12 +327,12 @@ module.exports = (db) => {
       }
       
       //set vars: user idx
-      const userId = req.user.id;
+      const userIdx = req.user.user_idx;
       const rsUser = await db.queryRow(db.queryBuilder()
         .select(['u.user_idx', 'u.id', 'u.use_otp', 'uo.secret'])
-        .from({u: 'users'})
-        .join({uo: 'users_otp'}, 'u.user_idx', 'uo.user_idx')
-        .where('u.id', userId)
+        .from('users AS u')
+        .join('users_otp AS uo', 'u.user_idx', 'uo.user_idx')
+        .where('u.user_idx', userIdx)
       );
       if (!rsUser) {
         throw new ResponseError('회원정보가 존재하지 않습니다.');

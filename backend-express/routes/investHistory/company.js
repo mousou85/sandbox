@@ -15,10 +15,14 @@ module.exports = (db) => {
    */
   router.get('/', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: 리스트
       let list = await db.queryAll(db.queryBuilder()
-        .select()
+        .select(['company_idx', 'company_name'])
         .from('invest_company')
+        .where('user_idx', userIdx)
         .orderBy('company_idx', 'asc')
       );
       
@@ -33,14 +37,18 @@ module.exports = (db) => {
    */
   router.get('/:company_idx', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
-      let companyIdx = req.params.company_idx;
+      const companyIdx = req.params.company_idx;
       
       //set vars: 데이터
       let company = await db.queryRow(db.queryBuilder()
-        .select()
+        .select(['company_idx', 'company_name'])
         .from('invest_company')
-        .where('company_idx', companyIdx)
+        .where('user_idx', userIdx)
+        .andWhere('company_idx', companyIdx)
       );
       if (!company) throw new ResponseError('데이터가 존재하지 않음');
       
@@ -55,6 +63,9 @@ module.exports = (db) => {
    */
   router.post('/', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let companyName = req.body.company_name;
       if (!companyName) throw new ResponseError('company_name값은 필수입력임');
@@ -64,13 +75,14 @@ module.exports = (db) => {
       //중복 체크
       let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
-        .where('company_name', companyName)
+        .where('user_idx', userIdx)
+        .andWhere('company_name', companyName)
       );
       if (hasData) throw new ResponseError('이미 등록된 company임');
       
       //insert data
       let rsInsert = await db.execute(db.queryBuilder()
-        .insert({'company_name': companyName})
+        .insert({user_idx: userIdx, company_name: companyName})
         .into('invest_company')
       );
       if (!rsInsert) throw new ResponseError('company 추가 실패함');
@@ -86,6 +98,9 @@ module.exports = (db) => {
    */
   router.put('/:company_idx', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let companyIdx = req.params.company_idx;
       let companyName = req.body.company_name;
@@ -96,7 +111,8 @@ module.exports = (db) => {
       //check data
       let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
-        .where('company_idx', companyIdx)
+        .where('user_idx', userIdx)
+        .andWhere('company_idx', companyIdx)
       );
       if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
       
@@ -119,13 +135,17 @@ module.exports = (db) => {
    */
   router.delete('/:company_idx', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let companyIdx = req.params.company_idx;
       
       //check data
       let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
-        .where('company_idx', companyIdx)
+        .where('user_idx', userIdx)
+        .andWhere('company_idx', companyIdx)
       );
       if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
       
