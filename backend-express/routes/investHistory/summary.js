@@ -22,16 +22,21 @@ module.exports = (db) => {
    */
   router.get('/:item_idx([0-9]+)/total', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
-      const itemIdx = req.params.item_idx;
-      const unit = req.query.unit ? req.query.unit.toUpperCase() : 'KRW';
+      let itemIdx = req.params.item_idx;
+      let unit = req.query.unit ? req.query.unit.toUpperCase() : 'KRW';
   
       if (!itemIdx) throw new ResponseError('잘못된 접근');
   
       //item 유무 체크
-      const hasItem = await db.exists(db.queryBuilder()
-        .from('invest_item')
-        .where('item_idx', itemIdx)
+      let hasItem = await db.exists(db.queryBuilder()
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ii.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
       );
       if (!hasItem) throw new ResponseError('item이 존재하지 않음');
       
@@ -42,7 +47,7 @@ module.exports = (db) => {
         .join('invest_unit AS u', 's.unit_idx', 'u.unit_idx')
         .where('s.item_idx', itemIdx)
         .andWhere('u.unit', unit);
-      const rsSummary = await db.queryRow(query);
+      let rsSummary = await db.queryRow(query);
   
       // set vars: summary data
       let summaryData = {
@@ -92,22 +97,27 @@ module.exports = (db) => {
    */
   router.get('/:item_idx([0-9]+)/month', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
-      const itemIdx = req.params.item_idx;
-      const unit = req.query.unit ? req.query.unit.toUpperCase() : 'KRW';
-      const date = req.query.date ? dayjs(req.query.date) : dayjs();
+      let itemIdx = req.params.item_idx;
+      let unit = req.query.unit ? req.query.unit.toUpperCase() : 'KRW';
+      let date = req.query.date ? dayjs(req.query.date) : dayjs();
       
       if (!itemIdx) throw new ResponseError('잘못된 접근');
       
       //item 유무 체크
-      const hasItem = await db.exists(db.queryBuilder()
-        .from('invest_item')
-        .where('item_idx', itemIdx)
+      let hasItem = await db.exists(db.queryBuilder()
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ii.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
       );
       if (!hasItem) throw new ResponseError('item이 존재하지 않음');
       
       //set vars: summary date
-      const summaryDate = date.format('YYYY-MM-01');
+      let summaryDate = date.format('YYYY-MM-01');
       
       //set vars: 요약 데이터
       let query = db.queryBuilder()
@@ -118,7 +128,7 @@ module.exports = (db) => {
         .andWhere('s.summary_date', summaryDate)
         .andWhere('s.item_idx', itemIdx)
         .andWhere('u.unit', unit);
-      const rsSummary = await db.queryRow(query);
+      let rsSummary = await db.queryRow(query);
       
       // set vars: summary data
       let summaryData = {
@@ -156,7 +166,6 @@ module.exports = (db) => {
           'rateIncProceeds': 0
         }
       };
-      
       
       if (rsSummary) {
         summaryData.unitType = rsSummary.unit_type;
@@ -198,22 +207,27 @@ module.exports = (db) => {
    */
   router.get('/:item_idx([0-9]+)/year', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
-      const itemIdx = req.params.item_idx;
-      const unit = req.query.unit ? req.query.unit.toUpperCase() : 'KRW';
-      const year = req.query.year ?? dayjs().year();
+      let itemIdx = req.params.item_idx;
+      let unit = req.query.unit ? req.query.unit.toUpperCase() : 'KRW';
+      let year = req.query.year ?? dayjs().year();
       
       if (!itemIdx) throw new ResponseError('잘못된 접근');
       
       //item 유무 체크
-      const hasItem = await db.exists(db.queryBuilder()
-        .from('invest_item')
-        .where('item_idx', itemIdx)
+      let hasItem = await db.exists(db.queryBuilder()
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ii.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
       );
       if (!hasItem) throw new ResponseError('item이 존재하지 않음');
   
       //set vars: summary date
-      const summaryDate = `${year}-01-01`;
+      let summaryDate = `${year}-01-01`;
       
       //set vars: 요약 데이터
       let query = db.queryBuilder()
@@ -224,7 +238,7 @@ module.exports = (db) => {
         .andWhere('s.summary_date', summaryDate)
         .andWhere('s.item_idx', itemIdx)
         .andWhere('u.unit', unit);
-      const rsSummary = await db.queryRow(query);
+      let rsSummary = await db.queryRow(query);
       
       // set vars: summary data
       let summaryData = {
@@ -303,41 +317,46 @@ module.exports = (db) => {
    */
   router.get('/remake-all', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: 상품 목록
-      const itemList = await db.queryAll(db.queryBuilder()
-          .select('item_idx')
-          .from('invest_item')
-        );
+      let rsItemList = await db.queryAll(db.queryBuilder()
+        .select('ii.item_idx')
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ic.user_idx', userIdx)
+      );
       
       //상품별로 처리
-      for (const item of itemList) {
+      for (const item of rsItemList) {
         const _itemIdx = item.item_idx;
         
         //set vars: 단위 리스트
-        const unitList = await db.queryAll(db.queryBuilder()
-            .select('unit_idx')
-            .from('invest_unit_set')
-            .where('item_idx', _itemIdx)
-          );
+        let rsUnitList = await db.queryAll(db.queryBuilder()
+          .select('unit_idx')
+          .from('invest_unit_set')
+          .where('item_idx', _itemIdx)
+        );
         
         //단위별로 처리
-        for (const unit of unitList) {
+        for (const unit of rsUnitList) {
           const _unitIdx = unit.unit_idx;
           
           //set vars: 요약 데이터 만들 기간 범위
-          const rsDateRange = await db.queryRow(db.queryBuilder()
-              .select([
-                db.raw(`DATE_FORMAT(MIN(history_date), '%Y-%m-01') AS minDate`),
-                db.raw(`DATE_FORMAT(MAX(history_date), '%Y-%m-01') AS maxDate`)
-              ])
-              .from('invest_history')
-              .where('item_idx', _itemIdx)
-              .andWhere('unit_idx', _unitIdx)
-            );
+          let rsDateRange = await db.queryRow(db.queryBuilder()
+            .select([
+              db.raw(`DATE_FORMAT(MIN(history_date), '%Y-%m-01') AS minDate`),
+              db.raw(`DATE_FORMAT(MAX(history_date), '%Y-%m-01') AS maxDate`)
+            ])
+            .from('invest_history')
+            .where('item_idx', _itemIdx)
+            .andWhere('unit_idx', _unitIdx)
+          );
           if (!rsDateRange.minDate || !rsDateRange.maxDate) continue;
   
-          const _minDate = dayjs(rsDateRange.minDate);
-          const _maxDate = dayjs(rsDateRange.maxDate);
+          let _minDate = dayjs(rsDateRange.minDate);
+          let _maxDate = dayjs(rsDateRange.maxDate);
   
           //기간 범위를 1달 단위로 반복하며 처리
           let _targetDate = _minDate;
@@ -365,20 +384,6 @@ module.exports = (db) => {
       }
       
       res.json(createResult('success'));
-    } catch (err) {
-      throw err;
-    }
-  }));
-  
-  router.get('/test', authTokenMiddleware, asyncHandler(async (req, res) => {
-    try {
-      const itemIdx = 17;
-      const unitIdx = 3;
-      const historyDate = '2022-01-01';
-      
-      await investHistoryHelper.upsertMonthSummary(itemIdx, historyDate, unitIdx);
-      
-      res.json(createResult());
     } catch (err) {
       throw err;
     }
