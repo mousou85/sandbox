@@ -83,7 +83,7 @@ module.exports = (db) => {
             responseData.needOTPVerify = true;
           } else {
             //set vars: access token, refresh token
-            const payload = {user_idx: rsUser.user_idx, id: rsUser.id};
+            const payload = {id: rsUser.id};
             const accessToken = userHelper.createAccessToken(payload);
             const refreshToken = userHelper.createRefreshToken(payload);
   
@@ -93,7 +93,6 @@ module.exports = (db) => {
             responseData.access_token = accessToken;
             responseData.refresh_token = refreshToken;
             responseData.data = {
-              user_idx: rsUser.user_idx,
               id: rsUser.id,
               name: rsUser.name,
               use_otp: rsUser.use_otp == 'y',
@@ -120,7 +119,7 @@ module.exports = (db) => {
           }
   
           //set vars: access token, refresh token
-          const payload = {user_idx: rsUser.user_idx, id: rsUser.id};
+          const payload = {id: rsUser.id};
           const accessToken = userHelper.createAccessToken(payload);
           const refreshToken = userHelper.createRefreshToken(payload);
   
@@ -130,7 +129,6 @@ module.exports = (db) => {
           responseData.access_token = accessToken;
           responseData.refresh_token = refreshToken;
           responseData.data = {
-            user_idx: rsUser.user_idx,
             id: rsUser.id,
             name: rsUser.name,
             use_otp: rsUser.use_otp == 'y',
@@ -151,8 +149,8 @@ module.exports = (db) => {
    */
   router.get('/info', authTokenMiddleWare, asyncHandler(async (req, res) => {
     //set vars: user idx
-    const userIdx = req.user.user_idx;
-    if (!userIdx) {
+    const userId = req.user.id;
+    if (!userId) {
       throw new ResponseError('잘못된 접근입니다.');
     }
     
@@ -160,7 +158,7 @@ module.exports = (db) => {
     const rsUser = await db.queryRow(db.queryBuilder()
       .select(['user_idx', 'id', 'name', 'use_otp'])
       .from('users')
-      .where('user_idx', userIdx)
+      .where('id', userId)
     );
     if (!rsUser) {
       throw new ResponseError('회원이 존재하지 않습니다.');
@@ -205,13 +203,13 @@ module.exports = (db) => {
   router.get('/otp/register', authTokenMiddleWare, asyncHandler(async (req, res) => {
     try {
       //set vars: request
-      const userIdx = req.user.user_idx;
+      const userId = req.user.id;
   
       //set vars: user data
       const rsUser = await db.queryRow(db.queryBuilder()
         .select('*')
         .from('users')
-        .where('user_idx', userIdx)
+        .where('id', userId)
       );
       if (!rsUser) {
         throw new ResponseError('잘못된 접근입니다.');
@@ -220,7 +218,7 @@ module.exports = (db) => {
       //check already register otp
       const hasOtp = await db.exists(db.queryBuilder()
         .from('users_otp')
-        .where('user_idx', userIdx)
+        .where('user_idx', rsUser.user_idx)
       );
       if (rsUser.use_otp == 'y' && hasOtp) {
         throw new ResponseError('이미 OTP를 등록하셨습니다.');
@@ -251,11 +249,11 @@ module.exports = (db) => {
       }
       
       //set vars: user info
-      const userIdx = req.user.user_idx;
+      const userId = req.user.id;
       const rsUser = await db.queryRow(db.queryBuilder()
         .select('*')
         .from('users')
-        .where('user_idx', userIdx)
+        .where('id', userId)
       );
       if (!rsUser) {
         throw new ResponseError('잘못된 접근입니다.');
@@ -264,7 +262,7 @@ module.exports = (db) => {
       //check already register otp
       const hasOtp = await db.exists(db.queryBuilder()
         .from('users_otp')
-        .where('user_idx', userIdx)
+        .where('user_idx', rsUser.user_idx)
       );
       if (rsUser.use_otp == 'y' && hasOtp) {
         throw new ResponseError('이미 OTP를 등록하셨습니다.');
@@ -282,7 +280,7 @@ module.exports = (db) => {
         //set vars: OTP 정보 유무
         const hasOtpData = await db.exists(db.queryBuilder()
           .from('users_otp')
-          .where('user_idx', userIdx)
+          .where('user_idx', rsUser.user_idx)
         , dbTrx);
         
         //OTP 정보 유무에 따라 쿼리 분리
@@ -293,7 +291,7 @@ module.exports = (db) => {
             .from('users_otp');
         } else {
           dbBuilder = db.queryBuilder()
-            .insert({user_idx: userIdx, secret: secret})
+            .insert({user_idx: rsUser.user_idx, secret: secret})
             .into('users_otp');
         }
         await db.execute(dbBuilder, dbTrx);
@@ -302,7 +300,7 @@ module.exports = (db) => {
         await db.execute(db.queryBuilder()
           .update({use_otp: 'y'})
           .from('users')
-          .where({user_idx: userIdx})
+          .where({user_idx: rsUser.user_idx})
         , dbTrx);
         
         await dbTrx.commit();
@@ -329,12 +327,12 @@ module.exports = (db) => {
       }
       
       //set vars: user idx
-      const userIdx = req.user.user_idx;
+      const userId = req.user.id;
       const rsUser = await db.queryRow(db.queryBuilder()
-        .select(['u.use_otp', 'uo.secret'])
+        .select(['u.user_idx', 'u.id', 'u.use_otp', 'uo.secret'])
         .from({u: 'users'})
         .join({uo: 'users_otp'}, 'u.user_idx', 'uo.user_idx')
-        .where('u.user_idx', userIdx)
+        .where('u.id', userId)
       );
       if (!rsUser) {
         throw new ResponseError('회원정보가 존재하지 않습니다.');
@@ -356,14 +354,14 @@ module.exports = (db) => {
         await db.execute(db.queryBuilder()
           .delete()
           .from('users_otp')
-          .where('user_idx', userIdx)
+          .where('user_idx', rsUser.user_idx)
         , dbTrx);
 
         //users 테이블에 otp 사용여부 갱신
         await db.execute(db.queryBuilder()
           .update({use_otp: 'n'})
           .from('users')
-          .where({user_idx: userIdx})
+          .where({user_idx: rsUser.user_idx})
         , dbTrx);
 
         await dbTrx.commit();
