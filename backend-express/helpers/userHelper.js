@@ -8,8 +8,18 @@ const QRCode = require("qrcode");
  * @param {Mysql} [db]
  */
 module.exports = (db) => {
+  /**
+   * JWT access token secret
+   */
   const ACCESS_TOKEN_SECRET = process.env.LOGIN_ACCESS_TOKEN_SECRET;
+  /**
+   * JWT refresh token secret
+   */
   const REFRESH_TOKEN_SECRET = process.env.LOGIN_REFRESH_TOKEN_SECRET;
+  /**
+   * 로그인 로그 타입 목록
+   * @type {Object}
+   */
   const LOGIN_LOG_TYPES = {
     BAD_REQUEST: 'badRequest',
     ATTEMPT: 'attempt',

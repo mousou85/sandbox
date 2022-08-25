@@ -3,10 +3,25 @@
  * @extends Error
  */
 class ResponseError extends Error {
+  /**
+   * HTTP CODE 400
+   * @type {number}
+   */
   static HTTP_BAD_REQUEST = 400;
+  /**
+   * HTTP CODE 401
+   * @type {number}
+   */
   static HTTP_UNAUTHORIZED = 401;
+  /**
+   * HTTP CODE 403
+   * @type {number}
+   */
   static HTTP_FORBIDDEN = 403;
-  
+  /**
+   * API response error code list
+   * @type {Object}
+   */
   static ERROR_CODE = {
     COMMON_ERROR: -1,
     NEED_LOGIN: -10,

@@ -42,11 +42,11 @@ const userHelper = require('#helpers/userHelper')(db);
             if (input.length < 4) return '사용자ID는 4자 이상으로 만들어주세요.';
             if (input.length > 100) return '사용자ID는 100자 이하로 만들어주세요.';
             
-            const rsHas = await db.exists(db.queryBuilder()
+            let hasUser = await db.exists(db.queryBuilder()
               .from('users')
               .where('id', input)
             );
-            if (rsHas) return '이미 존재하는 사용자ID입니다.';
+            if (hasUser) return '이미 존재하는 사용자ID입니다.';
             
             return true;
           }
@@ -131,10 +131,11 @@ const userHelper = require('#helpers/userHelper')(db);
             if (!input) return '사용자ID를 입력해주세요.';
             if (regexpBlank.test(input)) return '사용자ID에는 공백을 사용할 수 없습니다.';
     
-            const rsHas = await db.exists(db.queryBuilder()
+            let hasUser = await db.exists(db.queryBuilder()
               .from('users')
-              .where('id', input));
-            if (!rsHas) return '존재하지 않는 사용자ID입니다.';
+              .where('id', input)
+            );
+            if (!hasUser) return '존재하지 않는 사용자ID입니다.';
     
             return true;
           }
@@ -178,7 +179,7 @@ const userHelper = require('#helpers/userHelper')(db);
         , dbTrx);
         
         //check password salt record
-        const hasSaltData = await db.exists(db.queryBuilder()
+        let hasSaltData = await db.exists(db.queryBuilder()
           .from('users_password_salt')
           .where('user_idx', userIdx)
         , dbTrx);
@@ -224,10 +225,11 @@ const userHelper = require('#helpers/userHelper')(db);
             if (!input) return '사용자ID를 입력해주세요.';
             if (regexpBlank.test(input)) return '사용자ID에는 공백을 사용할 수 없습니다.';
             
-            const rsHas = await db.exists(db.queryBuilder()
+            let hasUser = await db.exists(db.queryBuilder()
               .from('users')
-              .where('id', input));
-            if (!rsHas) return '존재하지 않는 사용자ID입니다.';
+              .where('id', input)
+            );
+            if (!hasUser) return '존재하지 않는 사용자ID입니다.';
             
             return true;
           }
@@ -257,7 +259,8 @@ const userHelper = require('#helpers/userHelper')(db);
         await db.execute(db.queryBuilder()
           .update({login_fail_count: 0})
           .from('users')
-          .where('user_idx', userIdx));
+          .where('user_idx', userIdx)
+        );
 
         console.info('초기화 완료');
       } catch (err) {
