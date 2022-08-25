@@ -18,20 +18,24 @@ module.exports = (db) => {
     let query;
     
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let itemIdx = req.params.item_idx;
       
       query = db.queryBuilder()
-        .select(['us.unit_set_idx', 'us.unit_idx', 'u.unit', 'u.unit_type'])
-        .from('invest_unit_set AS us')
-        .join('invest_unit AS u', 'us.unit_idx', 'u.unit_idx')
-        .where('us.item_idx', itemIdx)
-        .orderBy('us.unit_set_idx', 'asc');
+        .select(['ius.unit_set_idx', 'ius.unit_idx', 'iu.unit', 'iu.unit_type'])
+        .from('invest_unit_set AS ius')
+        .join('invest_unit AS iu', 'ius.unit_idx', 'iu.unit_idx')
+        .where('ius.item_idx', itemIdx)
+        .andWhere('iu.user_idx', userIdx)
+        .orderBy('ius.unit_set_idx', 'asc');
       
       //set vars: list
-      let list = await db.queryAll(query);
+      let rsList = await db.queryAll(query);
       
-      res.json(createResult('success', {'list': list}));
+      res.json(createResult('success', {'list': rsList}));
     } catch (err) {
       throw err;
     }
@@ -42,6 +46,9 @@ module.exports = (db) => {
    */
   router.post('/', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let itemIdx = req.body.item_idx;
       let unitIdx = req.body.unit_idx;
@@ -49,14 +56,17 @@ module.exports = (db) => {
       
       //check data
       let hasItemData = await db.exists(db.queryBuilder()
-        .from('invest_item')
-        .where('item_idx', itemIdx)
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ii.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
       );
       if (!hasItemData) throw new ResponseError('item이 존재하지 않음');
-      
+  
       let hasUnitData = await db.exists(db.queryBuilder()
         .from('invest_unit')
         .where('unit_idx', unitIdx)
+        .andWhere('user_idx', userIdx)
       );
       if (!hasUnitData) throw new ResponseError('unit이 존재하지 않음');
       
@@ -86,13 +96,18 @@ module.exports = (db) => {
    */
   router.delete('/:unit_set_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let unitSetIdx = req.params.unit_set_idx;
       
       //check data
       let hasData = await db.exists(db.queryBuilder()
-        .from('invest_unit_set')
-        .where('unit_set_idx', unitSetIdx)
+        .from('invest_unit_set AS ius')
+        .join('invest_unit AS iu', 'ius.unit_idx', 'iu.unit_idx')
+        .where('ius.unit_set_idx', unitSetIdx)
+        .andWhere('iu.user_idx', userIdx)
       );
       if (!hasData) throw new ResponseError('unit set가 존재하지 않음');
       

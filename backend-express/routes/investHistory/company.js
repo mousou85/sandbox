@@ -19,14 +19,14 @@ module.exports = (db) => {
       const userIdx = req.user.user_idx;
       
       //set vars: 리스트
-      let list = await db.queryAll(db.queryBuilder()
+      let rsList = await db.queryAll(db.queryBuilder()
         .select(['company_idx', 'company_name'])
         .from('invest_company')
         .where('user_idx', userIdx)
         .orderBy('company_idx', 'asc')
       );
       
-      res.json(createResult('success', {'list': list}));
+      res.json(createResult('success', {'list': rsList}));
     } catch (err) {
       throw err;
     }
@@ -41,18 +41,18 @@ module.exports = (db) => {
       const userIdx = req.user.user_idx;
       
       //set vars: request
-      const companyIdx = req.params.company_idx;
+      let companyIdx = req.params.company_idx;
       
       //set vars: 데이터
-      let company = await db.queryRow(db.queryBuilder()
+      let rsCompany = await db.queryRow(db.queryBuilder()
         .select(['company_idx', 'company_name'])
         .from('invest_company')
-        .where('user_idx', userIdx)
-        .andWhere('company_idx', companyIdx)
+        .where('company_idx', companyIdx)
+        .andWhere('user_idx', userIdx)
       );
-      if (!company) throw new ResponseError('데이터가 존재하지 않음');
+      if (!rsCompany) throw new ResponseError('데이터가 존재하지 않음');
       
-      res.json(createResult('success', company));
+      res.json(createResult('success', rsCompany));
     } catch (err) {
       throw err;
     }
@@ -75,8 +75,8 @@ module.exports = (db) => {
       //중복 체크
       let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
-        .where('user_idx', userIdx)
-        .andWhere('company_name', companyName)
+        .where('company_name', companyName)
+        .andWhere('user_idx', userIdx)
       );
       if (hasData) throw new ResponseError('이미 등록된 company임');
       
@@ -111,8 +111,8 @@ module.exports = (db) => {
       //check data
       let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
-        .where('user_idx', userIdx)
-        .andWhere('company_idx', companyIdx)
+        .where('company_idx', companyIdx)
+        .andWhere('user_idx', userIdx)
       );
       if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
       
@@ -144,11 +144,11 @@ module.exports = (db) => {
       //check data
       let hasData = await db.exists(db.queryBuilder()
         .from('invest_company')
-        .where('user_idx', userIdx)
-        .andWhere('company_idx', companyIdx)
+        .where('company_idx', companyIdx)
+        .andWhere('user_idx', userIdx)
       );
       if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
-      
+  
       let hasItem = await db.exists(db.queryBuilder()
         .from('invest_item')
         .where('company_idx', companyIdx)

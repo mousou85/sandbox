@@ -27,61 +27,63 @@ module.exports = (db) => {
    */
   router.get('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
-      const itemIdx = req.params.item_idx;
-      const historyType = req.query.history_type ?? '';
-      const unit = req.query.unit ? req.query.unit.toUpperCase() : '';
-      const date = req.query.date ?? '';
+      let itemIdx = req.params.item_idx;
+      let historyType = req.query.history_type ?? '';
+      let unit = req.query.unit ? req.query.unit.toUpperCase() : '';
+      let date = req.query.date ?? '';
       if (!itemIdx) throw new ResponseError('잘못된 접근');
       
       //set vars: sql 쿼리
       let query = db.queryBuilder()
         .select([
-          'h.history_idx',
-          'h.unit_idx',
-          'h.history_date',
-          'h.history_type',
-          'h.inout_type',
-          'h.revenue_type',
-          'h.val',
-          'h.memo',
-          'u.unit',
-          'u.unit_type'
+          'ih.history_idx',
+          'ih.unit_idx',
+          'ih.history_date',
+          'ih.history_type',
+          'ih.inout_type',
+          'ih.revenue_type',
+          'ih.val',
+          'ih.memo',
+          'iu.unit',
+          'iu.unit_type'
         ])
-        .from('invest_history AS h')
-        .join('invest_unit AS u', 'h.unit_idx', 'u.unit_idx')
-        .where('h.item_idx', itemIdx)
+        .from('invest_history AS ih')
+        .join('invest_unit AS iu', 'ih.unit_idx', 'iu.unit_idx')
+        .join('invest_item AS ii', 'ih.item_idx', 'ii.item_idx')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ih.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
         .orderBy([
           {column: 'h.history_date', order: 'desc'},
           {column: 'h.history_idx', order: 'desc'}
         ]);
       
-      if (historyType) {
-        query.where('h.history_type', historyType);
-      }
-      if (unit) {
-        query.where('u.unit', unit);
-      }
+      if (historyType) query.where('ih.history_type', historyType);
+      if (unit) query.where('iu.unit', unit);
       if (date) {
-        query.whereBetween('h.history_date', [
+        query.whereBetween('ih.history_date', [
             dayjs(date).format('YYYY-MM-01'),
             dayjs(date).endOf('month').format('YYYY-MM-DD')
           ]);
       }
       
       //set vars: history 리스트
-      const historyList = await db.queryAll(query);
-      for (const key in historyList) {
-        const _historyType = historyList[key].history_type;
-        const _inoutType = historyList[key].inout_type;
-        const _revenueType = historyList[key].revenue_type;
-        
-        historyList[key].history_type_text = historyTypeList[_historyType];
-        historyList[key].inout_type_text = _inoutType ? inoutTypeList[_inoutType] : null;
-        historyList[key].revenue_type_text = _revenueType ? revenueTypeList[_revenueType] : null;
+      let rsHistoryList = await db.queryAll(query);
+      for (const key in rsHistoryList) {
+        let _historyType = rsHistoryList[key].history_type;
+        let _inoutType = rsHistoryList[key].inout_type;
+        const _revenueType = rsHistoryList[key].revenue_type;
+  
+        rsHistoryList[key].history_type_text = historyTypeList[_historyType];
+        rsHistoryList[key].inout_type_text = _inoutType ? inoutTypeList[_inoutType] : null;
+        rsHistoryList[key].revenue_type_text = _revenueType ? revenueTypeList[_revenueType] : null;
       }
       
-      res.json(createResult('success', {'list': historyList}));
+      res.json(createResult('success', {'list': rsHistoryList}));
     } catch (err) {
       throw err;
     }
@@ -92,6 +94,9 @@ module.exports = (db) => {
    */
   router.post('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let itemIdx = req.params.item_idx;
       let unitIdx = req.body.unit_idx;
@@ -116,12 +121,14 @@ module.exports = (db) => {
       }
       
       //check data
-      const hasItem = await db.exists(db.queryBuilder()
-        .from('invest_item')
-        .where('item_idx', itemIdx)
+      let hasItem = await db.exists(db.queryBuilder()
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ii.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
       );
       if (!hasItem) throw new ResponseError('item이 존재하지 않음');
-      const hasUnit = await db.exists(db.queryBuilder()
+      let hasUnit = await db.exists(db.queryBuilder()
         .from('invest_unit_set')
         .where('item_idx', itemIdx)
         .andWhere('unit_idx', unitIdx)
@@ -144,9 +151,9 @@ module.exports = (db) => {
         };
         
         let rsInsert = await db.execute(db.queryBuilder()
-            .insert(insertData)
-            .into('invest_history')
-          , trx);
+          .insert(insertData)
+          .into('invest_history')
+        , trx);
         if (!rsInsert) throw new ResponseError('history 추가 실패함');
         
         //요약 데이터 생성/갱신
@@ -169,34 +176,40 @@ module.exports = (db) => {
    */
   router.put('/:history_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
-      const historyIdx = req.params.history_idx;
-      const historyDate = req.body.history_date;
-      const val = req.body.val;
-      const memo = req.body.memo;
+      let historyIdx = req.params.history_idx;
+      let historyDate = req.body.history_date;
+      let val = req.body.val;
+      let memo = req.body.memo;
       if (!historyIdx) throw new ResponseError('history_idx는 필수임');
       if (!historyDate) throw new ResponseError('history_date는 필수임');
       if (!val) throw new ResponseError('val은 필수임');
       
       //set vars: 데이터
-      const rsHistory = await db.queryRow(db.queryBuilder()
-          .select()
-          .from('invest_history')
-          .where('history_idx', historyIdx)
-        );
+      let rsHistory = await db.queryRow(db.queryBuilder()
+        .select(['ih.item_idx', 'ih.unit_idx'])
+        .from('invest_history AS ih')
+        .join('invest_item AS ii', 'ih.item_idx', 'ii.item_idx')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ih.history_idx', historyIdx)
+        .andWhere('ic.user_idx', userIdx)
+      );
       if (!rsHistory) throw new ResponseError('데이터자 존재하지 않음');
       
       const trx = await db.transaction();
       try {
         await db.execute(db.queryBuilder()
-            .update({
-              'history_date': historyDate,
-              'val': val,
-              'memo': memo
-            })
-            .from('invest_history')
-            .where('history_idx', historyIdx)
-          , trx);
+          .update({
+            'history_date': historyDate,
+            'val': val,
+            'memo': memo
+          })
+          .from('invest_history')
+          .where('history_idx', historyIdx)
+        , trx);
         
         //요약데이터 update
         await investHistoryHelper.upsertSummary(rsHistory.item_idx, historyDate, rsHistory.unit_idx, trx);
@@ -218,26 +231,32 @@ module.exports = (db) => {
    */
   router.delete('/:history_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
-      const historyIdx=  req.params.history_idx;
+      let historyIdx=  req.params.history_idx;
       if (!historyIdx) throw new ResponseError('history_idx는 필수임');
   
       //set vars: 데이터
-      const rsHistory = await db.queryRow(db.queryBuilder()
-          .select()
-          .from('invest_history')
-          .where('history_idx', historyIdx)
-        );
+      let rsHistory = await db.queryRow(db.queryBuilder()
+        .select(['ih.item_idx', 'ih.history_date', 'ih.unit_idx'])
+        .from('invest_history AS ih')
+        .join('invest_item AS ii', 'ih.item_idx', 'ii.item_idx')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ih.history_idx', historyIdx)
+        .andWhere('ic.user_idx', userIdx)
+      );
       if (!rsHistory) throw new ResponseError('데이터가 존재하지 않음');
       
       const trx = await db.transaction();
       try {
         //delete data
         let rsDelete = await db.execute(db.queryBuilder()
-            .delete()
-            .from('invest_history')
-            .where('history_idx', historyIdx)
-          , trx);
+          .delete()
+          .from('invest_history')
+          .where('history_idx', historyIdx)
+        , trx);
         if (!rsDelete) throw new ResponseError('삭제 실패');
   
         //요약 데이터 insert/update

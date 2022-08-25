@@ -29,9 +29,16 @@ module.exports = (db) => {
     res.json(createResult('success', {'list': list}));
   }));
   
+  /**
+   * item 목록
+   */
   router.get('/', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
-      const listType = req.query.type ?? '';
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
+      //set vars: request
+      let listType = req.query.type ?? '';
       
       let query;
       let list = [];
@@ -41,12 +48,13 @@ module.exports = (db) => {
         query = db.queryBuilder()
           .select(['company_idx', 'company_name'])
           .from('invest_company')
+          .where('user_idx', userIdx)
           .orderBy('company_name', 'desc');
-        const companyList = await db.queryAll(query);
+        let rsCompanyList = await db.queryAll(query);
         
         //기업단위로 상품 목록 구성
-        for (const company of companyList) {
-          const _tmp1 = {
+        for (const company of rsCompanyList) {
+          let _tmp1 = {
             company_idx: company.company_idx,
             company_name: company.company_name,
             item_count: 0,
@@ -59,10 +67,10 @@ module.exports = (db) => {
             .from('invest_item')
             .where('company_idx', company.company_idx)
             .orderBy('item_name', 'asc');
-          const itemList = await db.queryAll(query);
+          let rsItemList = await db.queryAll(query);
           
-          for (const item of itemList) {
-            const _tmp2 = {
+          for (const item of rsItemList) {
+            let _tmp2 = {
               item_idx: item.item_idx,
               item_name: item.item_name,
               item_type: item.item_type,
@@ -93,6 +101,7 @@ module.exports = (db) => {
           .select(db.raw('i.*, ic.company_name'))
           .from('invest_item AS i')
           .join('invest_company AS ic', 'i.company_idx', 'ic.company_idx')
+          .where('ic.user_idx', userIdx)
           .orderBy([
             {column: 'ic.company_name', order: 'asc'},
             {column: 'i.item_name', order: 'asc'}
@@ -123,20 +132,24 @@ module.exports = (db) => {
    */
   router.get('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let itemIdx = req.params.item_idx;
       if (!itemIdx) throw new ResponseError('잘못된 접근');
       
       //set vars: 데이터
-      let item = await db.queryRow(db.queryBuilder()
+      let rsItem = await db.queryRow(db.queryBuilder()
         .select(db.raw('i.*, c.company_name'))
         .from('invest_item AS i')
         .join('invest_company AS c', 'i.company_idx', 'c.company_idx')
         .where('i.item_idx', itemIdx)
+        .andWhere('c.user_idx', userIdx)
       );
-      if (!item) throw new ResponseError('데이터 없음');
-      
-      item.unit_set = await db.queryAll(db.queryBuilder()
+      if (!rsItem) throw new ResponseError('데이터 없음');
+  
+      rsItem.unit_set = await db.queryAll(db.queryBuilder()
         .select(db.raw('us.*, u.unit, u.unit_type'))
         .from('invest_unit_set AS us')
         .join('invest_unit AS u', 'us.unit_idx', 'u.unit_idx')
@@ -144,7 +157,7 @@ module.exports = (db) => {
         .orderBy('us.unit_set_idx', 'asc')
       );
       
-      res.json(createResult('success', item));
+      res.json(createResult('success', rsItem));
     } catch (err) {
       throw err;
     }
@@ -155,6 +168,9 @@ module.exports = (db) => {
    */
   router.post('/', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let companyIdx = req.body.company_idx;
       let itemType = req.body.item_type;
@@ -171,6 +187,7 @@ module.exports = (db) => {
       let hasCompany = await db.exists(db.queryBuilder()
         .from('invest_company')
         .where('company_idx', companyIdx)
+        .andWhere('user_idx', userIdx)
       );
       if (!hasCompany) throw new ResponseError('company가 존재하지 않음');
       
@@ -179,24 +196,25 @@ module.exports = (db) => {
       try {
         //item 등록
         let itemIdx = await db.execute(db.queryBuilder()
-            .insert({'company_idx': companyIdx, 'item_type': itemType, 'item_name': itemName})
-            .into('invest_item')
-          , trx);
+          .insert({'company_idx': companyIdx, 'item_type': itemType, 'item_name': itemName})
+          .into('invest_item')
+        , trx);
         if (!itemIdx) throw new ResponseError('item 추가 실패함');
         
         //unit set 등록
         if (units && units.length) {
           for (let unit of units) {
             let hasUnit = await db.exists(db.queryBuilder()
-                .from('invest_unit')
-                .where('unit_idx', unit)
-              , trx);
+              .from('invest_unit')
+              .where('unit_idx', unit)
+              .andWhere('user_idx', userIdx)
+            , trx);
             if (!hasUnit) throw new ResponseError('unit이 존재하지 않음');
             
             await db.execute(db.queryBuilder()
-                .insert({'item_idx': itemIdx, 'unit_idx': unit})
-                .into('invest_unit_set')
-              , trx);
+              .insert({'item_idx': itemIdx, 'unit_idx': unit})
+              .into('invest_unit_set')
+            , trx);
           }
         }
         
@@ -217,6 +235,9 @@ module.exports = (db) => {
    */
   router.put('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let itemIdx = req.params.item_idx;
       let companyIdx = req.body.company_idx;
@@ -228,8 +249,10 @@ module.exports = (db) => {
       
       //check data
       let hasData = await db.exists(db.queryBuilder()
-        .from('invest_item')
-        .where('item_idx', itemIdx)
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ii.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
       );
       if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
       
@@ -242,6 +265,7 @@ module.exports = (db) => {
         let hasCompany = await db.exists(db.queryBuilder()
           .from('invest_company')
           .where('company_idx', companyIdx)
+          .andWhere('user_idx', userIdx)
         );
         if (!hasCompany) throw new ResponseError('company가 존재하지 않음');
         
@@ -263,38 +287,46 @@ module.exports = (db) => {
         //update
         if (Object.keys(updateParams).length) {
           await db.execute(db.queryBuilder()
-              .update(updateParams)
-              .from('invest_item')
-              .where('item_idx', itemIdx)
-            , trx);
+            .update(updateParams)
+            .from('invest_item')
+            .where('item_idx', itemIdx)
+          , trx);
         }
         
         //unit-set update
         if (units && units.length) {
-          let unitSetList = await db.queryAll(db.queryBuilder()
-              .select(['unit_set_idx', 'unit_idx'])
-              .from('invest_unit_set')
-              .where('item_idx', itemIdx)
-            , trx);
+          let rsUnitSetList = await db.queryAll(db.queryBuilder()
+            .select(['unit_set_idx', 'unit_idx'])
+            .from('invest_unit_set')
+            .where('item_idx', itemIdx)
+          , trx);
           
-          for (let item of unitSetList) {
+          for (let item of rsUnitSetList) {
             //기존 등록 unit 중 삭제해야될 것들 삭제
             if (!units.includes(item.unit_idx)) {
               await db.execute(db.queryBuilder()
-                  .delete()
-                  .from('invest_unit_set')
-                  .where('unit_set_idx', item.unit_set_idx)
-                , trx);
+                .delete()
+                .from('invest_unit_set')
+                .where('unit_set_idx', item.unit_set_idx)
+              , trx);
             } else {
               units.splice(units.indexOf(item.unit_idx), 1);
             }
           }
           
           for (let unit of units) {
+            //unit 데이터 유무 체크
+            let hasUnit = await db.exists(db.queryBuilder()
+              .from('invest_unit')
+              .where('unit_idx', unit)
+              .andWhere('user_idx', userIdx)
+            );
+            if (!hasUnit) throw new ResponseError('선택한 unit의 데이터가 존재하지 않음');
+            
             await db.execute(db.queryBuilder()
-                .insert({'item_idx': itemIdx, 'unit_idx': unit})
-                .into('invest_unit_set')
-              , trx);
+              .insert({'item_idx': itemIdx, 'unit_idx': unit})
+              .into('invest_unit_set')
+            , trx);
           }
         }
         
@@ -315,13 +347,18 @@ module.exports = (db) => {
    */
   router.delete('/:item_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
+      //set vars: user idx
+      const userIdx = req.user.user_idx;
+      
       //set vars: request
       let itemIdx = req.params.item_idx;
       
       //check data
       let hasData = await db.exists(db.queryBuilder()
-        .from('invest_item')
-        .where('item_idx', itemIdx)
+        .from('invest_item AS ii')
+        .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
+        .where('ii.item_idx', itemIdx)
+        .andWhere('ic.user_idx', userIdx)
       );
       if (!hasData) throw new ResponseError('데이터가 존재하지 않음');
       
@@ -337,16 +374,16 @@ module.exports = (db) => {
       const trx = await db.transaction();
       try {
         await db.execute(db.queryBuilder()
-            .delete()
-            .from('invest_unit_set')
-            .where('item_idx', itemIdx)
-          , trx);
+          .delete()
+          .from('invest_unit_set')
+          .where('item_idx', itemIdx)
+        , trx);
         
         await db.execute(db.queryBuilder()
-            .delete()
-            .from('invest_item')
-            .where('item_idx', itemIdx)
-          , trx);
+          .delete()
+          .from('invest_item')
+          .where('item_idx', itemIdx)
+        , trx);
         
         await trx.commit();
       } catch (err) {
