@@ -62,7 +62,7 @@ module.exports = (db) => {
   /**
    * unit 추가
    */
-  router.post('/', asyncHandler(async (req, res) => {
+  router.post('/', authTokenMiddleware, asyncHandler(async (req, res) => {
     try {
       //set vars: user idx
       const userIdx = req.user.user_idx;
@@ -91,6 +91,7 @@ module.exports = (db) => {
       
       res.json(createResult());
     } catch (err) {
+      console.log(err);
       throw err;
     }
   }));

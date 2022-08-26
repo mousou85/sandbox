@@ -58,8 +58,8 @@ module.exports = (db) => {
         .where('ih.item_idx', itemIdx)
         .andWhere('ic.user_idx', userIdx)
         .orderBy([
-          {column: 'h.history_date', order: 'desc'},
-          {column: 'h.history_idx', order: 'desc'}
+          {column: 'ih.history_date', order: 'desc'},
+          {column: 'ih.history_idx', order: 'desc'}
         ]);
       
       if (historyType) query.where('ih.history_type', historyType);
