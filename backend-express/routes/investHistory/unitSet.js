@@ -48,10 +48,9 @@ module.exports = (db) => {
   
     //check data
     let hasItemData = await db.exists(db.queryBuilder()
-      .from('invest_item AS ii')
-      .join('invest_company AS ic', 'ii.company_idx', 'ic.company_idx')
-      .where('ii.item_idx', itemIdx)
-      .andWhere('ic.user_idx', userIdx)
+      .from('invest_item')
+      .where('item_idx', itemIdx)
+      .andWhere('user_idx', userIdx)
     );
     if (!hasItemData) throw new ResponseError('item이 존재하지 않음');
   
@@ -83,35 +82,31 @@ module.exports = (db) => {
   /**
    * unit set 삭제
    */
-  router.delete('/:unit_set_idx', authTokenMiddleware, asyncHandler(async (req, res) => {
-    try {
-      //set vars: user idx
-      const userIdx = req.user.user_idx;
-      
-      //set vars: request
-      let unitSetIdx = req.params.unit_set_idx;
-      
-      //check data
-      let hasData = await db.exists(db.queryBuilder()
-        .from('invest_unit_set AS ius')
-        .join('invest_unit AS iu', 'ius.unit_idx', 'iu.unit_idx')
-        .where('ius.unit_set_idx', unitSetIdx)
-        .andWhere('iu.user_idx', userIdx)
-      );
-      if (!hasData) throw new ResponseError('unit set가 존재하지 않음');
-      
-      //delete data
-      let rsDelete = await db.execute(db.queryBuilder()
-        .delete()
-        .from('invest_unit_set')
-        .where('unit_set_idx', unitSetIdx)
-      );
-      if (!rsDelete) throw new ResponseError('unit set 삭제 실패함');
-      
-      res.json(createResult());
-    } catch (err) {
-      throw err;
-    }
+  router.delete('/:unit_set_idx([0-9]+)', authTokenMiddleware, asyncHandler(async (req, res) => {
+    //set vars: user idx
+    const userIdx = req.user.user_idx;
+  
+    //set vars: request
+    const unitSetIdx = req.params.unit_set_idx;
+  
+    //check data
+    let hasData = await db.exists(db.queryBuilder()
+      .from('invest_unit_set AS ius')
+      .join('invest_unit AS iu', 'ius.unit_idx', 'iu.unit_idx')
+      .where('ius.unit_set_idx', unitSetIdx)
+      .andWhere('iu.user_idx', userIdx)
+    );
+    if (!hasData) throw new ResponseError('unit set가 존재하지 않음');
+  
+    //delete data
+    let rsDelete = await db.execute(db.queryBuilder()
+      .delete()
+      .from('invest_unit_set')
+      .where('unit_set_idx', unitSetIdx)
+    );
+    if (!rsDelete) throw new ResponseError('unit set 삭제 실패함');
+  
+    res.json(createResult());
   }));
   
   return router;

@@ -37,6 +37,8 @@ class ResponseError extends Error {
    * @param {number} [httpCode=400]
    */
   constructor(errorMessage, errorCode, httpCode) {
+    if (!errorMessage) errorMessage = 'unknown error';
+    
     super(errorMessage);
   
     this.errorMessage = errorMessage;
