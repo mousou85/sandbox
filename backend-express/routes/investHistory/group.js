@@ -19,14 +19,28 @@ module.exports = (db) => {
       const userIdx = req.user.user_idx;
       
       //set vars: 리스트
-      let rsList = await db.queryAll(db.queryBuilder()
+      let rsGroupList = await db.queryAll(db.queryBuilder()
         .select(['group_idx', 'group_name'])
         .from('invest_group')
         .where('user_idx', userIdx)
         .orderBy('group_idx', 'asc')
       );
       
-      res.json(createResult('success', {list: rsList}));
+      for (const i in rsGroupList) {
+        let _group = rsGroupList[i];
+        
+        _group.item_list = await db.queryAll(db.queryBuilder()
+          .select(['igi.item_idx', 'ii.item_type', 'ii.item_name', 'ii.is_close'])
+          .from ('invest_group_item AS igi')
+          .join('invest_item AS ii', 'igi.item_idx', 'ii.item_idx')
+          .where('igi.group_idx', _group.group_idx)
+          .orderBy('igi.item_idx', 'ASC')
+        );
+        
+        rsGroupList[i] = _group;
+      }
+      
+      res.json(createResult({list: rsGroupList}));
     } catch (err) {
       throw err;
     }
@@ -53,16 +67,15 @@ module.exports = (db) => {
       if (!rsGroup) throw new ResponseError('데이터가 존재하지 않음');
       
       //set vars: 포함된 item list
-      let rsItemList = await db.queryAll(db.queryBuilder()
+      rsGroup.item_list = await db.queryAll(db.queryBuilder()
         .select(['igi.item_idx', 'ii.item_type', 'ii.item_name', 'ii.is_close'])
         .from('invest_group_item AS igi')
         .join('invest_item AS ii', 'igi.item_idx', 'ii.item_idx')
         .where('igi.group_idx', rsGroup.group_idx)
         .orderBy('igi.item_idx', 'ASC')
       );
-      if (rsItemList.length > 0) rsGroup.item_list = rsItemList;
       
-      res.json(createResult('success', rsGroup));
+      res.json(createResult(rsGroup));
     } catch (err) {
       throw err;
     }

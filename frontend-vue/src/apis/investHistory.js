@@ -8,7 +8,13 @@ export const useInvestApi = () => {
      * get group list
      * @returns {Promise<{
      *  group_idx: number,
-     *  group_name: string
+     *  group_name: string,
+     *  item_list: {
+     *    item_idx: number,
+     *    item_type: string,
+     *    item_name: string,
+     *    is_close: string
+     *  }[]
      * }[]>}
      */
     getGroupList: async () => {
@@ -57,6 +63,24 @@ export const useInvestApi = () => {
      */
     deleteGroup: async (groupIdx) => {
       await api.delete(`/invest-history/group/${groupIdx}`);
+    },
+    /**
+     * add group item
+     * @param {number} groupIdx
+     * @param {number[]} itemIdxList
+     * @returns {Promise<void>}
+     */
+    addGroupItem: async (groupIdx, itemIdxList) => {
+      await api.post(`/invest-history/group/${groupIdx}/item`, {items: itemIdxList});
+    },
+    /**
+     * delete group item
+     * @param {number} groupIdx
+     * @param {number[]} itemIdxList
+     * @returns {Promise<void>}
+     */
+    deleteGroupItem: async (groupIdx, itemIdxList) => {
+      await api.post(`/invest-history/group/${groupIdx}/item`, {items: itemIdxList});
     },
     /**
      * get item list
