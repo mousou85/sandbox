@@ -142,7 +142,7 @@ export const useInvestApi = () => {
     },
     /**
      * add item
-     * @param {{company_idx: number, item_type: string, item_name: string, [units]: number[]}} data
+     * @param {{group_idx: number, item_type: string, item_name: string}} data
      * @return {Promise<number>} item idx
      */
     addItem: async (data) => {
@@ -151,16 +151,12 @@ export const useInvestApi = () => {
     },
     /**
      * edit item
-     * @param {{item_idx: number, [company_idx]: number, [item_type]: string, [item_name]: string, [units]: number[]}} data
+     * @param {number} itemIdx
+     * @param {{[group_idx]: number, [item_type]: string, [item_name]: string}} data
      * @return {Promise<void>}
      */
-    editItem: async (data) => {
-      const itemIdx = data.item_idx;
-  
-      delete data.item_idx;
-  
-      const res = await api.put(`/invest-history/item/${itemIdx}`, data);
-      if (!res.result) throw new Error(res.resultMessage);
+    editItem: async (itemIdx, data) => {
+      await api.put(`/invest-history/item/${itemIdx}`, data);
     },
     /**
      * delete item
@@ -168,8 +164,34 @@ export const useInvestApi = () => {
      * @return {Promise<void>}
      */
     delItem: async (itemIdx) => {
-      const res = await api.delete(`/invest-history/item/${itemIdx}`);
-      if (!res.result) throw new Error(res.resultMessage);
+      await api.delete(`/invest-history/item/${itemIdx}`);
+    },
+    /**
+     * add item unit list
+     * @param {number} itemIdx
+     * @param {number[]} unitIdxList
+     * @returns {Promise<void>}
+     */
+    addItemUnit: async (itemIdx, unitIdxList) => {
+      await api.post(`/invest-history/item/${itemIdx}/unit`, {units: unitIdxList});
+    },
+    /**
+     * edit item unit list
+     * @param {number} itemIdx
+     * @param {number[]} unitIdxList
+     * @returns {Promise<void>}
+     */
+    editItemUnit: async (itemIdx, unitIdxList) => {
+      await api.put(`/invest-history/item/${itemIdx}/unit`, {units: unitIdxList});
+    },
+    /**
+     * delete item unit list
+     * @param {number} itemIdx
+     * @param {number[]} unitIdxList
+     * @returns {Promise<void>}
+     */
+    delItemUnit: async (itemIdx, unitIdxList) => {
+      await api.delete(`/invest-history/item/${itemIdx}/unit`, {units: unitIdxList});
     },
     /**
      * get item usable unit list
@@ -184,12 +206,10 @@ export const useInvestApi = () => {
     },
     /**
      * get item type list
-     * @return {Promise<Object[]>}
+     * @return {Promise<{type: string, text: string}[]>}
      */
     getItemTypeList: async () => {
       const res = await api.get(`/invest-history/item/item-type`);
-      if (!res.result) throw new Error(res.resultMessage);
-  
       return res.data.list;
     },
     /**
