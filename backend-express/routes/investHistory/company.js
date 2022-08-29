@@ -26,7 +26,7 @@ module.exports = (db) => {
         .orderBy('company_idx', 'asc')
       );
       
-      res.json(createResult('success', {'list': rsList}));
+      res.json(createResult({list: rsList}));
     } catch (err) {
       throw err;
     }
@@ -52,7 +52,7 @@ module.exports = (db) => {
       );
       if (!rsCompany) throw new ResponseError('데이터가 존재하지 않음');
       
-      res.json(createResult('success', rsCompany));
+      res.json(createResult(rsCompany));
     } catch (err) {
       throw err;
     }

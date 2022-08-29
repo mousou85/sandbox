@@ -26,7 +26,7 @@ module.exports = (db) => {
       list.push({type: key, text: itemTypeList[key]});
     }
     
-    res.json(createResult('success', {'list': list}));
+    res.json(createResult({list: list}));
   }));
   
   /**
@@ -121,7 +121,7 @@ module.exports = (db) => {
         }
       }
       
-      res.json(createResult('success', {list: list}));
+      res.json(createResult({list: list}));
     } catch (err) {
       throw err;
     }
@@ -157,7 +157,7 @@ module.exports = (db) => {
         .orderBy('us.unit_set_idx', 'asc')
       );
       
-      res.json(createResult('success', rsItem));
+      res.json(createResult(rsItem));
     } catch (err) {
       throw err;
     }

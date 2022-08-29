@@ -86,7 +86,7 @@ module.exports = (db) => {
         summaryData.earn.rateIncProceeds = rsSummary.earn_rate_inc_proceeds;
       }
   
-      res.json(createResult('success', summaryData));
+      res.json(createResult(summaryData));
     } catch (err) {
       throw err;
     }
@@ -196,7 +196,7 @@ module.exports = (db) => {
         summaryData.earnPrevDiff.rateIncProceeds = rsSummary.earn_rate_inc_proceeds_prev_diff;
       }
       
-      res.json(createResult('success', summaryData));
+      res.json(createResult(summaryData));
     } catch (err) {
       throw err;
     }
@@ -306,7 +306,7 @@ module.exports = (db) => {
         summaryData.earnPrevDiff.rateIncProceeds = rsSummary.earn_rate_inc_proceeds_prev_diff;
       }
       
-      res.json(createResult('success', summaryData));
+      res.json(createResult(summaryData));
     } catch (err) {
       throw err;
     }
@@ -383,7 +383,7 @@ module.exports = (db) => {
         }
       }
       
-      res.json(createResult('success'));
+      res.json(createResult());
     } catch (err) {
       throw err;
     }

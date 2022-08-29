@@ -83,7 +83,7 @@ module.exports = (db) => {
         rsHistoryList[key].revenue_type_text = _revenueType ? revenueTypeList[_revenueType] : null;
       }
       
-      res.json(createResult('success', {'list': rsHistoryList}));
+      res.json(createResult({list: rsHistoryList}));
     } catch (err) {
       throw err;
     }
