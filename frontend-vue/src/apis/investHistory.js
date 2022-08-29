@@ -5,6 +5,60 @@ export const useInvestApi = () => {
   
   return {
     /**
+     * get group list
+     * @returns {Promise<{
+     *  group_idx: number,
+     *  group_name: string
+     * }[]>}
+     */
+    getGroupList: async () => {
+      const res = await api.get('/invest-history/group');
+      return res.data.list;
+    },
+    /**
+     *
+     * @param groupIdx
+     * @returns {Promise<{
+     *  group_idx: number,
+     *  group_name: string,
+     *  item_list: {
+     *    item_idx: number,
+     *    item_type: string,
+     *    item_name: string,
+     *    is_close: string
+     *  }[]
+     * }>}
+     */
+    getGroup: async (groupIdx) => {
+      const res = await api.get(`/invest-history/group/${groupIdx}`);
+      return res.data.data;
+    },
+    /**
+     * add group
+     * @param {string} groupName
+     * @returns {Promise<void>}
+     */
+    addGroup: async (groupName) => {
+      await api.post('/invest-history/group', {group_name: groupName});
+    },
+    /**
+     * edit group
+     * @param {number} groupIdx
+     * @param {string} groupName
+     * @returns {Promise<void>}
+     */
+    editGroup: async (groupIdx, groupName) => {
+      await api.put(`/invest-history/group/${groupIdx}`, {group_name: groupName});
+    },
+    /**
+     * delete group
+     * @param {number} groupIdx
+     * @returns {Promise<void>}
+     */
+    deleteGroup: async (groupIdx) => {
+      await api.delete(`/invest-history/group/${groupIdx}`);
+    },
+    /**
      * get item list
      * @param {string} [type]
      * @return {Promise<Object[]>}

@@ -34,7 +34,7 @@ const db = new Mysql(
 const investHistoryRouter = {
   unit: require('#routes/investHistory/unit')(db),
   unitSet: require('#routes/investHistory/unitSet')(db),
-  company: require('#routes/investHistory/company')(db),
+  group: require('#routes/investHistory/group')(db),
   item: require('#routes/investHistory/item')(db),
   history: require('#routes/investHistory/history')(db),
   summary: require('#routes/investHistory/summary')(db),
@@ -44,7 +44,7 @@ const userRouter = require('#routes/user')(db);
 app.use('/user', userRouter);
 app.use('/invest-history/unit', investHistoryRouter.unit);
 app.use('/invest-history/unit-set', investHistoryRouter.unitSet);
-app.use('/invest-history/company', investHistoryRouter.company);
+app.use('/invest-history/group', investHistoryRouter.group);
 app.use('/invest-history/item', investHistoryRouter.item);
 app.use('/invest-history/history', investHistoryRouter.history);
 app.use('/invest-history/summary', investHistoryRouter.summary);
