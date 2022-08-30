@@ -3,20 +3,17 @@
     <div class="field mt-5">
       <div class="p-normal-label">
         <Dropdown
-            v-model="formData.companyIdx"
-            :options="companyList"
-            :class="{'p-invalid': !formData.validate.companyIdx}"
-            optionLabel="company_name"
-            optionValue="company_idx"
+            v-model="formData.groupIdx"
+            :options="groupList"
+            :class="{'p-invalid': !formData.validate.groupIdx}"
+            optionLabel="group_name"
+            optionValue="group_idx"
             class="w-full"
-            placeholder="기업선택"
+            placeholder="그룹선택"
         ></Dropdown>
-        <label :class="{'p-error': !formData.validate.companyIdx}">기업</label>
+        <label :class="{'p-error': !formData.validate.groupIdx}">그룹</label>
       </div>
-      <small
-          v-if="!formData.validate.companyIdx"
-          :class="{'p-error': !formData.validate.companyIdx}"
-      >{{formData.validateMsg.companyIdx}}</small>
+      <small v-if="!formData.validate.groupIdx" class="p-error">{{formData.validateMsg.groupIdx}}</small>
     </div>
 
     <div class="field mt-5">
@@ -31,10 +28,7 @@
         ></SelectButton>
         <label :class="{'p-error': !formData.validate.itemType}">상품타입</label>
       </div>
-      <small
-          v-if="!formData.validate.itemType"
-          :class="{'p-error': !formData.validate.itemType}"
-      >{{formData.validateMsg.itemType}}</small>
+      <small v-if="!formData.validate.itemType" class="p-error">{{formData.validateMsg.itemType}}</small>
     </div>
 
     <div class="field mt-5">
@@ -47,10 +41,7 @@
         ></InputText>
         <label :class="{'p-error': !formData.validate.itemName}">상품명</label>
       </div>
-      <small
-          v-if="!formData.validate.itemName"
-          :class="{'p-error': !formData.validate.itemName}"
-      >{{formData.validateMsg.itemName}}</small>
+      <small v-if="!formData.validate.itemName" class="p-error">{{formData.validateMsg.itemName}}</small>
     </div>
 
     <div class="field mt-5">
@@ -67,10 +58,7 @@
         </div>
         <label :class="{'p-error': !formData.validate.units}">단위</label>
       </div>
-      <small
-          v-if="!formData.validate.units"
-          :class="{'p-error': !formData.validate.units}"
-      >{{formData.validateMsg.units}}</small>
+      <small v-if="!formData.validate.units" class="p-error">{{formData.validateMsg.units}}</small>
     </div>
 
     <div class="field mt-0 mb-0">
@@ -101,7 +89,7 @@ export default {
     Button,
   },
   props: {
-    companyList: {
+    groupList: {
       required: true,
       default: () => [],
     },
@@ -124,18 +112,18 @@ export default {
 
     //set vars: form model
     const formData = reactive({
-      companyIdx: '',
+      groupIdx: '',
       itemType: '',
       itemName: '',
       units: [],
       validate: {
-        companyIdx: true,
+        groupIdx: true,
         itemType: true,
         itemName: true,
         units: true,
       },
       validateMsg: {
-        companyIdx: '',
+        groupIdx: '',
         itemType: '',
         itemName: '',
         units: '',
@@ -160,11 +148,11 @@ export default {
     const formSubmit = async () => {
       let validateFlag = true;
 
-      if (!formData.companyIdx) {
-        setFormValidate('companyIdx', false, '기업을 선택해주세요.');
+      if (!formData.groupIdx) {
+        setFormValidate('groupIdx', false, '그룹을 선택해주세요.');
         validateFlag = false;
       } else {
-        setFormValidate('companyIdx', true);
+        setFormValidate('groupIdx', true);
       }
       if (!formData.itemType) {
         setFormValidate('itemType', false, '상품타입을 선택해주세요.');
@@ -188,12 +176,13 @@ export default {
       if (!validateFlag) return false;
 
       try {
-        await investApi.addItem({
-          company_idx: formData.companyIdx,
+        const itemIdx = await investApi.addItem({
+          group_idx: formData.groupIdx,
           item_name: formData.itemName,
-          item_type: formData.itemType,
-          units: formData.units
+          item_type: formData.itemType
         });
+
+        await investApi.addItemUnit(itemIdx, formData.units);
 
         toast.add({
           severity: 'success',

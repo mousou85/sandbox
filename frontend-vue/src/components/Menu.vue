@@ -114,7 +114,7 @@ export default {
         // to: '/invest-history',
         items: [
           {key: 'invest-history', label: 'history', to: '/invest-history/history'},
-          {key: 'invest-company', label: 'company', to: '/invest-history/company'},
+          {key: 'invest-group', label: 'group', to: '/invest-history/group'},
           {key: 'invest-item', label: 'item', to: '/invest-history/item'},
           {key: 'invest-unit', label: 'unit', to: '/invest-history/unit'},
         ]

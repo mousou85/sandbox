@@ -17,7 +17,7 @@ export default {
   setup() {
     const subMenus = ref([
       {label: 'history', to: '/invest-history/history'},
-      {label: 'company', to: '/invest-history/company'},
+      {label: 'group', to: '/invest-history/group'},
       {label: 'item', to: '/invest-history/item'},
       {label: 'unit', to: '/invest-history/unit'},
     ]);

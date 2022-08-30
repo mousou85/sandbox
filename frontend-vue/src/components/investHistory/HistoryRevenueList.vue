@@ -199,13 +199,12 @@ export default {
 
       try {
         const reqData = {
-          history_idx: history.history_idx,
           history_date: history.history_date,
           val: history.val,
           memo: history.memo
         };
 
-        await investApi.editHistory(reqData);
+        await investApi.editHistory(history.history_idx, reqData);
 
         store.commit('investHistory/setUpdateSummaryFlag', true);
         store.commit('investHistory/setUpdateRevenueListFlag', true);

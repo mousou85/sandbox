@@ -73,13 +73,13 @@ module.exports = (db) => {
     if (hasData) throw new ResponseError('이미 등록된 unit입니다.');
   
     //insert data
-    let rsInsert = await db.execute(db.queryBuilder()
+    let unitIdx = await db.execute(db.queryBuilder()
       .insert({user_idx: userIdx, unit: unit, unit_type: unitType})
       .into('invest_unit')
     );
-    if (!rsInsert) throw new ResponseError('unit 추가 실패함');
+    if (!unitIdx) throw new ResponseError('unit 추가 실패함');
   
-    res.json(createResult());
+    res.json(createResult({unit_idx: unitIdx}));
   }));
   
   /**

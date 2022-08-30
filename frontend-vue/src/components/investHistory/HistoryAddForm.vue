@@ -330,8 +330,7 @@ export default  {
       if (!validateFlag) return false;
 
       try {
-        await investApi.addHistory({
-          item_idx: currentItemIdx.value,
+        await investApi.addHistory(currentItemIdx.value, {
           unit_idx: formData.unitIdx,
           history_type: formData.historyType,
           history_date: formData.historyDate,

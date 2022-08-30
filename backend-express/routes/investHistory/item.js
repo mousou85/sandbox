@@ -38,10 +38,11 @@ module.exports = (db) => {
   
     //set vars: 데이터
     let list = await db.queryAll(db.queryBuilder()
-      .select(['item_idx', 'item_type', 'item_name', 'is_close', 'closed_at'])
-      .from('invest_item')
-      .where('user_idx', userIdx)
-      .orderBy('item_idx', 'asc')
+      .select(['igi.group_idx', 'ii.item_idx', 'ii.item_type', 'ii.item_name', 'ii.is_close', 'ii.closed_at'])
+      .from('invest_item AS ii')
+      .leftJoin('invest_group_item AS igi', 'ii.item_idx', 'igi.item_idx')
+      .where('ii.user_idx', userIdx)
+      .orderBy('ii.item_idx', 'asc')
     );
     for (let i in list) {
       let _item = list[i];
@@ -104,7 +105,7 @@ module.exports = (db) => {
     const userIdx = req.user.user_idx;
   
     //set vars: request
-    let groupIdx = req.body.group_idx ? req.body.group_idx.trim() : '';
+    let groupIdx = req.body.group_idx ?? 0;
     let itemType = req.body.item_type ? req.body.item_type.trim() : '';
     let itemName = req.body.item_name ? req.body.item_name.trim() : '';
     if (!groupIdx) throw new ResponseError('group_idx 필수입력임');
@@ -158,7 +159,7 @@ module.exports = (db) => {
   
     //set vars: request
     const itemIdx = req.params.item_idx;
-    let groupIdx = req.body.group_idx ? req.body.group_idx.trim() : '';
+    let groupIdx = req.body.group_idx ?? 0;
     let itemType = req.body.item_type ? req.body.item_type.trim() : '';
     let itemName = req.body.item_name ? req.body.item_name.trim() : '';
     if (itemType && !itemTypeList.hasOwnProperty(itemType)) throw new ResponseError('존재하지 않는 item type');
@@ -199,12 +200,24 @@ module.exports = (db) => {
           .andWhere('user_idx', userIdx)
         );
         if (!hasGroup) throw new ResponseError('group 존재하지 않음');
-      
-        await db.execute(db.queryBuilder()
-          .update({group_idx: groupIdx})
+        
+        let hasGroupItem = await db.exists(db.queryBuilder()
           .from('invest_group_item')
           .where('item_idx', itemIdx)
-        , dbTrx);
+        );
+        
+        if (hasGroupItem) {
+          await db.execute(db.queryBuilder()
+            .update({group_idx: groupIdx})
+            .from('invest_group_item')
+            .where('item_idx', itemIdx)
+          , dbTrx);
+        } else {
+          await db.execute(db.queryBuilder()
+            .insert({group_idx: groupIdx, item_idx: itemIdx})
+            .into('invest_group_item')
+          , dbTrx);
+        }
       }
     
       await dbTrx.commit();
