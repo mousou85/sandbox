@@ -27,10 +27,10 @@ export default (store) => {
           component: () => import('@/components/investHistory/History.vue')
         },
         {
-          name: 'investCompany',
-          path: 'company',
+          name: 'investGroup',
+          path: 'group',
           meta: {needLogin: true},
-          component: () => import('@/components/investHistory/Company.vue')
+          component: () => import('@/components/investHistory/Group.vue')
         },
         {
           name: 'investItem',

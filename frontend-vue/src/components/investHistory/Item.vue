@@ -11,7 +11,7 @@
         :breakpoints="{'960px': '75vw', '640px': '95vw'}"
     >
       <ItemAddForm
-          :companyList="companyList"
+          :groupList="groupList"
           :itemTypeList="itemTypeList"
           :unitList="unitList"
       ></ItemAddForm>
@@ -27,7 +27,7 @@
         @hide="toggleFormOverlay($event, 'hide')"
     >
       <ItemAddForm
-          :companyList="companyList"
+          :groupList="groupList"
           :itemTypeList="itemTypeList"
           :unitList="unitList"
       ></ItemAddForm>
@@ -48,7 +48,7 @@
     <ColumnGroup type="header">
       <Row>
         <Column header="IDX" class="text-center"></Column>
-        <Column header="기업명" class="text-center"></Column>
+        <Column header="그룹" class="text-center"></Column>
         <Column header="상품명" class="text-center"></Column>
         <Column header="상품타입" class="text-center"></Column>
         <Column header="단위" class="text-center"></Column>
@@ -62,16 +62,16 @@
         class="text-center"
     ></Column>
     <Column
-        header="기업명"
-        field="company_name"
+        header="그룹"
+        field="group_name"
         class="text-center"
     >
       <template #editor="{data, field}">
         <Dropdown
-            v-model="data.company_idx"
-            :options="companyList"
-            optionLabel="company_name"
-            optionValue="company_idx"
+            v-model="data.group_idx"
+            :options="groupList"
+            optionLabel="group_name"
+            optionValue="group_idx"
         ></Dropdown>
       </template>
     </Column>
@@ -114,7 +114,7 @@
         ></MultiSelect>
       </template>
       <template #body="{data}">
-        {{printUnitText(data.unit_set)}}
+        {{printUnitText(data.unit_list)}}
       </template>
     </Column>
     <Column
@@ -198,24 +198,24 @@ export default {
     const updateListFlag = computed(() => store.getters['investHistory/getUpdateItemListFlag']);
     const htmlFormOverlay = ref();
     const formOverlayVisible = ref(false);
-    const companyList = ref([]);
+    const groupList = ref([]);
     const itemTypeList = ref([]);
     const unitList = ref([]);
     const itemList = ref([]);
     const itemFormData = reactive({
       itemIdx: '',
-      companyIdx: '',
+      groupIdx: '',
       itemType: '',
       itemName: '',
       units: [],
       validate: {
-        companyIdx: true,
+        groupIdx: true,
         itemType: true,
         itemName: true,
         units: true,
       },
       validateMsg: {
-        companyIdx: '',
+        groupIdx: '',
         itemType: '',
         itemName: '',
         units: '',
@@ -228,7 +228,7 @@ export default {
      */
     onBeforeMount(async () => {
       try {
-        companyList.value = await investApi.getCompanyList();
+        groupList.value = await investApi.getGroupList();
 
         itemTypeList.value = await investApi.getItemTypeList();
 
@@ -295,8 +295,14 @@ export default {
         itemList.value = await investApi.getItemList();
         for (const item of itemList.value) {
           item.unit_idx_list = [];
-          for (const unit of item.unit_set) {
+          for (const unit of item.unit_list) {
             item.unit_idx_list.push(unit.unit_idx);
+          }
+
+          for (const group of groupList.value) {
+            if (item.group_idx == group.group_idx) {
+              item.group_name = group.group_name;
+            }
           }
         }
       } catch (err) {
@@ -314,25 +320,24 @@ export default {
     const editItem = async (event) => {
       let {data, newData, field} = event;
 
-      let requestBody = {
-        item_idx: data.item_idx,
-      };
+      const itemIdx = data.item_idx;
+      let requestBody = {};
 
       try {
         switch (field) {
-          //기업
-          case 'company_name':
-            if (data.company_idx == newData.company_idx) {
+          //그룹
+          case 'group_name':
+            if (data.group_idx == newData.group_idx) {
               return false;
             }
 
-            for (const company of companyList.value) {
-              if (company.company_idx == newData.company_idx) {
-                data.company_idx = company.company_idx;
-                data.company_name = company.company_name;
+            for (const group of groupList.value) {
+              if (group.group_idx == newData.group_idx) {
+                data.group_idx = group.group_idx;
+                data.group_name = group.group_name;
               }
             }
-            requestBody['company_idx'] = newData.company_idx;
+            requestBody['group_idx'] = newData.group_idx;
             break;
           //상품명
           case 'item_name':
@@ -387,8 +392,8 @@ export default {
             break;
         }
 
-        if (Object.keys(requestBody).length > 1) {
-          await investApi.editItem(requestBody);
+        if (Object.keys(requestBody).length > 0) {
+          await investApi.editItem(itemIdx, requestBody);
         }
 
         toast.add({
@@ -451,7 +456,7 @@ export default {
       isMobile,
       htmlFormOverlay,
       formOverlayVisible,
-      companyList,
+      groupList,
       itemTypeList,
       unitList,
       itemList,

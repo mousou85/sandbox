@@ -3,58 +3,48 @@
     <div class="p-inputgroup">
       <div class="p-float-label">
         <InputText
-          id="addCompanyName"
+          id="addGroupName"
           type="text"
           maxlength="20"
-          v-model="addForm.company_name"
-          :class="{'p-invalid': !addForm.validate.company_name}"
+          v-model="addForm.group_name"
+          :class="{'p-invalid': !addForm.validate.group_name}"
         ></InputText>
-        <label for="addCompanyName" :class="{'p-error': !addForm.validate.company_name}">기업추가</label>
+        <label for="addCompanyName" :class="{'p-error': !addForm.validate.group_name}">그룹추가</label>
       </div>
-      <Button type="button" @click="addCompany"><i class="pi pi-plus"></i></Button>
+      <Button type="button" @click="addGroup"><i class="pi pi-plus"></i></Button>
     </div>
-    <small
-      v-if="!addForm.validate.company_name"
-      :class="{'p-error': !addForm.validate.company_name}"
-    >
-      기업명을 입력해주세요.
-    </small>
+    <small v-if="!addForm.validate.group_name" class="p-error">기업명을 입력해주세요.</small>
   </div>
 
   <div class="md:w-3 w-full">
     <DataView
-        :value="companyList"
+        :value="groupList"
         layout="list"
     >
-      <template #list="{data: company}">
+      <template #list="{data: group}">
         <div class="w-full mb-1">
           <div class="p-inputgroup">
-            <span class="p-inputgroup-addon">{{company.company_idx}}</span>
+            <span class="p-inputgroup-addon">{{group.group_idx}}</span>
             <InputText
-              type="text"
-              maxlength="20"
-              v-model="company.company_name"
-              :class="{'p-invalid': !company.validate.company_name}"
-              @blur="updateCompany(company)"
+                type="text"
+                maxlength="20"
+                v-model="group.group_name"
+                :class="{'p-invalid': !group.validate.group_name}"
+                @blur="updateGroup(group)"
             ></InputText>
-            <Button type="button" class="p-button-danger" @click="deleteCompany(company.company_idx)"><i class="pi pi-trash"></i></Button>
+            <Button type="button" class="p-button-danger" @click="deleteGroup(group.group_idx)"><i class="pi pi-trash"></i></Button>
           </div>
-          <small
-            v-if="!company.validate.company_name"
-            :class="{'p-error': !company.validate.company_name}"
-          >
-            기업명을 입력해주세요.
-          </small>
+          <small v-if="!group.validate.group_name" class="p-error">기업명을 입력해주세요.</small>
         </div>
       </template>
     </DataView>
   </div>
 
   <ConfirmDialog
-    :breakpoints="{'960px': '75vw', '640px': '100vw'}"
+      :breakpoints="{'960px': '75vw', '640px': '100vw'}"
   ></ConfirmDialog>
   <Toast
-    :breakpoints="{'960px': {width: '100%', right: '0', left: '0'}}"
+      :breakpoints="{'960px': {width: '100%', right: '0', left: '0'}}"
   ></Toast>
 </template>
 
@@ -84,11 +74,11 @@ export default {
     const investApi = useInvestApi();
 
     //set vars: 필요 변수
-    const companyList = ref([]);
+    const groupList = ref([]);
     const addForm = reactive({
-      company_name: '',
+      group_name: '',
       validate: {
-        company_name: true,
+        group_name: true,
       }
     });
 
@@ -97,49 +87,49 @@ export default {
     const toast = useToast();
 
     /*
-    lifecycle hook
+     lifecycle hook
      */
     onBeforeMount(async () => {
-      await getCompanyList();
+      await getGroupList();
     });
 
     /**
-     * 기업 목록
+     * 그룹 목록
      * @returns {Promise<void>}
      */
-    const getCompanyList = async () => {
+    const getGroupList = async () => {
       try {
-        companyList.value = await investApi.getCompanyList();
+        groupList.value = await investApi.getGroupList();
 
-        for (const company of companyList.value) {
-          company.original_company_name = company.company_name;
-          company.validate = reactive({
-            company_name: true
+        for (const group of groupList.value) {
+          group.original_group_name = group.group_name;
+          group.validate = reactive({
+            group_name: true
           });
         }
       } catch (err) {
-        companyList.value = [];
+        groupList.value = [];
       }
     }
 
     /**
-     * 기업 추가
+     * 그룹 추가
      * @returns {Promise<boolean>}
      */
-    const addCompany = async() => {
-      if (!addForm.company_name) {
-        addForm.validate.company_name = false;
-        document.getElementById('addCompanyName').focus();
+    const addGroup = async() => {
+      if (!addForm.group_name) {
+        addForm.validate.group_name = false;
+        document.getElementById('addGroupName').focus();
         return false;
       }
 
       try {
-        await investApi.addCompany(addForm.company_name);
+        await investApi.addGroup(addForm.group_name);
 
-        await getCompanyList();
+        await getGroupList();
 
-        addForm.company_name = '';
-        addForm.validate.company_name = true;
+        addForm.group_name = '';
+        addForm.validate.group_name = true;
       } catch (err) {
         toast.add({
           severity: 'error',
@@ -152,23 +142,23 @@ export default {
     }
 
     /**
-     * 기업 수정
-     * @param company
+     * 그룹 수정
+     * @param group
      * @returns {Promise<void>}
      */
-    const updateCompany = async (company) => {
+    const updateGroup = async (group) => {
       try {
-        if (company.company_name == '') {
-          company.validate.company_name = false;
+        if (group.group_name == '') {
+          group.validate.group_name = false;
           return;
         } else {
-          company.validate.company_name = true;
+          group.validate.group_name = true;
         }
 
-        if (company.company_name != company.original_company_name) {
-          await investApi.editCompany(company.company_idx, company.company_name);
+        if (group.group_name != group.original_group_name) {
+          await investApi.editGroup(group.group_idx, group.group_name);
 
-          company.original_company_name = company.company_name;
+          group.original_group_name = group.group_name;
 
           toast.add({
             severity: 'success',
@@ -187,11 +177,11 @@ export default {
     }
 
     /**
-     * 기업 삭제
-     * @param companyIdx
+     * 그룹 삭제
+     * @param {number} groupIdx
      * @returns {Promise<void>}
      */
-    const deleteCompany = async (companyIdx) => {
+    const deleteGroup = async (groupIdx) => {
       confirm.require({
         message: '삭제 하시겠습니까?',
         header: '삭제 확인',
@@ -203,9 +193,9 @@ export default {
         rejectLabel: '아니오',
         accept: async () => {
           try {
-            await investApi.delCompany(companyIdx);
+            await investApi.delGroup(groupIdx);
 
-            await getCompanyList();
+            await getGroupList();
 
             toast.add({
               severity: 'success',
@@ -227,11 +217,11 @@ export default {
     }
 
     return {
-      companyList,
+      groupList,
       addForm,
-      addCompany,
-      updateCompany,
-      deleteCompany,
+      addGroup,
+      updateGroup,
+      deleteGroup,
     }
   }
 }

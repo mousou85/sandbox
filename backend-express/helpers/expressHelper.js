@@ -37,6 +37,10 @@ class ResponseError extends Error {
    * @param {number} [httpCode=400]
    */
   constructor(errorMessage, errorCode, httpCode) {
+    if (typeof errorMessage != 'string') {
+      errorMessage = errorMessage.message ?? errorMessage.toString();
+    }
+    
     super(errorMessage);
   
     this.errorMessage = errorMessage;
@@ -63,11 +67,11 @@ module.exports = {
   },
   /**
    * 결과 json data 생성
-   * @param {string} [resultMessage='success']
    * @param {*} [extraData]
+   * @param {string} [resultMessage='success']
    * @return {{result: boolean, resultMessage: string, [data]: *}}
    */
-  createResult: (resultMessage, extraData) => {
+  createResult: (extraData, resultMessage) => {
     let jsonData = {
       result: true,
       resultMessage: resultMessage ? resultMessage : 'success',

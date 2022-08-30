@@ -134,7 +134,7 @@ module.exports = (db) => {
           throw new ResponseError('잘못된 접근입니다.');
       }
       
-      res.json(createResult('success', responseData));
+      res.json(createResult(responseData));
     } catch (err) {
       throw err;
     }
@@ -156,7 +156,7 @@ module.exports = (db) => {
     );
     if (!rsUser) throw new ResponseError('회원이 존재하지 않습니다.');
   
-    res.json(createResult('success', {
+    res.json(createResult({
       user_idx: rsUser.user_idx,
       id: rsUser.id,
       name: rsUser.name,
@@ -177,7 +177,7 @@ module.exports = (db) => {
   
       let newAccessToken = userHelper.createAccessToken(decodedPayload);
       
-      res.json(createResult('success', {access_token: newAccessToken}));
+      res.json(createResult( {access_token: newAccessToken}));
     } catch (err) {
       let errorCode = ResponseError.ERROR_CODE.TOKEN_ERROR;
       let errorMessage = 'access token issued fail';
@@ -215,7 +215,7 @@ module.exports = (db) => {
       //set vars: otp secret, auth url, qr code
       let otpSecret = await userHelper.createOTPSecret(rsUser.id);
       
-      res.json(createResult('success', {
+      res.json(createResult({
         secret: otpSecret.secret,
         qrcode: otpSecret.qrCode,
       }));
@@ -290,7 +290,7 @@ module.exports = (db) => {
         throw new ResponseError('OTP 등록중 문제가 발생했습니다.');
       }
       
-      res.json(createResult('success'));
+      res.json(createResult());
     } catch (err) {
       throw err;
     }
@@ -343,7 +343,7 @@ module.exports = (db) => {
         throw new ResponseError('OTP 해제중 문제가 발생했습니다.');
       }
       
-      res.json(createResult('success'));
+      res.json(createResult());
     } catch (err) {
       throw err;
     }
