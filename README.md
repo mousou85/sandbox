@@ -48,14 +48,14 @@
   - 재테크 가계부
     - :white_check_mark: 유저별 가계부 관리 기능 사용되도록 변경
     - :white_check_mark: 기업 관리 API
-      - (WIP) 기업 관리 API 제거(상픔 그룹 관리 API로 대체)
+      - :white_check_mark: 기업 관리 API 제거(상픔 그룹 관리 API로 대체)
     - :white_check_mark: 상품 관리 API
     - :white_check_mark: 화폐 관리 API
     - :white_check_mark: 재테크 이력 관리 API
     - :white_check_mark: 요약 정보 API
       - :white_check_mark: 전체/년간/월간 요약 API
       - 차트 데이터용 API
-    - (WIP) 상품 그룹 관리 API
+    - :white_check_mark: 상품 그룹 관리 API
 - frontend-vue
   - 공통
     - :white_check_mark: vuex 적용
@@ -67,10 +67,10 @@
     - :white_check_mark: OTP 관련 컴포넌트 추가
   - 재테크 가계부
     - :white_check_mark: 기업 관리 컴포넌트 추가
-      - (WIP) 기업 관리 컴포넌트 제거(상품 그룹 관리 컴포넌트로 대체)
+      - :white_check_mark: 기업 관리 컴포넌트 제거(상품 그룹 관리 컴포넌트로 대체)
     - :white_check_mark: 상품 관리 컴포넌트 추가
     - :white_check_mark: 화폐 관리 컴포넌트 추가
     - :white_check_mark: 재테크 이력 컴포넌트 추가
     - :white_check_mark: 재테크 요약 정보 컴포넌트 추가
     - 차트 컴포넌트
-    - (WIP) 상품 그룹 관리 컴포넌트 추가
+    - :white_check_mark: 상품 그룹 관리 컴포넌트 추가
