@@ -38,12 +38,12 @@
       - 유저 생성 기능(API)
     - 유저 정보
       - :white_check_mark: 유저 정보 조회 API
-      - (WIP) 유저 정보 수정 API
+      - :white_check_mark: 유저 정보 수정 API
     - 보안
       - 관리자/일반 사용자 권한 구분 추가 
       - :white_check_mark: OTP 등록/해제 API
       - :white_check_mark: 유저 비밀번호 변경(CLI)
-      - 유저 비밀번호 변경(API)
+      - :white_check_mark: 유저 비밀번호 변경(API)
       - :white_check_mark: 유저 로그인 차단 초기화(CLI)
   - 재테크 가계부
     - :white_check_mark: 유저별 가계부 관리 기능 사용되도록 변경
