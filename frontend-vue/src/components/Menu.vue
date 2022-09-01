@@ -54,9 +54,8 @@
     </Sidebar>
   </template>
 
-  <UserOtp
-    ref="otpDialog"
-  ></UserOtp>
+  <UserOtp ref="cUserOtp"></UserOtp>
+  <EditUserInfo ref="cEditUserInfo"></EditUserInfo>
 </template>
 
 <script>
@@ -72,6 +71,7 @@ import SplitButton from 'primevue/splitbutton';
 import Button from "primevue/button";
 
 import UserOtp from '@/components/user/Otp.vue';
+import EditUserInfo from "@/components/user/EditUserInfo.vue";
 
 export default {
   components: {
@@ -82,6 +82,7 @@ export default {
     SplitButton,
     Button,
     UserOtp,
+    EditUserInfo,
   },
   setup(props) {
     //set vars: vuex, router
@@ -93,8 +94,9 @@ export default {
     const isMobile = computed(() => store.getters["isMobile"]);
     const isLogin = computed(() => store.getters['user/isLogin']);
 
-    //set vars: otp dialog component
-    const otpDialog = ref(null);
+    //set vars: component
+    const cUserOtp = ref(null);
+    const cEditUserInfo = ref(null);
 
     //set vars: sidebar flag
     const showSidebar = ref(false);
@@ -124,9 +126,15 @@ export default {
     //set vars: logout button menu
     const logoutMenus = ref([
       {
+        label: 'Edit Info',
+        command: () => {
+          cEditUserInfo.value.toggleDialog('show');
+        }
+      },
+      {
         label: 'OTP Setting',
         command: () => {
-          otpDialog.value.toggleDialog('show');
+          cUserOtp.value.toggleDialog('show');
         }
       }
     ]);
@@ -153,7 +161,8 @@ export default {
       menus,
       logoutMenus,
       showSidebar,
-      otpDialog,
+      cEditUserInfo,
+      cUserOtp,
       login,
       logout,
     }

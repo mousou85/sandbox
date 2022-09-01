@@ -87,6 +87,18 @@ export const useUserApi = () => {
       };
     },
     /**
+     *
+     * @param {{
+     *   [name]: string,
+     *   [current_password]: string,
+     *   [new_password]: string
+     * }} updateData
+     * @returns {Promise<void>}
+     */
+    editUserInfo: async (updateData) => {
+      await api.post('/user/info', updateData);
+    },
+    /**
      * request otp qr code
      * @returns {Promise<{qrcode: string, secret: string}>}
      */

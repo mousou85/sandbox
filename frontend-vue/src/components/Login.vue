@@ -27,6 +27,7 @@
                     v-model="formData.password"
                     class="w-full"
                     inputClass="w-full"
+                    :feedback="false"
                     :class="{'p-invalid': !formData.validate.password.valid}"
                 ></Password>
                 <label for="password">PASSWORD</label>
