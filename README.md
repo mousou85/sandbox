@@ -28,7 +28,7 @@
       - 다른 모듈로 전환 검토
     - :white_check_mark: PM2 설정 추가
     - :white_check_mark: JWT 인증 적용
-    - DB 테이블 생성 CLI 추가
+    - (WIP) DB 테이블 생성 CLI 추가
   - 유저/로그인
     - 로그인
       - :white_check_mark: 로그인 API
