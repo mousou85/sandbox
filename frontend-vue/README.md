@@ -2,7 +2,7 @@
 
 ### 애플리케이션 셋업
 ```shell
-npm install
+$ npm install
 ```
 
 ### 환경변수(.env) 설정
@@ -15,10 +15,10 @@ VITE_API_BASE_URL='백엔드 API 주소(default: http://localhost:5000)'
 
 ### 개발 및 테스트 실행
 ```shell
-npm run dev
+$ npm run dev
 ```
 
 ### 프로덕션 빌드
 ```shell
-npm run build
+$ npm run build
 ```
