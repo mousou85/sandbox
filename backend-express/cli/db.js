@@ -7,6 +7,7 @@ const path = require('path');
 
 //load cli module
 const {program} = require('commander');
+const chalk = require('chalk');
 
 //load db module
 const {Mysql} = require('#database/Mysql');
@@ -21,11 +22,23 @@ const db = new Mysql(
 );
 
 (async () => {
-  program.command('user')
-    .description('사용자 테이블 생성')
-    .action(async () => {
+  /**
+   * DB 테이블 생성 CLI
+   */
+  program.command('create')
+    .description('DB 테이블 생성')
+    .argument('<function>', '생성할 기능 DB 테이블')
+    .addHelpText('after', `
+Examples:
+  $ db create user ${chalk.gray('# user 테이블 생성')}
+  $ db create investHistory ${chalk.gray('# 재테크 가계부 테이블 생성')}
+    `)
+    .action(async (functionName) => {
       try {
-        const ddlPath = path.resolve(__dirname, '../database/ddl', 'user.sql');
+        const ddlPath = path.resolve(__dirname, '../database/ddl', `${functionName}.sql`);
+        if (!fs.existsSync(ddlPath)) {
+          throw new Error("생성할 테이블의 DDL 파일을 찾지 못했습니다.");
+        }
         let ddlData = fs.readFileSync(ddlPath, {encoding: 'utf-8', flag: 'r'});
         ddlData = ddlData.replaceAll('\r\n', '\n')
           .split(';\n')
@@ -36,7 +49,7 @@ const db = new Mysql(
           await db.executeRaw(sql);
         }
       } catch (err) {
-        console.error(err.sqlMessage ? err.sqlMessage : err.message);
+        console.error(chalk.redBright(err.sqlMessage ? err.sqlMessage : err.message));
         console.error(err.stack);
         process.exit();
       }
