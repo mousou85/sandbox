@@ -1,12 +1,7 @@
 import {apiBase} from '@/apis/base';
 
-/**
- *
- * @param {Store} [store]
- * @param {Router} [router]
- */
-export const useUserApi = (store, router) => {
-  const api = apiBase(store, router);
+export const useUserApi = () => {
+  const api = apiBase();
   
   return {
     /**

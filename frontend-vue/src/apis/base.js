@@ -1,9 +1,11 @@
-import {useStore} from 'vuex';
 import {useRouter} from 'vue-router';
 
 import axios from "axios";
 import qs from "qs";
 import * as _ from 'lodash';
+
+import store from '@/store/index';
+import router from '@/router';
 
 /**
  * api base url
@@ -12,15 +14,8 @@ import * as _ from 'lodash';
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 /**
- *
- * @param {Store} [store]
- * @param {Router} [router]
  */
-export const apiBase = (store, router) => {
-  //set vars: vuex, router
-  if (!store) store = useStore();
-  if (!router) router = useRouter();
-  
+export const apiBase = () => {
   /**
    * auth 헤더 불필요한 api url 목록
    * @type {string[]}
@@ -109,12 +104,12 @@ export const apiBase = (store, router) => {
               return axiosInstance(originalConfig);
             } catch (refreshTokenError) {
               await store.dispatch('user/logout');
-              await router.push({name: 'login'});
+              // await router.push({name: 'login'});
               return Promise.reject(customError(refreshTokenError));
             }
           } else {
             await store.dispatch('user/logout');
-            await router.push({name: 'login'});
+            // await router.push({name: 'login'});
             return Promise.reject(customError(error));
           }
         }

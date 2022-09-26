@@ -105,8 +105,8 @@ export const user = {
      *    name: (string|null),
      *    use_otp: boolean
      *  },
-     *  accessToken: string,
-     *  refreshToken: string
+     *  [accessToken]: string,
+     *  [refreshToken]: string
      * }} value
      * @returns {Promise<void>}
      */
@@ -126,7 +126,6 @@ export const user = {
         }
         commit('doLogin');
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },

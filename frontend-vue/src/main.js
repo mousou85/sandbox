@@ -12,8 +12,9 @@ const SITE_NAME = import.meta.env.VITE_SITE_NAME;
 store.commit('setSiteName', SITE_NAME);
 
 const app = createApp(App);
+
 app.use(store);
-app.use(router(store));
+app.use(router);
 app.use(PrimeVue, {
   ripple: true,
   locale: {

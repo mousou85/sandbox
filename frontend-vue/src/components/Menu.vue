@@ -73,6 +73,8 @@ import Button from "primevue/button";
 import UserOtp from '@/components/user/Otp.vue';
 import EditUserInfo from "@/components/user/EditUserInfo.vue";
 
+import * as helper from '@/libs/helper';
+
 export default {
   components: {
     Menubar,
@@ -150,7 +152,12 @@ export default {
      * logout event
      */
      const logout = () => {
-       store.dispatch('user/logout');
+       store.dispatch('user/logout')
+           .then(() => {
+             if (helper.hasLocalStorage('autoLoginToken')) {
+               helper.delLocalStorage('autoLoginToken');
+             }
+           });
        router.push({name: 'login'});
      }
 
