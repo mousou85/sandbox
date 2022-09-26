@@ -1,7 +1,12 @@
 import {apiBase} from '@/apis/base';
 
-export const useUserApi = () => {
-  const api = apiBase();
+/**
+ *
+ * @param {Store} [store]
+ * @param {Router} [router]
+ */
+export const useUserApi = (store, router) => {
+  const api = apiBase(store, router);
   
   return {
     /**
@@ -63,14 +68,12 @@ export const useUserApi = () => {
     /**
      * get new access token
      * @param {string} refreshToken
-     * @return {Promise<{access_token: string}>}
+     * @return {Promise<string>}
      */
     refreshToken: async (refreshToken) => {
       const res = await api.post('/user/refreshToken', {refresh_token: refreshToken});
   
-      return {
-        access_token: res.data.access_token,
-      }
+      return res.data.access_token;
     },
     /**
      * get user info
@@ -87,7 +90,7 @@ export const useUserApi = () => {
       };
     },
     /**
-     *
+     * edit user info
      * @param {{
      *   [name]: string,
      *   [current_password]: string,
@@ -97,6 +100,23 @@ export const useUserApi = () => {
      */
     editUserInfo: async (updateData) => {
       await api.post('/user/info', updateData);
+    },
+    /**
+     * get auto login token
+     * @returns {Promise<string>}
+     */
+    getAutoLoginToken: async () => {
+      const res = await api.get('/user/getAutoLoginToken');
+      return res.data.autologin_token;
+    },
+    /**
+     * verify auto login token
+     * @param {string} token
+     * @returns {Promise<string>} return refresh token
+     */
+    verifyAutoLoginToken: async (token) => {
+      const res = await api.post('/user/verifyAutoLoginToken', {auto_login_token: token});
+      return res.data.refresh_token
     },
     /**
      * request otp qr code

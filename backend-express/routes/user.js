@@ -239,6 +239,35 @@ module.exports = (db) => {
     res.json(createResult());
   }));
   
+  router.get('/getAutoLoginToken', authTokenMiddleWare, asyncHandler(async (req, res) => {
+    //set vars: request
+    const userIdx = req.user.user_idx;
+    
+    try {
+      let token = userHelper.createAutoLoginToken({user_idx: userIdx});
+      
+      res.json(createResult({autologin_token: token}));
+    } catch (err) {
+      throw new ResponseError(err.message, ResponseError.ERROR_CODE.COMMON_ERROR);
+    }
+  }));
+  
+  router.post('/verifyAutoLoginToken', asyncHandler(async (req, res) => {
+    //set vars: request
+    const autoLoginToken = req.body.auto_login_token;
+    
+    try {
+      const {user_idx} = userHelper.decodeAutoLoginToken(autoLoginToken);
+      
+      const payload = {user_idx: user_idx};
+      const refreshToken = userHelper.createRefreshToken(payload);
+      
+      res.json(createResult({refresh_token: refreshToken}));
+    } catch (err) {
+      throw new ResponseError(err.message);
+    }
+  }));
+  
   /**
    * 액세스 토큰 재발급
    */

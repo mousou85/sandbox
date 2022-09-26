@@ -118,8 +118,12 @@ export const user = {
           name: value.data.name,
           use_otp: value.data.use_otp
         });
-        commit('setAccessToken', value.accessToken);
-        commit('setRefreshToken', value.refreshToken);
+        if (value.accessToken) {
+          commit('setAccessToken', value.accessToken);
+        }
+        if (value.refreshToken) {
+          commit('setRefreshToken', value.refreshToken);
+        }
         commit('doLogin');
       } catch (err) {
         console.log(err);

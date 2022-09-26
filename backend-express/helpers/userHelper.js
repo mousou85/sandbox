@@ -17,6 +17,10 @@ module.exports = (db) => {
    */
   const REFRESH_TOKEN_SECRET = process.env.LOGIN_REFRESH_TOKEN_SECRET;
   /**
+   * auto login token secret
+   */
+  const AUTOLOGIN_TOKEN_SECRET = process.env.AUTOLOGIN_TOKEN_SECRET;
+  /**
    * 로그인 로그 타입 목록
    * @type {Object}
    */
@@ -104,6 +108,12 @@ module.exports = (db) => {
       } catch (err) {
         throw err;
       }
+    },
+    createAutoLoginToken: (payload) => {
+      return jwt.sign(payload, AUTOLOGIN_TOKEN_SECRET, {expiresIn: '30d'});
+    },
+    decodeAutoLoginToken: (token) => {
+      return jwt.verify(token, AUTOLOGIN_TOKEN_SECRET);
     },
     /**
      * create otp secret

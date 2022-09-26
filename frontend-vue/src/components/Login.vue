@@ -34,6 +34,16 @@
               </div>
               <small v-if="!formData.validate.password.valid" class="p-error">{{formData.validate.password.msg}}</small>
             </div>
+            <div class="field flex">
+              <div class="field-checkbox mr-3">
+                <Checkbox id="setRememberId" v-model="formData.setRememberId" :binary="true" />
+                <label for="setRememberId">Remember ID</label>
+              </div>
+              <div class="field-checkbox">
+                <Checkbox id="setAutoLogin" v-model="formData.setAutoLogin" :binary="true" />
+                <label for="setAutoLogin">Autologin</label>
+              </div>
+            </div>
             <Message v-if="messageBox.length > 0" severity="error" :closable="false">{{messageBox}}</Message>
             <Button type="submit" label="LOGIN" icon="pi pi-check-circle" class="w-full"></Button>
           </form>
@@ -71,22 +81,25 @@
 
 <script>
 import {useStore} from "vuex";
-import {computed, reactive, ref} from "vue";
+import {computed, onBeforeMount, reactive, ref} from "vue";
 import {useRouter} from 'vue-router';
 
 import Card from 'primevue/card';
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
+import Checkbox from "primevue/checkbox";
 import Password from 'primevue/password';
 import Message from 'primevue/message';
 
 import {useUserApi} from '@/apis/user';
+import * as helper from '@/libs/helper';
 
 export default {
   components: {
     Card,
     Button,
     InputText,
+    Checkbox,
     Password,
     Message,
   },
@@ -106,6 +119,8 @@ export default {
       id: '',
       password: '',
       authToken: '',
+      setRememberId: false,
+      setAutoLogin: false,
       validate: {
         id: {
           valid: true,
@@ -127,6 +142,20 @@ export default {
 
     //set vars: error message box
     const messageBox = ref('');
+
+    /**
+     * before mount event
+     */
+    onBeforeMount(() => {
+      //set remember id
+      if (helper.hasLocalStorage('rememberId')) {
+        formData.id = helper.getLocalStorage('rememberId');
+        formData.setRememberId = true;
+      }
+      if (helper.hasLocalStorage('autoLoginToken')) {
+        formData.setAutoLogin = true;
+      }
+    });
 
     /**
      * 로그인 submit
@@ -170,6 +199,10 @@ export default {
             refreshToken: res.refresh_token
           });
 
+          upsertRememberId();
+
+          await upsertAutoLogin();
+
           await router.push({name: 'index'});
         }
       } catch (err) {
@@ -209,11 +242,43 @@ export default {
           refreshToken: res.refresh_token
         });
 
+        upsertRememberId();
+
+        await upsertAutoLogin();
+
         await router.push({name: 'index'});
       } catch (err) {
         messageBox.value = err.toString();
       }
     };
+
+    /**
+     * upsert remember id
+     */
+    const upsertRememberId = () => {
+      if (formData.setRememberId) {
+        helper.setLocalStorage('rememberId', formData.id);
+      } else {
+        if (helper.hasLocalStorage('rememberId')) {
+          helper.delLocalStorage('rememberId');
+        }
+      }
+    }
+
+    /**
+     * upsert auto login token
+     * @returns {Promise<void>}
+     */
+    const upsertAutoLogin = async () => {
+      if (formData.setAutoLogin) {
+        const autoLoginToken = await userApi.getAutoLoginToken();
+        helper.setLocalStorage('autoLoginToken', autoLoginToken);
+      } else {
+        if (helper.hasLocalStorage('autoLoginToken')) {
+          helper.delLocalStorage('autoLoginToken');
+        }
+      }
+    }
 
     return {
       SITE_NAME,

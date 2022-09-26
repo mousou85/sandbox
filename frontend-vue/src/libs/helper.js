@@ -27,6 +27,37 @@ export const numberUncomma = (val) => {
   return parts.join('.');
 }
 /**
+ * set local storage data
+ * @param {string} key
+ * @param {string} val
+ */
+export const setLocalStorage = (key, val) => {
+  window.localStorage.setItem(key, val);
+}
+/**
+ * get local storage data
+ * @param {string} key
+ * @returns {string}
+ */
+export const getLocalStorage = (key) => {
+  return window.localStorage.getItem(key);
+}
+/**
+ * delete local storage data
+ * @param {string} key
+ */
+export const delLocalStorage = (key) => {
+  window.localStorage.removeItem(key);
+}
+/**
+ * check local storage data
+ * @param {string} key
+ * @returns {boolean}
+ */
+export const hasLocalStorage = (key) => {
+  return (window.localStorage.getItem(key) !== null);
+}
+/**
  * set session storage data
  * @param {string} key
  * @param {string} val

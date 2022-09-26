@@ -11,10 +11,15 @@ import * as _ from 'lodash';
  */
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
-export const apiBase = () => {
+/**
+ *
+ * @param {Store} [store]
+ * @param {Router} [router]
+ */
+export const apiBase = (store, router) => {
   //set vars: vuex, router
-  const store = useStore();
-  const router = useRouter();
+  if (!store) store = useStore();
+  if (!router) router = useRouter();
   
   /**
    * auth 헤더 불필요한 api url 목록
@@ -23,6 +28,7 @@ export const apiBase = () => {
   const EXCLUDE_AUTH_URL = [
     '/user/login',
     '/user/refreshToken',
+    '/user/verifyAutoLoginToken',
   ];
   
   /**
@@ -134,7 +140,7 @@ export const apiBase = () => {
       axiosError.httpCode = axiosError.response.status;
     }
     
-    let jsonObject = axiosError?.toJSON();
+    let jsonObject = axiosError?.toJSON?.();
     
     axiosError.toJSON = () => {
       if (axiosError.errorCode) jsonObject.errorCode = axiosError.errorCode;
