@@ -1,6 +1,11 @@
 # SAND BOX
 프로그래밍 언어 학습 및 개인적인 필요에 의해 개발중인 애플리케이션.
 
+# git 저장소 이동
+프론트엔드와 백엔드의 git 저장소를 분리하며 이 저장소는 더이상 사용하지 않음
+- 프론트엔드(https://github.com/mousou85/sandbox-frontend)
+- 백엔드(https://github.com/mousou85/sandbox-backend)
+
 ## 디렉토리 구분
 루트기준으로 아래와 같이 구분됨
 - `backend-xxx`: 백엔드 API로 `xxx`는 언어 또는 프레임워크 이름
