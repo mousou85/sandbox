@@ -37,7 +37,7 @@ module.exports = (db) => {
     
       //item list 세팅
       _group.item_list = await db.queryAll(db.queryBuilder()
-        .select(['igi.item_idx', 'ii.item_type', 'ii.item_name', 'ii.is_close', 'ii.closed_at'])
+        .select(['igi.item_idx', 'ii.item_type', 'ii.item_name', 'ii.closed_at'])
         .from ('invest_group_item AS igi')
         .join('invest_item AS ii', 'igi.item_idx', 'ii.item_idx')
         .where('igi.group_idx', _group.group_idx)
@@ -91,7 +91,7 @@ module.exports = (db) => {
   
     //set vars: 포함된 item list
     rsGroup.item_list = await db.queryAll(db.queryBuilder()
-      .select(['igi.item_idx', 'ii.item_type', 'ii.item_name', 'ii.is_close', 'ii.closed_at'])
+      .select(['igi.item_idx', 'ii.item_type', 'ii.item_name', 'ii.closed_at'])
       .from('invest_group_item AS igi')
       .join('invest_item AS ii', 'igi.item_idx', 'ii.item_idx')
       .where('igi.group_idx', rsGroup.group_idx)

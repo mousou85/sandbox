@@ -15,7 +15,6 @@ export const useInvestApi = () => {
      *     item_type: string,
      *     item_type_text: string,
      *     item_name: string,
-     *     is_close: string,
      *     closed_at: string,
      *     unit_list: {
      *       unit_idx: number,
@@ -41,7 +40,6 @@ export const useInvestApi = () => {
      *     item_type: string,
      *     item_type_text: string,
      *     item_name: string,
-     *     is_close: string,
      *     closed_at: string,
      *     unit_list: {
      *       unit_idx: number,
@@ -106,7 +104,6 @@ export const useInvestApi = () => {
      *   item_type: string,
      *   item_type_text: string,
      *   item_name: string,
-     *   is_close: string,
      *   closed_at: string,
      *   unit_list: {
      *     unit_idx: number,
@@ -127,7 +124,6 @@ export const useInvestApi = () => {
      *   item_type: string,
      *   item_type_text: string,
      *   item_name: string,
-     *   is_close: string,
      *   closed_at: string,
      *   unit_list: {
      *     unit_idx: number,

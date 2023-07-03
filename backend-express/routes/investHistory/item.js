@@ -38,7 +38,7 @@ module.exports = (db) => {
   
     //set vars: 데이터
     let list = await db.queryAll(db.queryBuilder()
-      .select(['igi.group_idx', 'ii.item_idx', 'ii.item_type', 'ii.item_name', 'ii.is_close', 'ii.closed_at'])
+      .select(['igi.group_idx', 'ii.item_idx', 'ii.item_type', 'ii.item_name', 'ii.closed_at'])
       .from('invest_item AS ii')
       .leftJoin('invest_group_item AS igi', 'ii.item_idx', 'igi.item_idx')
       .where('ii.user_idx', userIdx)
@@ -75,7 +75,7 @@ module.exports = (db) => {
       
       //set vars: 데이터
       let rsItem = await db.queryRow(db.queryBuilder()
-        .select(['item_idx', 'item_type', 'item_name', 'is_close', 'closed_at'])
+        .select(['item_idx', 'item_type', 'item_name', 'closed_at'])
         .from('invest_item')
         .where('item_idx', itemIdx)
         .andWhere('user_idx', userIdx)
